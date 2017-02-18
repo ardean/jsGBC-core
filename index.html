@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>jsGBC-core</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="./index.css" />
+</head>
+
+<body>
+  <div class="loading">
+    <h1>Loading...</h1>
+  </div>
+
+  <p>Click <span class="rom-select">HERE</span> to select a ROM</p>
+
+  <canvas class="lcd pixelated"></canvas>
+
+  <!-- <script src="index.js"></script> -->
+  <script src="jspm_packages/system.js"></script>
+  <script src="jspm.config.js"></script>
+  <script>
+  System.import("demo/index.js");
+</script>
+</body>
+
+</html>
