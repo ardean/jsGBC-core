@@ -16,7 +16,7 @@ Please checkout the [direct/index.html](https://ardean.github.io/jsGBC-core/dire
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE.md)
 
 [downloads-image]: https://img.shields.io/npm/dm/jsgbc.svg
 [downloads-url]: https://npmjs.org/package/jsgbc
