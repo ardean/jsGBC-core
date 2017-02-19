@@ -22,30 +22,7 @@ SystemJS.config({
           "loader": "plugin-babel"
         }
       }
-    },
-    "github:ardean/jsPointerLock@1.0.0": {
-      "map": {
-        "jquery": "npm:jquery@3.1.1",
-        "events": "npm:jspm-nodelibs-events@0.2.0"
-      }
-    },
-    "github:ardean/jsGamepad@0.1.0": {
-      "map": {
-        "events": "npm:jspm-nodelibs-events@0.2.0",
-        "jquery": "npm:jquery@3.1.1"
-      }
-    },
-    "github:ardean/jsFullscreen@0.1.0": {
-      "map": {
-        "events": "npm:jspm-nodelibs-events@0.2.0",
-        "jquery": "npm:jquery@3.1.1"
-      }
     }
-  },
-  map: {
-    "jsfullscreen": "github:ardean/jsFullscreen@0.1.0",
-    "jsgamepad": "github:ardean/jsGamepad@0.1.0",
-    "jspointerlock": "github:ardean/jsPointerLock@1.0.0"
   }
 });
 

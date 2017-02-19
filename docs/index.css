@@ -22,7 +22,7 @@ body {
 }
 
 .rom-select {
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
 }
 
