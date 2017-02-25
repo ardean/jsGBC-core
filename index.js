@@ -1,4 +1,4 @@
-import GameBoy from "../src/index.js";
+import { GameBoy, util } from "./src/index.js";
 import $ from "jquery";
 
 const keyMap = {
@@ -25,6 +25,8 @@ const $lcd = $(".lcd");
 
 const gameboy = new GameBoy($lcd.get(0));
 
+window.gameboy = gameboy;
+
 $(window)
   .on("keydown", ({ keyCode }) => {
     if (keyMap[keyCode]) {
@@ -37,21 +39,18 @@ $(window)
     }
   });
 
-$(".rom-select").on("click", () => {
-  const $input = $("<input type='file' accept='.gb, .gbc' />");
-  $input.one("change", function() {
-    if (this.files.length > 0) {
-      var file = this.files[0];
-      var binaryHandle = new FileReader();
-      binaryHandle.onload = function() {
-        if (this.readyState === 2) {
-          gameboy.replaceCartridge(this.result);
-        }
-      };
-      binaryHandle.readAsBinaryString(file);
-    }
-  });
-  $input.click();
+$(".rom-select").on("click", async() => {
+  const result = await util.uploadFile(["gb", "gbc"]);
+  gameboy.replaceCartridge(result);
+});
+
+$(".download-battery-file").on("click", () => {
+  util.downloadFile(gameboy.core.cartridgeSlot.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
+});
+
+$(".upload-battery-file").on("click", async() => {
+  const result = await util.uploadFile(["sav"]);
+  await gameboy.loadBatteryFileArrayBuffer(result);
 });
 
 $(".loading").hide();

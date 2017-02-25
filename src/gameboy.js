@@ -1,7 +1,10 @@
 import { Buffer } from "buffer";
 import settings from "./settings.js";
+import { stringToArrayBuffer, concatArrayBuffers } from "./core/util.js";
 import GameBoyCore from "./core/index.js";
+import LocalStorage from "./storages/localstorage.js";
 import Cartridge from "./core/cartridge/index.js";
+import ActionRegistry from "./action-registry.js";
 import EventEmitter from "events";
 import debounce from "debounce";
 
@@ -12,16 +15,50 @@ export default class GameBoy extends EventEmitter {
     super();
 
     this.debouncedAutoSave = debounce(this.autoSave.bind(this), 100);
-
-    this.core = new GameBoyCore(canvas);
-    this.core.loadSRAMState = this.loadSRAMState.bind(this);
-    this.core.loadRTCState = this.loadRTCState.bind(this);
-    this.core.onMBCWrite = () => {
+    this.core = new GameBoyCore(this, canvas);
+    this.core.events.on("sramWrite", () => {
       if (!this.core.cartridgeSlot.cartridge) return;
       this.debouncedAutoSave();
-    };
+    });
 
     this.isOn = false;
+    this.actionRegistry = new ActionRegistry();
+    this.registerActions();
+    this.storage = new LocalStorage();
+  }
+
+  setStorage(storage) {
+    this.storage = storage;
+  }
+
+  registerActions() {
+    this.buttons.forEach((button, index) => {
+      this.actionRegistry
+        .register(button)
+        .on("down-" + button, () => {
+          this.core.joypad.down(index);
+        })
+        .on("up-" + button, () => {
+          this.core.joypad.up(index);
+        });
+    });
+
+    this.actionRegistry
+      .register("speed")
+      .on("down-speed", options => this.handleSpeed(options))
+      .on("change-speed", options => this.handleSpeed(options))
+      .on("up-speed", () => {
+        this.setSpeed(1);
+      });
+  }
+
+  handleSpeed(options) {
+    let multiplier = 2;
+    if (options && typeof options.value === "number") {
+      multiplier = options.value * 2 + 1;
+    }
+
+    this.setSpeed(multiplier);
   }
 
   turnOn() {
@@ -32,8 +69,7 @@ export default class GameBoy extends EventEmitter {
     this.core.stopEmulator &= 1;
     this.interval = setInterval(
       () => {
-        if (
-          !document.hidden &&
+        if (!document.hidden &&
           !document.msHidden &&
           !document.mozHidden &&
           !document.webkitHidden
@@ -79,70 +115,140 @@ export default class GameBoy extends EventEmitter {
     this.cartridge = cartridge;
   }
 
-  actionDown(action) {
-    this.core.joypad.down(this.getButtonIndex(action));
+  actionDown(action, options) {
+    this.actionRegistry.down(action, options);
   }
 
-  actionUp(action) {
-    this.core.joypad.up(this.getButtonIndex(action));
+  actionChange(action, options) {
+    this.actionRegistry.change(action, options);
+  }
+
+  actionUp(action, options) {
+    this.actionRegistry.up(action, options);
   }
 
   setSpeed(multiplier) {
     this.core.setSpeed(multiplier);
   }
 
-  getButtonIndex(action) {
-    return this.buttons.indexOf(action);
-  }
-
   autoSave() {
-    this.saveSRAMState(this.core.cartridgeSlot.cartridge.name);
-    this.saveRTCState(this.core.cartridgeSlot.cartridge.name);
+    this.saveSRAM();
+    this.saveRTC();
   }
 
-  saveSRAMState(filename) {
-    const sram = this.core.saveSRAMState();
-    if (sram) {
-      this.setLocalStorageValue("SRAM_" + filename, sram);
+  async saveState(state) {
+    if (!this.core.cartridgeSlot.cartridge) return;
+    const name = this.core.cartridgeSlot.cartridge.name;
+
+    if (!state) {
+      state = this.core.stateManager.get();
+      if (!state) return false;
     }
+
+    await this.storage.setState(name, state);
+    this.emit("stateSaved", { name, state });
   }
 
-  saveRTCState(filename) {
-    const rtc = this.core.saveRTCState();
-    if (rtc) {
-      this.setLocalStorageValue("RTC_" + filename, rtc);
+  async saveSRAM(sram) {
+    if (!this.core.cartridgeSlot.cartridge) return;
+    const name = this.core.cartridgeSlot.cartridge.name;
+
+    if (!sram) {
+      sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+      if (!sram) return false;
     }
+
+    await this.storage.setSRAM(name, sram.buffer);
+    this.emit("sramSaved", { name, sram });
   }
 
-  loadSRAMState(filename) {
-    return this.findLocalStorageValue("SRAM_" + filename);
-  }
+  async saveRTC(rtc) {
+    if (!this.core.cartridgeSlot.cartridge) return;
+    const name = this.core.cartridgeSlot.cartridge.name;
 
-  loadRTCState(filename) {
-    return this.findLocalStorageValue("RTC_" + filename);
-  }
-
-  saveState(filename) {
-    this.setLocalStorageValue(filename, this.core.saveState());
-    this.emit("stateSaved", { filename });
-  }
-
-  loadState(filename) {
-    const value = this.findLocalStorageValue(filename);
-    if (value) {
-      this.core.savedStateFileName = filename;
-      this.core.loadState(value);
-      this.emit("stateLoaded", { filename });
+    if (!rtc) {
+      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+      if (!rtc) return false;
     }
+
+    await this.storage.setRTC(name, rtc.buffer);
+    this.emit("rtcSaved", { name, rtc });
   }
 
-  setLocalStorageValue(key, value) {
-    window.localStorage.setItem(key, btoa(JSON.stringify(value)));
-  }
+  loadState(state) {
+    if (!this.core.cartridgeSlot.cartridge) return;
+    const name = this.core.cartridgeSlot.cartridge.name;
 
-  findLocalStorageValue(key) {
-    if (window.localStorage.getItem(key) !== null) {
-      return JSON.parse(atob(window.localStorage.getItem(key)));
+    if (!state) {
+      state = this.storage.findState(name);
+      if (!state) return false;
     }
+
+    this.core.loadState(state);
+    this.emit("stateLoaded", { name, state });
   }
+
+  loadSRAM(sram) {
+    if (!this.core.cartridgeSlot.cartridge) return;
+    const name = this.core.cartridgeSlot.cartridge.name;
+
+    if (!sram) {
+      sram = this.storage.findSRAM(name);
+      if (!sram) return false;
+      sram = new Uint8Array(sram);
+    }
+
+    this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
+    this.emit("sramLoaded", { name, sram });
+  }
+
+  loadRTC(rtc) {
+    if (!this.core.cartridgeSlot.cartridge || !this.core.cartridgeSlot.cartridge.hasRTC) return;
+    const name = this.core.cartridgeSlot.cartridge.name;
+
+    if (!rtc) {
+      rtc = this.storage.findRTC(name);
+      if (!rtc) return false;
+      rtc = new Uint32Array(rtc);
+    }
+
+    this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+    this.emit("rtcLoaded", { name, rtc });
+  }
+
+  getBatteryFileArrayBuffer() {
+    if (!this.core.cartridgeSlot.cartridge) return;
+
+    const sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+    let rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+
+    return concatArrayBuffers(sram.buffer, rtc.buffer);
+  }
+
+  async loadBatteryFileArrayBuffer(data) {
+    if (typeof data === "string") {
+      data = stringToArrayBuffer(data);
+    }
+
+    const sram = this.core.cartridgeSlot.cartridge.mbc.cutSRAMFromBatteryFileArray(
+      data
+    );
+    const rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(
+      data
+    );
+
+    this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
+    this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+
+    await this.saveSRAM(sram);
+    await this.saveRTC(rtc);
+
+    this.restart();
+  }
+
+  // getStateFileArrayBuffer() {
+  //   let array = this.core.stateManager.save();
+  //   array = new Uint8Array(array);
+  //   return array;
+  // }
 }

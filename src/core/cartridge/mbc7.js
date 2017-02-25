@@ -47,9 +47,7 @@ export default class MBC7 extends MBC {
           //X Low Byte:
           return this.lowX;
         default:
-          return this.cartridge.MBCRam[
-            address + this.currentRAMBankPosition
-          ];
+          return this.RAM[address + this.currentRAMBankPosition];
       }
     }
     //console.log("Reading from disabled RAM.", 1);

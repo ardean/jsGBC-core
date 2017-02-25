@@ -11,9 +11,9 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-          this.mbc.currentMBCRAMBank +
-          ") RTC write out of range: " +
-          data
+        this.mbc.currentMBCRAMBank +
+        ") RTC write out of range: " +
+        data
       );
     }
   }
@@ -24,9 +24,9 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-          this.mbc.currentMBCRAMBank +
-          ") RTC write out of range: " +
-          data
+        this.mbc.currentMBCRAMBank +
+        ") RTC write out of range: " +
+        data
       );
     }
   }
@@ -36,9 +36,9 @@ export default class RTC {
   }
 
   writeDaysHigh(data) {
-    this.mbc.cartridge.RTCDayOverFlow = data > 0x7f;
-    this.mbc.cartridge.RTCHalt = (data & 0x40) === 0x40;
-    this.mbc.cartridge.RTCDays = (data & 0x1) << 8 | this.mbc.cartridge.RTCDays & 0xff;
+    this.RTCDayOverFlow = data > 0x7f;
+    this.RTCHalt = (data & 0x40) === 0x40;
+    this.RTCDays = (data & 0x1) << 8 | this.RTCDays & 0xff;
   }
 
   writeHours(data) {
@@ -47,9 +47,9 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-          this.mbc.currentMBCRAMBank +
-          ") RTC write out of range: " +
-          data
+        this.mbc.currentMBCRAMBank +
+        ") RTC write out of range: " +
+        data
       );
     }
   }
@@ -90,7 +90,92 @@ export default class RTC {
     }
   }
 
+  get() {
+    const lastTimeSeconds = Math.round(this.lastTime / 1000);
+    const lastTimeLow = lastTimeSeconds >> 0 & 0xffff;
+    const lastTimeHigh = lastTimeSeconds >> 16 & 0xffff;
+
+    const data = new Uint32Array([
+      this.RTCSeconds,
+      this.RTCMinutes,
+      this.RTCHours,
+      this.RTCDays,
+      this.RTCDayOverFlow,
+      this.latchedSeconds,
+      this.latchedMinutes,
+      this.latchedHours,
+      this.latchedLDays,
+      this.latchedHDays,
+      lastTimeLow,
+      lastTimeHigh
+    ]);
+
+    return data;
+  }
+
+  load(array) {
+    const options = this.extract(array);
+
+    this.RTCSeconds = options.seconds;
+    this.RTCMinutes = options.minutes;
+    this.RTCHours = options.hours;
+    this.RTCDays = options.daysLow;
+    this.RTCDayOverFlow = options.daysHigh;
+
+    this.latchedSeconds = options.latchedSeconds;
+    this.latchedMinutes = options.latchedMinutes;
+    this.latchedHours = options.latchedHours;
+    this.latchedLDays = options.latchedDaysLow;
+    this.latchedHDays = options.latchedDaysHigh;
+
+    this.lastTime = options.lastTime;
+  }
+
+  cutBatteryFileArray(data) {
+    return new Uint32Array(
+      data.buffer.slice(
+        this.mbc.allocatedRamBytes,
+        this.mbc.allocatedRamBytes + 4 * 12
+      )
+    );
+  }
+
+  extract(array) {
+    const seconds = array[0];
+    const minutes = array[1];
+    const hours = array[2];
+    const daysLow = array[3];
+    const daysHigh = array[4];
+    const latchedSeconds = array[5];
+    const latchedMinutes = array[6];
+    const latchedHours = array[7];
+    const latchedDaysLow = array[8];
+    const latchedDaysHigh = array[9];
+    const lastTimeLow = array[10];
+    const lastTimeHigh = array[11];
+
+    let lastTimeSeconds = lastTimeLow;
+    if (lastTimeLow && lastTimeHigh) {
+      lastTimeSeconds = lastTimeHigh << 16 | lastTimeLow;
+    }
+
+    return {
+      seconds,
+      minutes,
+      hours,
+      daysLow,
+      daysHigh,
+      latchedSeconds,
+      latchedMinutes,
+      latchedHours,
+      latchedDaysLow,
+      latchedDaysHigh,
+      lastTime: lastTimeSeconds * 1000
+    };
+  }
+
   saveState() {
+    // TODO: remove after state refactor
     // return the MBC RAM for backup...
     return [
       this.lastTime,

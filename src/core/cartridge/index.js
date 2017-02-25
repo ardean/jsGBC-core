@@ -11,9 +11,6 @@ export default class Cartridge {
   constructor(rom) {
     this.rom = new ROM(rom);
 
-    this.MBCRam = []; // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
-    this.MBC1Mode = false; // MBC1 Type (4/32, 16/8)
-
     this.hasMBC1 = false; // Does the cartridge use MBC1?
     this.hasMBC2 = false; // Does the cartridge use MBC2?
     this.hasMBC3 = false; // Does the cartridge use MBC3?
@@ -46,7 +43,6 @@ export default class Cartridge {
     this.ROMBanks[0x54] = 96;
 
     this.RAMBanks = [0, 1, 2, 4, 16]; // Used to map the RAM banks to maximum size the MBC used can do.
-    this.numRAMBanks = 0; // How many RAM banks were actually allocated?
   }
 
   connect(gameboy) {
@@ -377,41 +373,9 @@ export default class Cartridge {
   }
 
   setupRAM() {
-    // Setup the auxilliary/switchable RAM:
-    if (this.hasMBC2) {
-      this.numRAMBanks = 1 / 16;
-    } else if (this.hasMBC1 || this.cRUMBLE || this.hasMBC3 || this.cHuC3) {
-      this.numRAMBanks = 4;
-    } else if (this.hasMBC5) {
-      this.numRAMBanks = 16;
-    } else if (this.hasSRAM) {
-      this.numRAMBanks = 1;
-    }
+    this.mbc.setupRAM();
 
-    this.allocatedRamBytes = this.numRAMBanks * 0x2000;
-
-    console.log("Actual bytes of MBC RAM allocated: " + this.allocatedRamBytes);
-
-    if (this.numRAMBanks > 0) {
-      let mbcRam = null;
-      if (typeof this.gameboy.loadSRAMState === "function") {
-        mbcRam = this.gameboy.loadSRAMState(this.name);
-      }
-
-      if (mbcRam) {
-        this.MBCRam = util.toTypedArray(mbcRam, "uint8");
-      } else {
-        this.MBCRam = util.getTypedArray(this.allocatedRamBytes, 0, "uint8");
-      }
-    }
-
-    this.gameboy.loadRTCState2();
-  }
-
-  saveSRAMState() {
-    if (!this.hasBattery || this.MBCRam.length === 0) return; // No battery backup...
-
-    // return the MBC RAM for backup...
-    return util.fromTypedArray(this.MBCRam);
+    this.gameboy.api.loadSRAM();
+    this.gameboy.api.loadRTC();
   }
 }

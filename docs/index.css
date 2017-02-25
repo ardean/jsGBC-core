@@ -21,7 +21,7 @@ body {
   z-index: 1;
 }
 
-.rom-select {
+.rom-select, .download-battery-file, .upload-battery-file {
   font-weight: 600;
   cursor: pointer;
 }

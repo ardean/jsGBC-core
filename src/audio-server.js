@@ -19,11 +19,9 @@ export default class AudioServer {
   }
 
   writeAudio(buffer) {
-    for (
-      let bufferCounter = 0;
-      bufferCounter < buffer.length &&
-        this.audioBufferSize < this.maxBufferSize;
-
+    let bufferCounter = 0;
+    while (
+      bufferCounter < buffer.length && this.audioBufferSize < this.maxBufferSize
     ) {
       this.audioContextSampleBuffer[this.audioBufferSize++] = buffer[
         bufferCounter++
@@ -74,14 +72,13 @@ export default class AudioServer {
     let index = 0;
     while (
       index < this.samplesPerCallback &&
-        this.resampleBufferStart !== this.resampleBufferEnd
+      this.resampleBufferStart !== this.resampleBufferEnd
     ) {
       bufferCount = 0;
       while (bufferCount < this.channelsAllocated) {
         buffers[bufferCount][index] = this.resampledBuffer[
           this.resampleBufferStart++
-        ] *
-          this.volume;
+        ] * this.volume;
 
         ++bufferCount;
       }
@@ -107,8 +104,6 @@ export default class AudioServer {
 
   setVolume(volume) {
     this.volume = Math.max(0, Math.min(1, volume));
-    // console.log("volume 0!");
-    // this.volume = 0;
   }
 
   resetCallbackAPIAudioBuffer(sampleRate) {

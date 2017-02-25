@@ -2400,13 +2400,172 @@ $__System.registerDynamic('12', ['11'], true, function ($__require, exports, mod
     };
   };
 });
-$__System.register('a', ['f', '10', '12'], function (_export, _context) {
+$__System.register('a', ['f', '10', '12'], function (_export, _context5) {
   "use strict";
 
-  var EventEmitter, debounce, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, GameBoy$1;
+  var EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, ActionRegistry, GameBoy$1;
 
-  function GameBoyCore(canvas, options) {
+  function toTypedArray(baseArray, memtype) {
+    try {
+      if (settings.disallowTypedArrays) {
+        return baseArray;
+      }
+      if (!baseArray || !baseArray.length) {
+        return [];
+      }
+      var length = baseArray.length;
+
+      var typedArrayTemp = void 0;
+      switch (memtype) {
+        case "uint8":
+          typedArrayTemp = new Uint8Array(length);
+          break;
+        case "int8":
+          typedArrayTemp = new Int8Array(length);
+          break;
+        case "int32":
+          typedArrayTemp = new Int32Array(length);
+          break;
+        case "float32":
+          typedArrayTemp = new Float32Array(length);
+      }
+
+      for (var index = 0; index < length; index++) {
+        typedArrayTemp[index] = baseArray[index];
+      }
+
+      return typedArrayTemp;
+    } catch (error) {
+      console.log("Could not convert an array to a typed array: " + error.message, 1);
+      return baseArray;
+    }
+  }
+
+  function fromTypedArray(baseArray) {
+    try {
+      if (!baseArray || !baseArray.length) {
+        return [];
+      }
+      var arrayTemp = [];
+      for (var index = 0; index < baseArray.length; ++index) {
+        arrayTemp[index] = baseArray[index];
+      }
+      return arrayTemp;
+    } catch (error) {
+      console.log("Conversion from a typed array failed: " + error.message, 1);
+      return baseArray;
+    }
+  }
+
+  function getTypedArray(length, defaultValue, numberType) {
+    var arrayHandle = void 0;
+    try {
+      if (settings.disallowTypedArrays) {
+        throw new Error("Settings forced typed arrays to be disabled.");
+      }
+      switch (numberType) {
+        case "int8":
+          arrayHandle = new Int8Array(length);
+          break;
+        case "uint8":
+          arrayHandle = new Uint8Array(length);
+          break;
+        case "int32":
+          arrayHandle = new Int32Array(length);
+          break;
+        case "float32":
+          arrayHandle = new Float32Array(length);
+      }
+      if (defaultValue !== 0) {
+        var index = 0;
+        while (index < length) {
+          arrayHandle[index++] = defaultValue;
+        }
+      }
+    } catch (error) {
+      console.log("Could not convert an array to a typed array: " + error.message, 1);
+      arrayHandle = [];
+      var _index = 0;
+      while (_index < length) {
+        arrayHandle[_index++] = defaultValue;
+      }
+    }
+    return arrayHandle;
+  }
+
+  function stringToArrayBuffer(data) {
+    var array = new Uint8Array(data.length);
+    for (var i = 0, strLen = data.length; i < strLen; i++) {
+      array[i] = data.charCodeAt(i);
+    }
+
+    return array;
+  }
+
+  function downloadFile(filename, arrayBuffer) {
+    var blob = new Blob([new Uint8Array(arrayBuffer)], { type: "application/octet-binary" });
+    var $a = $("<a />");
+    var a = $a.get(0);
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    $a.appendTo("body");
+    a.click();
+    $a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function uploadFile(extensions) {
+    return new Promise(function (resolve) {
+      var $input = $("<input type='file' accept='" + extensions.map(function (extension) {
+        return "." + extension;
+      }).join(", ") + "' />");
+      $input.one("change", function () {
+        if (this.files.length > 0) {
+          var file = this.files[0];
+          var binaryHandle = new FileReader();
+          binaryHandle.addEventListener("load", function () {
+            if (this.readyState === 2) {
+              resolve(this.result);
+            }
+          });
+          binaryHandle.readAsBinaryString(file);
+        }
+      });
+      $input.click();
+    });
+  }
+
+  function concatArrayBuffers() {
+    var totalLength = 0;
+
+    for (var _len = arguments.length, buffers = Array(_len), _key = 0; _key < _len; _key++) {
+      buffers[_key] = arguments[_key];
+    }
+
+    for (var i = 0; i < buffers.length; i++) {
+      totalLength += buffers[i].byteLength;
+    }
+
+    var array = new Uint8Array(totalLength);
+
+    for (var _i = 0; _i < buffers.length; _i++) {
+      var typedArray = new Uint8Array(buffers[_i]);
+      if (_i === 0) {
+        array.set(typedArray);
+      } else {
+        array.set(typedArray, buffers[_i - 1].byteLength);
+      }
+    }
+
+    return array.buffer;
+  }
+
+  function GameBoyCore(api, canvas, options) {
     options = options || {};
+
+    this.api = api;
+    this.events = new EventEmitter(); // TODO: use as super
 
     this.joypad = new Joypad(this);
     this.cartridgeSlot = new CartridgeSlot(this);
@@ -2509,6 +2668,31 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
     //Initialize the white noise cache tables ahead of time:
     this.intializeWhiteNoise();
   }
+
+
+  function base64ToArrayBuffer(data) {
+    if (!data || data.length <= 0) return null;
+
+    data = atob(data);
+    var array = new Uint8Array(data.length);
+    for (var i = 0; i < data.length; i++) {
+      array[i] = data.charCodeAt(i);
+    }
+    return array.buffer;
+  }
+
+  function arrayBufferToBase64(array) {
+    if (!array || array.length <= 0) return null;
+
+    array = new Uint8Array(array);
+    var data = "";
+    for (var i = 0; i < array.byteLength; i++) {
+      data += String.fromCharCode(array[i]);
+    }
+
+    return btoa(data);
+  }
+
   return {
     setters: [function (_f) {}, function (_) {
       EventEmitter = _.default;
@@ -2516,6 +2700,685 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
       debounce = _2.default;
     }],
     execute: function () {
+      _regeneratorRuntime = function (module) {
+        /**
+         * Copyright (c) 2014, Facebook, Inc.
+         * All rights reserved.
+         *
+         * This source code is licensed under the BSD-style license found in the
+         * https://raw.github.com/facebook/regenerator/master/LICENSE file. An
+         * additional grant of patent rights can be found in the PATENTS file in
+         * the same directory.
+         */
+
+        !function (global) {
+          "use strict";
+
+          var Op = Object.prototype;
+          var hasOwn = Op.hasOwnProperty;
+          var undefined; // More compressible than void 0.
+          var $Symbol = typeof Symbol === "function" ? Symbol : {};
+          var iteratorSymbol = $Symbol.iterator || "@@iterator";
+          var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
+
+          var inModule = typeof module === "object";
+          var runtime = global.regeneratorRuntime;
+          if (runtime) {
+            if (inModule) {
+              // If regeneratorRuntime is defined globally and we're in a module,
+              // make the exports object identical to regeneratorRuntime.
+              module.exports = runtime;
+            }
+            // Don't bother evaluating the rest of this file if the runtime was
+            // already defined globally.
+            return;
+          }
+
+          // Define the runtime globally (as expected by generated code) as either
+          // module.exports (if we're in a module) or a new, empty object.
+          runtime = global.regeneratorRuntime = inModule ? module.exports : {};
+
+          function wrap(innerFn, outerFn, self, tryLocsList) {
+            // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
+            var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
+            var generator = Object.create(protoGenerator.prototype);
+            var context = new Context(tryLocsList || []);
+
+            // The ._invoke method unifies the implementations of the .next,
+            // .throw, and .return methods.
+            generator._invoke = makeInvokeMethod(innerFn, self, context);
+
+            return generator;
+          }
+          runtime.wrap = wrap;
+
+          // Try/catch helper to minimize deoptimizations. Returns a completion
+          // record like context.tryEntries[i].completion. This interface could
+          // have been (and was previously) designed to take a closure to be
+          // invoked without arguments, but in all the cases we care about we
+          // already have an existing method we want to call, so there's no need
+          // to create a new function object. We can even get away with assuming
+          // the method takes exactly one argument, since that happens to be true
+          // in every case, so we don't have to touch the arguments object. The
+          // only additional allocation required is the completion record, which
+          // has a stable shape and so hopefully should be cheap to allocate.
+          function tryCatch(fn, obj, arg) {
+            try {
+              return { type: "normal", arg: fn.call(obj, arg) };
+            } catch (err) {
+              return { type: "throw", arg: err };
+            }
+          }
+
+          var GenStateSuspendedStart = "suspendedStart";
+          var GenStateSuspendedYield = "suspendedYield";
+          var GenStateExecuting = "executing";
+          var GenStateCompleted = "completed";
+
+          // Returning this object from the innerFn has the same effect as
+          // breaking out of the dispatch switch statement.
+          var ContinueSentinel = {};
+
+          // Dummy constructor functions that we use as the .constructor and
+          // .constructor.prototype properties for functions that return Generator
+          // objects. For full spec compliance, you may wish to configure your
+          // minifier not to mangle the names of these two functions.
+          function Generator() {}
+          function GeneratorFunction() {}
+          function GeneratorFunctionPrototype() {}
+
+          // This is a polyfill for %IteratorPrototype% for environments that
+          // don't natively support it.
+          var IteratorPrototype = {};
+          IteratorPrototype[iteratorSymbol] = function () {
+            return this;
+          };
+
+          var getProto = Object.getPrototypeOf;
+          var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+          if (NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
+            // This environment has a native %IteratorPrototype%; use it instead
+            // of the polyfill.
+            IteratorPrototype = NativeIteratorPrototype;
+          }
+
+          var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
+          GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
+          GeneratorFunctionPrototype.constructor = GeneratorFunction;
+          GeneratorFunctionPrototype[toStringTagSymbol] = GeneratorFunction.displayName = "GeneratorFunction";
+
+          // Helper for defining the .next, .throw, and .return methods of the
+          // Iterator interface in terms of a single ._invoke method.
+          function defineIteratorMethods(prototype) {
+            ["next", "throw", "return"].forEach(function (method) {
+              prototype[method] = function (arg) {
+                return this._invoke(method, arg);
+              };
+            });
+          }
+
+          runtime.isGeneratorFunction = function (genFun) {
+            var ctor = typeof genFun === "function" && genFun.constructor;
+            return ctor ? ctor === GeneratorFunction ||
+            // For the native GeneratorFunction constructor, the best we can
+            // do is to check its .name property.
+            (ctor.displayName || ctor.name) === "GeneratorFunction" : false;
+          };
+
+          runtime.mark = function (genFun) {
+            if (Object.setPrototypeOf) {
+              Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+            } else {
+              genFun.__proto__ = GeneratorFunctionPrototype;
+              if (!(toStringTagSymbol in genFun)) {
+                genFun[toStringTagSymbol] = "GeneratorFunction";
+              }
+            }
+            genFun.prototype = Object.create(Gp);
+            return genFun;
+          };
+
+          // Within the body of any async function, `await x` is transformed to
+          // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
+          // `hasOwn.call(value, "__await")` to determine if the yielded value is
+          // meant to be awaited.
+          runtime.awrap = function (arg) {
+            return { __await: arg };
+          };
+
+          function AsyncIterator(generator) {
+            function invoke(method, arg, resolve, reject) {
+              var record = tryCatch(generator[method], generator, arg);
+              if (record.type === "throw") {
+                reject(record.arg);
+              } else {
+                var result = record.arg;
+                var value = result.value;
+                if (value && typeof value === "object" && hasOwn.call(value, "__await")) {
+                  return Promise.resolve(value.__await).then(function (value) {
+                    invoke("next", value, resolve, reject);
+                  }, function (err) {
+                    invoke("throw", err, resolve, reject);
+                  });
+                }
+
+                return Promise.resolve(value).then(function (unwrapped) {
+                  // When a yielded Promise is resolved, its final value becomes
+                  // the .value of the Promise<{value,done}> result for the
+                  // current iteration. If the Promise is rejected, however, the
+                  // result for this iteration will be rejected with the same
+                  // reason. Note that rejections of yielded Promises are not
+                  // thrown back into the generator function, as is the case
+                  // when an awaited Promise is rejected. This difference in
+                  // behavior between yield and await is important, because it
+                  // allows the consumer to decide what to do with the yielded
+                  // rejection (swallow it and continue, manually .throw it back
+                  // into the generator, abandon iteration, whatever). With
+                  // await, by contrast, there is no opportunity to examine the
+                  // rejection reason outside the generator function, so the
+                  // only option is to throw it from the await expression, and
+                  // let the generator function handle the exception.
+                  result.value = unwrapped;
+                  resolve(result);
+                }, reject);
+              }
+            }
+
+            if (typeof process === "object" && process.domain) {
+              invoke = process.domain.bind(invoke);
+            }
+
+            var previousPromise;
+
+            function enqueue(method, arg) {
+              function callInvokeWithMethodAndArg() {
+                return new Promise(function (resolve, reject) {
+                  invoke(method, arg, resolve, reject);
+                });
+              }
+
+              return previousPromise =
+              // If enqueue has been called before, then we want to wait until
+              // all previous Promises have been resolved before calling invoke,
+              // so that results are always delivered in the correct order. If
+              // enqueue has not been called before, then it is important to
+              // call invoke immediately, without waiting on a callback to fire,
+              // so that the async generator function has the opportunity to do
+              // any necessary setup in a predictable way. This predictability
+              // is why the Promise constructor synchronously invokes its
+              // executor callback, and why async functions synchronously
+              // execute code before the first await. Since we implement simple
+              // async functions in terms of async generators, it is especially
+              // important to get this right, even though it requires care.
+              previousPromise ? previousPromise.then(callInvokeWithMethodAndArg,
+              // Avoid propagating failures to Promises returned by later
+              // invocations of the iterator.
+              callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
+            }
+
+            // Define the unified helper method that is used to implement .next,
+            // .throw, and .return (see defineIteratorMethods).
+            this._invoke = enqueue;
+          }
+
+          defineIteratorMethods(AsyncIterator.prototype);
+          runtime.AsyncIterator = AsyncIterator;
+
+          // Note that simple async functions are implemented on top of
+          // AsyncIterator objects; they just return a Promise for the value of
+          // the final result produced by the iterator.
+          runtime.async = function (innerFn, outerFn, self, tryLocsList) {
+            var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList));
+
+            return runtime.isGeneratorFunction(outerFn) ? iter // If outerFn is a generator, return the full iterator.
+            : iter.next().then(function (result) {
+              return result.done ? result.value : iter.next();
+            });
+          };
+
+          function makeInvokeMethod(innerFn, self, context) {
+            var state = GenStateSuspendedStart;
+
+            return function invoke(method, arg) {
+              if (state === GenStateExecuting) {
+                throw new Error("Generator is already running");
+              }
+
+              if (state === GenStateCompleted) {
+                if (method === "throw") {
+                  throw arg;
+                }
+
+                // Be forgiving, per 25.3.3.3.3 of the spec:
+                // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
+                return doneResult();
+              }
+
+              while (true) {
+                var delegate = context.delegate;
+                if (delegate) {
+                  if (method === "return" || method === "throw" && delegate.iterator[method] === undefined) {
+                    // A return or throw (when the delegate iterator has no throw
+                    // method) always terminates the yield* loop.
+                    context.delegate = null;
+
+                    // If the delegate iterator has a return method, give it a
+                    // chance to clean up.
+                    var returnMethod = delegate.iterator["return"];
+                    if (returnMethod) {
+                      var record = tryCatch(returnMethod, delegate.iterator, arg);
+                      if (record.type === "throw") {
+                        // If the return method threw an exception, let that
+                        // exception prevail over the original return or throw.
+                        method = "throw";
+                        arg = record.arg;
+                        continue;
+                      }
+                    }
+
+                    if (method === "return") {
+                      // Continue with the outer return, now that the delegate
+                      // iterator has been terminated.
+                      continue;
+                    }
+                  }
+
+                  var record = tryCatch(delegate.iterator[method], delegate.iterator, arg);
+
+                  if (record.type === "throw") {
+                    context.delegate = null;
+
+                    // Like returning generator.throw(uncaught), but without the
+                    // overhead of an extra function call.
+                    method = "throw";
+                    arg = record.arg;
+                    continue;
+                  }
+
+                  // Delegate generator ran and handled its own exceptions so
+                  // regardless of what the method was, we continue as if it is
+                  // "next" with an undefined arg.
+                  method = "next";
+                  arg = undefined;
+
+                  var info = record.arg;
+                  if (info.done) {
+                    context[delegate.resultName] = info.value;
+                    context.next = delegate.nextLoc;
+                  } else {
+                    state = GenStateSuspendedYield;
+                    return info;
+                  }
+
+                  context.delegate = null;
+                }
+
+                if (method === "next") {
+                  // Setting context._sent for legacy support of Babel's
+                  // function.sent implementation.
+                  context.sent = context._sent = arg;
+                } else if (method === "throw") {
+                  if (state === GenStateSuspendedStart) {
+                    state = GenStateCompleted;
+                    throw arg;
+                  }
+
+                  if (context.dispatchException(arg)) {
+                    // If the dispatched exception was caught by a catch block,
+                    // then let that catch block handle the exception normally.
+                    method = "next";
+                    arg = undefined;
+                  }
+                } else if (method === "return") {
+                  context.abrupt("return", arg);
+                }
+
+                state = GenStateExecuting;
+
+                var record = tryCatch(innerFn, self, context);
+                if (record.type === "normal") {
+                  // If an exception is thrown from innerFn, we leave state ===
+                  // GenStateExecuting and loop back for another invocation.
+                  state = context.done ? GenStateCompleted : GenStateSuspendedYield;
+
+                  var info = {
+                    value: record.arg,
+                    done: context.done
+                  };
+
+                  if (record.arg === ContinueSentinel) {
+                    if (context.delegate && method === "next") {
+                      // Deliberately forget the last sent value so that we don't
+                      // accidentally pass it on to the delegate.
+                      arg = undefined;
+                    }
+                  } else {
+                    return info;
+                  }
+                } else if (record.type === "throw") {
+                  state = GenStateCompleted;
+                  // Dispatch the exception by looping back around to the
+                  // context.dispatchException(arg) call above.
+                  method = "throw";
+                  arg = record.arg;
+                }
+              }
+            };
+          }
+
+          // Define Generator.prototype.{next,throw,return} in terms of the
+          // unified ._invoke helper method.
+          defineIteratorMethods(Gp);
+
+          Gp[toStringTagSymbol] = "Generator";
+
+          Gp.toString = function () {
+            return "[object Generator]";
+          };
+
+          function pushTryEntry(locs) {
+            var entry = { tryLoc: locs[0] };
+
+            if (1 in locs) {
+              entry.catchLoc = locs[1];
+            }
+
+            if (2 in locs) {
+              entry.finallyLoc = locs[2];
+              entry.afterLoc = locs[3];
+            }
+
+            this.tryEntries.push(entry);
+          }
+
+          function resetTryEntry(entry) {
+            var record = entry.completion || {};
+            record.type = "normal";
+            delete record.arg;
+            entry.completion = record;
+          }
+
+          function Context(tryLocsList) {
+            // The root entry object (effectively a try statement without a catch
+            // or a finally block) gives us a place to store values thrown from
+            // locations where there is no enclosing try statement.
+            this.tryEntries = [{ tryLoc: "root" }];
+            tryLocsList.forEach(pushTryEntry, this);
+            this.reset(true);
+          }
+
+          runtime.keys = function (object) {
+            var keys = [];
+            for (var key in object) {
+              keys.push(key);
+            }
+            keys.reverse();
+
+            // Rather than returning an object with a next method, we keep
+            // things simple and return the next function itself.
+            return function next() {
+              while (keys.length) {
+                var key = keys.pop();
+                if (key in object) {
+                  next.value = key;
+                  next.done = false;
+                  return next;
+                }
+              }
+
+              // To avoid creating an additional object, we just hang the .value
+              // and .done properties off the next function object itself. This
+              // also ensures that the minifier will not anonymize the function.
+              next.done = true;
+              return next;
+            };
+          };
+
+          function values(iterable) {
+            if (iterable) {
+              var iteratorMethod = iterable[iteratorSymbol];
+              if (iteratorMethod) {
+                return iteratorMethod.call(iterable);
+              }
+
+              if (typeof iterable.next === "function") {
+                return iterable;
+              }
+
+              if (!isNaN(iterable.length)) {
+                var i = -1,
+                    next = function next() {
+                  while (++i < iterable.length) {
+                    if (hasOwn.call(iterable, i)) {
+                      next.value = iterable[i];
+                      next.done = false;
+                      return next;
+                    }
+                  }
+
+                  next.value = undefined;
+                  next.done = true;
+
+                  return next;
+                };
+
+                return next.next = next;
+              }
+            }
+
+            // Return an iterator with no values.
+            return { next: doneResult };
+          }
+          runtime.values = values;
+
+          function doneResult() {
+            return { value: undefined, done: true };
+          }
+
+          Context.prototype = {
+            constructor: Context,
+
+            reset: function reset(skipTempReset) {
+              this.prev = 0;
+              this.next = 0;
+              // Resetting context._sent for legacy support of Babel's
+              // function.sent implementation.
+              this.sent = this._sent = undefined;
+              this.done = false;
+              this.delegate = null;
+
+              this.tryEntries.forEach(resetTryEntry);
+
+              if (!skipTempReset) {
+                for (var name in this) {
+                  // Not sure about the optimal order of these conditions:
+                  if (name.charAt(0) === "t" && hasOwn.call(this, name) && !isNaN(+name.slice(1))) {
+                    this[name] = undefined;
+                  }
+                }
+              }
+            },
+
+            stop: function stop() {
+              this.done = true;
+
+              var rootEntry = this.tryEntries[0];
+              var rootRecord = rootEntry.completion;
+              if (rootRecord.type === "throw") {
+                throw rootRecord.arg;
+              }
+
+              return this.rval;
+            },
+
+            dispatchException: function dispatchException(exception) {
+              if (this.done) {
+                throw exception;
+              }
+
+              var context = this;
+              function handle(loc, caught) {
+                record.type = "throw";
+                record.arg = exception;
+                context.next = loc;
+                return !!caught;
+              }
+
+              for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+                var entry = this.tryEntries[i];
+                var record = entry.completion;
+
+                if (entry.tryLoc === "root") {
+                  // Exception thrown outside of any try block that could handle
+                  // it, so set the completion value of the entire function to
+                  // throw the exception.
+                  return handle("end");
+                }
+
+                if (entry.tryLoc <= this.prev) {
+                  var hasCatch = hasOwn.call(entry, "catchLoc");
+                  var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+                  if (hasCatch && hasFinally) {
+                    if (this.prev < entry.catchLoc) {
+                      return handle(entry.catchLoc, true);
+                    } else if (this.prev < entry.finallyLoc) {
+                      return handle(entry.finallyLoc);
+                    }
+                  } else if (hasCatch) {
+                    if (this.prev < entry.catchLoc) {
+                      return handle(entry.catchLoc, true);
+                    }
+                  } else if (hasFinally) {
+                    if (this.prev < entry.finallyLoc) {
+                      return handle(entry.finallyLoc);
+                    }
+                  } else {
+                    throw new Error("try statement without catch or finally");
+                  }
+                }
+              }
+            },
+
+            abrupt: function abrupt(type, arg) {
+              for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+                var entry = this.tryEntries[i];
+                if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
+                  var finallyEntry = entry;
+                  break;
+                }
+              }
+
+              if (finallyEntry && (type === "break" || type === "continue") && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc) {
+                // Ignore the finally entry if control is not jumping to a
+                // location outside the try/catch block.
+                finallyEntry = null;
+              }
+
+              var record = finallyEntry ? finallyEntry.completion : {};
+              record.type = type;
+              record.arg = arg;
+
+              if (finallyEntry) {
+                this.next = finallyEntry.finallyLoc;
+              } else {
+                this.complete(record);
+              }
+
+              return ContinueSentinel;
+            },
+
+            complete: function complete(record, afterLoc) {
+              if (record.type === "throw") {
+                throw record.arg;
+              }
+
+              if (record.type === "break" || record.type === "continue") {
+                this.next = record.arg;
+              } else if (record.type === "return") {
+                this.rval = record.arg;
+                this.next = "end";
+              } else if (record.type === "normal" && afterLoc) {
+                this.next = afterLoc;
+              }
+            },
+
+            finish: function finish(finallyLoc) {
+              for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+                var entry = this.tryEntries[i];
+                if (entry.finallyLoc === finallyLoc) {
+                  this.complete(entry.completion, entry.afterLoc);
+                  resetTryEntry(entry);
+                  return ContinueSentinel;
+                }
+              }
+            },
+
+            "catch": function _catch(tryLoc) {
+              for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+                var entry = this.tryEntries[i];
+                if (entry.tryLoc === tryLoc) {
+                  var record = entry.completion;
+                  if (record.type === "throw") {
+                    var thrown = record.arg;
+                    resetTryEntry(entry);
+                  }
+                  return thrown;
+                }
+              }
+
+              // The context.catch method must only be called with a location
+              // argument that corresponds to a known catch block.
+              throw new Error("illegal catch attempt");
+            },
+
+            delegateYield: function delegateYield(iterable, resultName, nextLoc) {
+              this.delegate = {
+                iterator: values(iterable),
+                resultName: resultName,
+                nextLoc: nextLoc
+              };
+
+              return ContinueSentinel;
+            }
+          };
+        }(
+        // Among the various tricks for obtaining a reference to the global
+        // object, this seems to be the most reliable technique that does not
+        // use indirect eval (which violates Content Security Policy).
+        typeof global === "object" ? global : typeof window === "object" ? window : typeof self === "object" ? self : this);
+        return module.exports;
+      }({ exports: {} });
+
+      _asyncToGenerator = function (fn) {
+        return function () {
+          var gen = fn.apply(this, arguments);
+          return new Promise(function (resolve, reject) {
+            function step(key, arg) {
+              try {
+                var info = gen[key](arg);
+                var value = info.value;
+              } catch (error) {
+                reject(error);
+                return;
+              }
+
+              if (info.done) {
+                resolve(value);
+              } else {
+                return Promise.resolve(value).then(function (value) {
+                  step("next", value);
+                }, function (err) {
+                  step("throw", err);
+                });
+              }
+            }
+
+            return step("next");
+          });
+        };
+      };
+
       _classCallCheck = function (instance, Constructor) {
         if (!(instance instanceof Constructor)) {
           throw new TypeError("Cannot call a class as a function");
@@ -2580,93 +3443,14 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         // User controlled channel enables.
         enabledChannels: [true, true, true, true]
       };
-      util = {
-        toTypedArray: function toTypedArray(baseArray, memtype) {
-          try {
-            if (settings.disallowTypedArrays) {
-              return baseArray;
-            }
-            if (!baseArray || !baseArray.length) {
-              return [];
-            }
-            var length = baseArray.length;
 
-            var typedArrayTemp = void 0;
-            switch (memtype) {
-              case "uint8":
-                typedArrayTemp = new Uint8Array(length);
-                break;
-              case "int8":
-                typedArrayTemp = new Int8Array(length);
-                break;
-              case "int32":
-                typedArrayTemp = new Int32Array(length);
-                break;
-              case "float32":
-                typedArrayTemp = new Float32Array(length);
-            }
-
-            for (var index = 0; index < length; index++) {
-              typedArrayTemp[index] = baseArray[index];
-            }
-
-            return typedArrayTemp;
-          } catch (error) {
-            console.log("Could not convert an array to a typed array: " + error.message, 1);
-            return baseArray;
-          }
-        },
-        fromTypedArray: function fromTypedArray(baseArray) {
-          try {
-            if (!baseArray || !baseArray.length) {
-              return [];
-            }
-            var arrayTemp = [];
-            for (var index = 0; index < baseArray.length; ++index) {
-              arrayTemp[index] = baseArray[index];
-            }
-            return arrayTemp;
-          } catch (error) {
-            console.log("Conversion from a typed array failed: " + error.message, 1);
-            return baseArray;
-          }
-        },
-        getTypedArray: function getTypedArray(length, defaultValue, numberType) {
-          var arrayHandle = void 0;
-          try {
-            if (settings.disallowTypedArrays) {
-              throw new Error("Settings forced typed arrays to be disabled.");
-            }
-            switch (numberType) {
-              case "int8":
-                arrayHandle = new Int8Array(length);
-                break;
-              case "uint8":
-                arrayHandle = new Uint8Array(length);
-                break;
-              case "int32":
-                arrayHandle = new Int32Array(length);
-                break;
-              case "float32":
-                arrayHandle = new Float32Array(length);
-            }
-            if (defaultValue !== 0) {
-              var index = 0;
-              while (index < length) {
-                arrayHandle[index++] = defaultValue;
-              }
-            }
-          } catch (error) {
-            console.log("Could not convert an array to a typed array: " + error.message, 1);
-            arrayHandle = [];
-            var _index = 0;
-            while (_index < length) {
-              arrayHandle[_index++] = defaultValue;
-            }
-          }
-          return arrayHandle;
-        }
-      };
+      _export('util', util = {
+        getTypedArray: getTypedArray,
+        fromTypedArray: fromTypedArray,
+        toTypedArray: toTypedArray,
+        uploadFile: uploadFile,
+        downloadFile: downloadFile
+      });
 
       LCD = function () {
         function LCD(canvas, options, gameboy) {
@@ -2939,18 +3723,75 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           _this.currentRAMBankPosition = -0xa000; // MBC Position Adder;
           _this.currentMBCRAMBank = 0; // MBC Currently Indexed RAM Bank
           _this.ROMBankEdge = Math.floor(cartridge.rom.length / 0x4000);
+          _this.numRAMBanks = 0; // How many RAM banks were actually allocated?
           return _this;
         }
 
         _createClass(MBC, [{
+          key: "setupRAM",
+          value: function setupRAM() {
+            // TODO: set banks amount on specific mbc type
+            // Setup the auxilliary/switchable RAM:
+            if (this.cartridge.hasMBC2) {
+              this.numRAMBanks = 1 / 16;
+            } else if (this.cartridge.hasMBC1 || this.cartridge.cRUMBLE || this.cartridge.hasMBC3 || this.cartridge.cHuC3) {
+              this.numRAMBanks = 4;
+            } else if (this.cartridge.hasMBC5) {
+              this.numRAMBanks = 16;
+            } else if (this.cartridge.hasSRAM) {
+              this.numRAMBanks = 1;
+            }
+
+            this.allocatedRamBytes = this.numRAMBanks * 0x2000;
+
+            console.log("Actual bytes of MBC RAM allocated: 0x" + this.allocatedRamBytes.toString(16));
+
+            if (this.numRAMBanks > 0) {
+              this.RAM = util.getTypedArray(this.allocatedRamBytes, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
+            }
+          }
+        }, {
+          key: "loadSRAM",
+          value: function loadSRAM(data) {
+            if (data.length !== this.allocatedRamBytes) return;
+            this.RAM = data.slice(0);
+          }
+        }, {
+          key: "getSRAM",
+          value: function getSRAM() {
+            return new Uint8Array(this.RAM.buffer.slice(0, this.allocatedRamBytes));
+          }
+        }, {
+          key: "cutSRAMFromBatteryFileArray",
+          value: function cutSRAMFromBatteryFileArray(data) {
+            return new Uint8Array(data.buffer.slice(0, this.allocatedRamBytes));
+          }
+        }, {
+          key: "saveState",
+          value: function saveState() {
+            // TODO: remove after state refactor
+            if (!this.cartridge.hasBattery || this.RAM.length === 0) return; // No battery backup...
+
+            // return the MBC RAM for backup...
+            return util.fromTypedArray(this.RAM);
+          }
+        }, {
           key: "readRAM",
           value: function readRAM(address) {
             // Switchable RAM
             if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-              return this.cartridge.MBCRam[address + this.currentRAMBankPosition];
+              return this.RAM[address + this.currentRAMBankPosition];
             }
             //console.log("Reading from disabled RAM.");
             return 0xff;
+          }
+        }, {
+          key: "writeRAM",
+          value: function writeRAM(address, data) {
+            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+              this.emit("ramWrite");
+              this.RAM[address + this.currentRAMBankPosition] = data;
+            }
           }
 
           // TODO: for MBC2 & MBC3, compare with other MBCx
@@ -2976,18 +3817,21 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
       MBC1 = function (_MBC) {
         _inherits(MBC1, _MBC);
 
-        function MBC1() {
+        function MBC1(cartridge) {
           _classCallCheck(this, MBC1);
 
-          return _possibleConstructorReturn(this, (MBC1.__proto__ || Object.getPrototypeOf(MBC1)).apply(this, arguments));
+          var _this = _possibleConstructorReturn(this, (MBC1.__proto__ || Object.getPrototypeOf(MBC1)).call(this, cartridge));
+
+          _this.MBC1Mode = false; // MBC1 Type (4/32, 16/8)
+          return _this;
         }
 
         _createClass(MBC1, [{
           key: "writeType",
           value: function writeType(address, data) {
             // MBC1 mode setting:
-            this.cartridge.MBC1Mode = (data & 0x1) === 0x1;
-            if (this.cartridge.MBC1Mode) {
+            this.MBC1Mode = (data & 0x1) === 0x1;
+            if (this.MBC1Mode) {
               this.ROMBank1Offset &= 0x1f;
               this.setCurrentROMBank();
             } else {
@@ -3006,7 +3850,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           key: "writeRAMBank",
           value: function writeRAMBank(address, data) {
             // MBC1 RAM bank switching
-            if (this.cartridge.MBC1Mode) {
+            if (this.MBC1Mode) {
               // 4/32 Mode
               this.currentMBCRAMBank = data & 0x03;
               this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
@@ -3093,9 +3937,9 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         }, {
           key: "writeDaysHigh",
           value: function writeDaysHigh(data) {
-            this.mbc.cartridge.RTCDayOverFlow = data > 0x7f;
-            this.mbc.cartridge.RTCHalt = (data & 0x40) === 0x40;
-            this.mbc.cartridge.RTCDays = (data & 0x1) << 8 | this.mbc.cartridge.RTCDays & 0xff;
+            this.RTCDayOverFlow = data > 0x7f;
+            this.RTCHalt = (data & 0x40) === 0x40;
+            this.RTCDays = (data & 0x1) << 8 | this.RTCDays & 0xff;
           }
         }, {
           key: "writeHours",
@@ -3147,8 +3991,79 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             }
           }
         }, {
+          key: "get",
+          value: function get() {
+            var lastTimeSeconds = Math.round(this.lastTime / 1000);
+            var lastTimeLow = lastTimeSeconds >> 0 & 0xffff;
+            var lastTimeHigh = lastTimeSeconds >> 16 & 0xffff;
+
+            var data = new Uint32Array([this.RTCSeconds, this.RTCMinutes, this.RTCHours, this.RTCDays, this.RTCDayOverFlow, this.latchedSeconds, this.latchedMinutes, this.latchedHours, this.latchedLDays, this.latchedHDays, lastTimeLow, lastTimeHigh]);
+
+            return data;
+          }
+        }, {
+          key: "load",
+          value: function load(array) {
+            var options = this.extract(array);
+
+            this.RTCSeconds = options.seconds;
+            this.RTCMinutes = options.minutes;
+            this.RTCHours = options.hours;
+            this.RTCDays = options.daysLow;
+            this.RTCDayOverFlow = options.daysHigh;
+
+            this.latchedSeconds = options.latchedSeconds;
+            this.latchedMinutes = options.latchedMinutes;
+            this.latchedHours = options.latchedHours;
+            this.latchedLDays = options.latchedDaysLow;
+            this.latchedHDays = options.latchedDaysHigh;
+
+            this.lastTime = options.lastTime;
+          }
+        }, {
+          key: "cutBatteryFileArray",
+          value: function cutBatteryFileArray(data) {
+            return new Uint32Array(data.buffer.slice(this.mbc.allocatedRamBytes, this.mbc.allocatedRamBytes + 4 * 12));
+          }
+        }, {
+          key: "extract",
+          value: function extract(array) {
+            var seconds = array[0];
+            var minutes = array[1];
+            var hours = array[2];
+            var daysLow = array[3];
+            var daysHigh = array[4];
+            var latchedSeconds = array[5];
+            var latchedMinutes = array[6];
+            var latchedHours = array[7];
+            var latchedDaysLow = array[8];
+            var latchedDaysHigh = array[9];
+            var lastTimeLow = array[10];
+            var lastTimeHigh = array[11];
+
+            var lastTimeSeconds = lastTimeLow;
+            if (lastTimeLow && lastTimeHigh) {
+              lastTimeSeconds = lastTimeHigh << 16 | lastTimeLow;
+            }
+
+            return {
+              seconds: seconds,
+              minutes: minutes,
+              hours: hours,
+              daysLow: daysLow,
+              daysHigh: daysHigh,
+              latchedSeconds: latchedSeconds,
+              latchedMinutes: latchedMinutes,
+              latchedHours: latchedHours,
+              latchedDaysLow: latchedDaysLow,
+              latchedDaysHigh: latchedDaysHigh,
+              lastTime: lastTimeSeconds * 1000
+            };
+          }
+        }, {
           key: "saveState",
           value: function saveState() {
+            // TODO: remove after state refactor
             // return the MBC RAM for backup...
             return [this.lastTime, this.RTCisLatched, this.latchedSeconds, this.latchedMinutes, this.latchedHours, this.latchedLDays, this.latchedHDays, this.RTCSeconds, this.RTCMinutes, this.RTCHours, this.RTCDays, this.RTCDayOverFlow, this.RTCHALT];
           }
@@ -3233,16 +4148,16 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             }
           }
         }, {
-          key: "write",
-          value: function write(address, data) {
+          key: "writeRAM",
+          value: function writeRAM(address, data) {
             if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
               switch (this.currentMBCRAMBank) {
                 case 0x00:
                 case 0x01:
                 case 0x02:
                 case 0x03:
-                  this.emit("write");
-                  this.cartridge.MBCRam[address + this.currentRAMBankPosition] = data;
+                  this.emit("ramWrite");
+                  this.RAM[address + this.currentRAMBankPosition] = data;
                   break;
                 case 0x08:
                   this.rtc && this.rtc.writeSeconds(data);
@@ -3265,8 +4180,8 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             }
           }
         }, {
-          key: "read",
-          value: function read(address) {
+          key: "readRAM",
+          value: function readRAM(address) {
             // Switchable RAM
             if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
               switch (this.currentMBCRAMBank) {
@@ -3274,7 +4189,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
                 case 0x01:
                 case 0x02:
                 case 0x03:
-                  return this.cartridge.MBCRam[address + this.currentRAMBankPosition];
+                  return this.RAM[address + this.currentRAMBankPosition];
                   break;
                 case 0x08:
                   return this.rtc && this.rtc.readSeconds();
@@ -3395,7 +4310,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
                   //X Low Byte:
                   return this.lowX;
                 default:
-                  return this.cartridge.MBCRam[address + this.currentRAMBankPosition];
+                  return this.RAM[address + this.currentRAMBankPosition];
               }
             }
             //console.log("Reading from disabled RAM.", 1);
@@ -3411,9 +4326,6 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           _classCallCheck(this, Cartridge);
 
           this.rom = new ROM(rom);
-
-          this.MBCRam = []; // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
-          this.MBC1Mode = false; // MBC1 Type (4/32, 16/8)
 
           this.hasMBC1 = false; // Does the cartridge use MBC1?
           this.hasMBC2 = false; // Does the cartridge use MBC2?
@@ -3438,7 +4350,6 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           this.ROMBanks[0x54] = 96;
 
           this.RAMBanks = [0, 1, 2, 4, 16]; // Used to map the RAM banks to maximum size the MBC used can do.
-          this.numRAMBanks = 0; // How many RAM banks were actually allocated?
         }
 
         _createClass(Cartridge, [{
@@ -3757,43 +4668,10 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         }, {
           key: "setupRAM",
           value: function setupRAM() {
-            // Setup the auxilliary/switchable RAM:
-            if (this.hasMBC2) {
-              this.numRAMBanks = 1 / 16;
-            } else if (this.hasMBC1 || this.cRUMBLE || this.hasMBC3 || this.cHuC3) {
-              this.numRAMBanks = 4;
-            } else if (this.hasMBC5) {
-              this.numRAMBanks = 16;
-            } else if (this.hasSRAM) {
-              this.numRAMBanks = 1;
-            }
+            this.mbc.setupRAM();
 
-            this.allocatedRamBytes = this.numRAMBanks * 0x2000;
-
-            console.log("Actual bytes of MBC RAM allocated: " + this.allocatedRamBytes);
-
-            if (this.numRAMBanks > 0) {
-              var mbcRam = null;
-              if (typeof this.gameboy.loadSRAMState === "function") {
-                mbcRam = this.gameboy.loadSRAMState(this.name);
-              }
-
-              if (mbcRam) {
-                this.MBCRam = util.toTypedArray(mbcRam, "uint8");
-              } else {
-                this.MBCRam = util.getTypedArray(this.allocatedRamBytes, 0, "uint8");
-              }
-            }
-
-            this.gameboy.loadRTCState2();
-          }
-        }, {
-          key: "saveSRAMState",
-          value: function saveSRAMState() {
-            if (!this.hasBattery || this.MBCRam.length === 0) return; // No battery backup...
-
-            // return the MBC RAM for backup...
-            return util.fromTypedArray(this.MBCRam);
+            this.gameboy.api.loadSRAM();
+            this.gameboy.api.loadRTC();
           }
         }]);
 
@@ -4040,7 +4918,8 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         _createClass(AudioServer, [{
           key: "writeAudio",
           value: function writeAudio(buffer) {
-            for (var bufferCounter = 0; bufferCounter < buffer.length && this.audioBufferSize < this.maxBufferSize;) {
+            var bufferCounter = 0;
+            while (bufferCounter < buffer.length && this.audioBufferSize < this.maxBufferSize) {
               this.audioContextSampleBuffer[this.audioBufferSize++] = buffer[bufferCounter++];
             }
           }
@@ -4102,8 +4981,6 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           key: "setVolume",
           value: function setVolume(volume) {
             this.volume = Math.max(0, Math.min(1, volume));
-            // console.log("volume 0!");
-            // this.volume = 0;
           }
         }, {
           key: "resetCallbackAPIAudioBuffer",
@@ -7952,21 +8829,229 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         _createClass(StateManager, [{
           key: "init",
           value: function init() {
-            this.load(initialState);
+            this.loadOld(initialState.slice(0));
           }
         }, {
-          key: "save",
-          value: function save() {
+          key: "get",
+          value: function get() {
             var gameboy = this.gameboy;
-            return [gameboy.inBootstrap, gameboy.registerA, gameboy.FZero, gameboy.FSubtract, gameboy.FHalfCarry, gameboy.FCarry, gameboy.registerB, gameboy.registerC, gameboy.registerD, gameboy.registerE, gameboy.registersHL, gameboy.stackPointer, gameboy.programCounter, gameboy.halt, gameboy.IME, gameboy.hdmaRunning, gameboy.CPUTicks, gameboy.doubleSpeedShifter, util.fromTypedArray(gameboy.memory), util.fromTypedArray(gameboy.VRAM), gameboy.currVRAMBank, util.fromTypedArray(gameboy.GBCMemory), gameboy.useGBCMode, gameboy.gbcRamBank, gameboy.gbcRamBankPosition, gameboy.ROMBank1Offset, gameboy.cartridgeSlot.cartridge.mbc.currentROMBank, gameboy.modeSTAT, gameboy.LYCMatchTriggerSTAT, gameboy.mode2TriggerSTAT, gameboy.mode1TriggerSTAT, gameboy.mode0TriggerSTAT, gameboy.LCDisOn, gameboy.gfxWindowCHRBankPosition, gameboy.gfxWindowDisplay, gameboy.gfxSpriteShow, gameboy.gfxSpriteNormalHeight, gameboy.gfxBackgroundCHRBankPosition, gameboy.gfxBackgroundBankOffset, gameboy.TIMAEnabled, gameboy.DIVTicks, gameboy.LCDTicks, gameboy.timerTicks, gameboy.TACClocker, gameboy.serialTimer, gameboy.serialShiftTimer, gameboy.serialShiftTimerAllocated, gameboy.IRQEnableDelay, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.lastTime, gameboy.drewBlank, util.fromTypedArray(gameboy.frameBuffer), gameboy.bgEnabled, gameboy.BGPriorityEnabled, gameboy.channel1FrequencyTracker, gameboy.channel1FrequencyCounter, gameboy.channel1totalLength, gameboy.channel1envelopeVolume, gameboy.channel1envelopeType, gameboy.channel1envelopeSweeps, gameboy.channel1envelopeSweepsLast, gameboy.channel1consecutive, gameboy.channel1frequency, gameboy.channel1SweepFault, gameboy.channel1ShadowFrequency, gameboy.channel1timeSweep, gameboy.channel1lastTimeSweep, gameboy.channel1Swept, gameboy.channel1frequencySweepDivider, gameboy.channel1decreaseSweep, gameboy.channel2FrequencyTracker, gameboy.channel2FrequencyCounter, gameboy.channel2totalLength, gameboy.channel2envelopeVolume, gameboy.channel2envelopeType, gameboy.channel2envelopeSweeps, gameboy.channel2envelopeSweepsLast, gameboy.channel2consecutive, gameboy.channel2frequency, gameboy.channel3canPlay, gameboy.channel3totalLength, gameboy.channel3patternType, gameboy.channel3frequency, gameboy.channel3consecutive, util.fromTypedArray(gameboy.channel3PCM), gameboy.channel4FrequencyPeriod, gameboy.channel4lastSampleLookup, gameboy.channel4totalLength, gameboy.channel4envelopeVolume, gameboy.channel4currentVolume, gameboy.channel4envelopeType, gameboy.channel4envelopeSweeps, gameboy.channel4envelopeSweepsLast, gameboy.channel4consecutive, gameboy.channel4BitRange, gameboy.soundMasterEnabled, gameboy.VinLeftChannelMasterVolume, gameboy.VinRightChannelMasterVolume, gameboy.leftChannel1, gameboy.leftChannel2, gameboy.leftChannel3, gameboy.leftChannel4, gameboy.rightChannel1, gameboy.rightChannel2, gameboy.rightChannel3, gameboy.rightChannel4, gameboy.channel1currentSampleLeft, gameboy.channel1currentSampleRight, gameboy.channel2currentSampleLeft, gameboy.channel2currentSampleRight, gameboy.channel3currentSampleLeft, gameboy.channel3currentSampleRight, gameboy.channel4currentSampleLeft, gameboy.channel4currentSampleRight, gameboy.channel1currentSampleLeftSecondary, gameboy.channel1currentSampleRightSecondary, gameboy.channel2currentSampleLeftSecondary, gameboy.channel2currentSampleRightSecondary, gameboy.channel3currentSampleLeftSecondary, gameboy.channel3currentSampleRightSecondary, gameboy.channel4currentSampleLeftSecondary, gameboy.channel4currentSampleRightSecondary, gameboy.channel1currentSampleLeftTrimary, gameboy.channel1currentSampleRightTrimary, gameboy.channel2currentSampleLeftTrimary, gameboy.channel2currentSampleRightTrimary, gameboy.mixerOutputCache, gameboy.channel1DutyTracker, gameboy.channel1CachedDuty, gameboy.channel2DutyTracker, gameboy.channel2CachedDuty, gameboy.channel1Enabled, gameboy.channel2Enabled, gameboy.channel3Enabled, gameboy.channel4Enabled, gameboy.sequencerClocks, gameboy.sequencePosition, gameboy.channel3Counter, gameboy.channel4Counter, gameboy.cachedChannel3Sample, gameboy.cachedChannel4Sample, gameboy.channel3FrequencyPeriod, gameboy.channel3lastSampleLookup, gameboy.actualScanLine, gameboy.lastUnrenderedLine, gameboy.queuedScanLines, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCisLatched, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedSeconds, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedMinutes, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHours, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedLDays, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHDays, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCSeconds, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCMinutes, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHours, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDays, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDayOverFlow, gameboy.cartridgeSlot.cartridge.hasRTC && gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHALT, gameboy.usedBootROM, gameboy.skipPCIncrement, gameboy.STATTracker, gameboy.gbcRamBankPositionECHO, gameboy.windowY, gameboy.windowX, util.fromTypedArray(gameboy.gbcOBJRawPalette), util.fromTypedArray(gameboy.gbcBGRawPalette), util.fromTypedArray(gameboy.gbOBJPalette), util.fromTypedArray(gameboy.gbBGPalette), util.fromTypedArray(gameboy.gbcOBJPalette), util.fromTypedArray(gameboy.gbcBGPalette), util.fromTypedArray(gameboy.gbBGColorizedPalette), util.fromTypedArray(gameboy.gbOBJColorizedPalette), util.fromTypedArray(gameboy.cachedBGPaletteConversion), util.fromTypedArray(gameboy.cachedOBJPaletteConversion), util.fromTypedArray(gameboy.BGCHRBank1), util.fromTypedArray(gameboy.BGCHRBank2), gameboy.haltPostClocks, gameboy.interruptsRequested, gameboy.interruptsEnabled, gameboy.remainingClocks, gameboy.colorizedGBPalettes, gameboy.backgroundY, gameboy.backgroundX, gameboy.CPUStopped, gameboy.audioClocksUntilNextEvent, gameboy.audioClocksUntilNextEventCounter];
+            if (!gameboy.cartridgeSlot.cartridge) return null;
+
+            return concatArrayBuffers(gameboy.memory.buffer.slice(0), gameboy.VRAM.buffer.slice(0));
+
+            // return [
+            //   gameboy.inBootstrap,
+            //   gameboy.registerA,
+            //   gameboy.FZero,
+            //   gameboy.FSubtract,
+            //   gameboy.FHalfCarry,
+            //   gameboy.FCarry,
+            //   gameboy.registerB,
+            //   gameboy.registerC,
+            //   gameboy.registerD,
+            //   gameboy.registerE,
+            //   gameboy.registersHL,
+            //   gameboy.stackPointer,
+            //   gameboy.programCounter,
+            //   gameboy.halt,
+            //   gameboy.IME,
+            //   gameboy.hdmaRunning,
+            //   gameboy.CPUTicks,
+            //   gameboy.doubleSpeedShifter,
+            //   // fromTypedArray(gameboy.memory),
+            //   // fromTypedArray(gameboy.VRAM),
+            //   gameboy.currVRAMBank,
+            //   fromTypedArray(gameboy.GBCMemory),
+            //   gameboy.useGBCMode,
+            //   gameboy.gbcRamBank,
+            //   gameboy.gbcRamBankPosition,
+            //   gameboy.ROMBank1Offset,
+            //   gameboy.cartridgeSlot.cartridge.mbc.currentROMBank,
+            //   gameboy.modeSTAT,
+            //   gameboy.LYCMatchTriggerSTAT,
+            //   gameboy.mode2TriggerSTAT,
+            //   gameboy.mode1TriggerSTAT,
+            //   gameboy.mode0TriggerSTAT,
+            //   gameboy.LCDisOn,
+            //   gameboy.gfxWindowCHRBankPosition,
+            //   gameboy.gfxWindowDisplay,
+            //   gameboy.gfxSpriteShow,
+            //   gameboy.gfxSpriteNormalHeight,
+            //   gameboy.gfxBackgroundCHRBankPosition,
+            //   gameboy.gfxBackgroundBankOffset,
+            //   gameboy.TIMAEnabled,
+            //   gameboy.DIVTicks,
+            //   gameboy.LCDTicks,
+            //   gameboy.timerTicks,
+            //   gameboy.TACClocker,
+            //   gameboy.serialTimer,
+            //   gameboy.serialShiftTimer,
+            //   gameboy.serialShiftTimerAllocated,
+            //   gameboy.IRQEnableDelay,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.lastTime,
+            //   gameboy.drewBlank,
+            //   fromTypedArray(gameboy.frameBuffer),
+            //   gameboy.bgEnabled,
+            //   gameboy.BGPriorityEnabled,
+            //   gameboy.channel1FrequencyTracker,
+            //   gameboy.channel1FrequencyCounter,
+            //   gameboy.channel1totalLength,
+            //   gameboy.channel1envelopeVolume,
+            //   gameboy.channel1envelopeType,
+            //   gameboy.channel1envelopeSweeps,
+            //   gameboy.channel1envelopeSweepsLast,
+            //   gameboy.channel1consecutive,
+            //   gameboy.channel1frequency,
+            //   gameboy.channel1SweepFault,
+            //   gameboy.channel1ShadowFrequency,
+            //   gameboy.channel1timeSweep,
+            //   gameboy.channel1lastTimeSweep,
+            //   gameboy.channel1Swept,
+            //   gameboy.channel1frequencySweepDivider,
+            //   gameboy.channel1decreaseSweep,
+            //   gameboy.channel2FrequencyTracker,
+            //   gameboy.channel2FrequencyCounter,
+            //   gameboy.channel2totalLength,
+            //   gameboy.channel2envelopeVolume,
+            //   gameboy.channel2envelopeType,
+            //   gameboy.channel2envelopeSweeps,
+            //   gameboy.channel2envelopeSweepsLast,
+            //   gameboy.channel2consecutive,
+            //   gameboy.channel2frequency,
+            //   gameboy.channel3canPlay,
+            //   gameboy.channel3totalLength,
+            //   gameboy.channel3patternType,
+            //   gameboy.channel3frequency,
+            //   gameboy.channel3consecutive,
+            //   fromTypedArray(gameboy.channel3PCM),
+            //   gameboy.channel4FrequencyPeriod,
+            //   gameboy.channel4lastSampleLookup,
+            //   gameboy.channel4totalLength,
+            //   gameboy.channel4envelopeVolume,
+            //   gameboy.channel4currentVolume,
+            //   gameboy.channel4envelopeType,
+            //   gameboy.channel4envelopeSweeps,
+            //   gameboy.channel4envelopeSweepsLast,
+            //   gameboy.channel4consecutive,
+            //   gameboy.channel4BitRange,
+            //   gameboy.soundMasterEnabled,
+            //   gameboy.VinLeftChannelMasterVolume,
+            //   gameboy.VinRightChannelMasterVolume,
+            //   gameboy.leftChannel1,
+            //   gameboy.leftChannel2,
+            //   gameboy.leftChannel3,
+            //   gameboy.leftChannel4,
+            //   gameboy.rightChannel1,
+            //   gameboy.rightChannel2,
+            //   gameboy.rightChannel3,
+            //   gameboy.rightChannel4,
+            //   gameboy.channel1currentSampleLeft,
+            //   gameboy.channel1currentSampleRight,
+            //   gameboy.channel2currentSampleLeft,
+            //   gameboy.channel2currentSampleRight,
+            //   gameboy.channel3currentSampleLeft,
+            //   gameboy.channel3currentSampleRight,
+            //   gameboy.channel4currentSampleLeft,
+            //   gameboy.channel4currentSampleRight,
+            //   gameboy.channel1currentSampleLeftSecondary,
+            //   gameboy.channel1currentSampleRightSecondary,
+            //   gameboy.channel2currentSampleLeftSecondary,
+            //   gameboy.channel2currentSampleRightSecondary,
+            //   gameboy.channel3currentSampleLeftSecondary,
+            //   gameboy.channel3currentSampleRightSecondary,
+            //   gameboy.channel4currentSampleLeftSecondary,
+            //   gameboy.channel4currentSampleRightSecondary,
+            //   gameboy.channel1currentSampleLeftTrimary,
+            //   gameboy.channel1currentSampleRightTrimary,
+            //   gameboy.channel2currentSampleLeftTrimary,
+            //   gameboy.channel2currentSampleRightTrimary,
+            //   gameboy.mixerOutputCache,
+            //   gameboy.channel1DutyTracker,
+            //   gameboy.channel1CachedDuty,
+            //   gameboy.channel2DutyTracker,
+            //   gameboy.channel2CachedDuty,
+            //   gameboy.channel1Enabled,
+            //   gameboy.channel2Enabled,
+            //   gameboy.channel3Enabled,
+            //   gameboy.channel4Enabled,
+            //   gameboy.sequencerClocks,
+            //   gameboy.sequencePosition,
+            //   gameboy.channel3Counter,
+            //   gameboy.channel4Counter,
+            //   gameboy.cachedChannel3Sample,
+            //   gameboy.cachedChannel4Sample,
+            //   gameboy.channel3FrequencyPeriod,
+            //   gameboy.channel3lastSampleLookup,
+            //   gameboy.actualScanLine,
+            //   gameboy.lastUnrenderedLine,
+            //   gameboy.queuedScanLines,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCisLatched,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedSeconds,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedMinutes,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHours,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedLDays,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHDays,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCSeconds,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCMinutes,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHours,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDays,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDayOverFlow,
+            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHALT,
+            //   gameboy.usedBootROM,
+            //   gameboy.skipPCIncrement,
+            //   gameboy.STATTracker,
+            //   gameboy.gbcRamBankPositionECHO,
+            //   gameboy.windowY,
+            //   gameboy.windowX,
+            //   fromTypedArray(gameboy.gbcOBJRawPalette),
+            //   fromTypedArray(gameboy.gbcBGRawPalette),
+            //   fromTypedArray(gameboy.gbOBJPalette),
+            //   fromTypedArray(gameboy.gbBGPalette),
+            //   fromTypedArray(gameboy.gbcOBJPalette),
+            //   fromTypedArray(gameboy.gbcBGPalette),
+            //   fromTypedArray(gameboy.gbBGColorizedPalette),
+            //   fromTypedArray(gameboy.gbOBJColorizedPalette),
+            //   fromTypedArray(gameboy.cachedBGPaletteConversion),
+            //   fromTypedArray(gameboy.cachedOBJPaletteConversion),
+            //   fromTypedArray(gameboy.BGCHRBank1),
+            //   fromTypedArray(gameboy.BGCHRBank2),
+            //   gameboy.haltPostClocks,
+            //   gameboy.interruptsRequested,
+            //   gameboy.interruptsEnabled,
+            //   gameboy.remainingClocks,
+            //   gameboy.colorizedGBPalettes,
+            //   gameboy.backgroundY,
+            //   gameboy.backgroundX,
+            //   gameboy.CPUStopped,
+            //   gameboy.audioClocksUntilNextEvent,
+            //   gameboy.audioClocksUntilNextEventCounter
+            // ];
           }
         }, {
           key: "load",
           value: function load(state) {
             var index = 0;
-            state = state.concat();
-
             var gameboy = this.gameboy;
+          }
+        }, {
+          key: "loadOld",
+          value: function loadOld(state) {
+            var index = 0;
+            var gameboy = this.gameboy;
+
             gameboy.inBootstrap = state[index++];
             gameboy.registerA = state[index++];
             gameboy.FZero = state[index++];
@@ -7985,10 +9070,10 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             gameboy.hdmaRunning = state[index++];
             gameboy.CPUTicks = state[index++];
             gameboy.doubleSpeedShifter = state[index++];
-            gameboy.memory = util.toTypedArray(state[index++], "uint8");
-            gameboy.VRAM = util.toTypedArray(state[index++], "uint8");
+            gameboy.memory = toTypedArray(state[index++], "uint8");
+            gameboy.VRAM = toTypedArray(state[index++], "uint8");
             gameboy.currVRAMBank = state[index++];
-            gameboy.GBCMemory = util.toTypedArray(state[index++], "uint8");
+            gameboy.GBCMemory = toTypedArray(state[index++], "uint8");
             gameboy.useGBCMode = state[index++];
             gameboy.gbcRamBank = state[index++];
             gameboy.gbcRamBankPosition = state[index++];
@@ -7996,7 +9081,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             if (gameboy.cartridgeSlot.cartridge) {
               gameboy.cartridgeSlot.cartridge.mbc.currentROMBank = state[index++];
             } else {
-              ++index;
+              index++;
             }
             gameboy.modeSTAT = state[index++];
             gameboy.LYCMatchTriggerSTAT = state[index++];
@@ -8025,7 +9110,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
               index++;
             }
             gameboy.drewBlank = state[index++];
-            gameboy.frameBuffer = util.toTypedArray(state[index++], "int32");
+            gameboy.frameBuffer = toTypedArray(state[index++], "int32");
             gameboy.bgEnabled = state[index++];
             gameboy.BGPriorityEnabled = state[index++];
             gameboy.channel1FrequencyTracker = state[index++];
@@ -8058,7 +9143,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             gameboy.channel3patternType = state[index++];
             gameboy.channel3frequency = state[index++];
             gameboy.channel3consecutive = state[index++];
-            gameboy.channel3PCM = util.toTypedArray(state[index++], "int8");
+            gameboy.channel3PCM = toTypedArray(state[index++], "int8");
             gameboy.channel4FrequencyPeriod = state[index++];
             gameboy.channel4lastSampleLookup = state[index++];
             gameboy.channel4totalLength = state[index++];
@@ -8142,18 +9227,18 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             gameboy.gbcRamBankPositionECHO = state[index++];
             gameboy.windowY = state[index++];
             gameboy.windowX = state[index++];
-            gameboy.gbcOBJRawPalette = util.toTypedArray(state[index++], "uint8");
-            gameboy.gbcBGRawPalette = util.toTypedArray(state[index++], "uint8");
-            gameboy.gbOBJPalette = util.toTypedArray(state[index++], "int32");
-            gameboy.gbBGPalette = util.toTypedArray(state[index++], "int32");
-            gameboy.gbcOBJPalette = util.toTypedArray(state[index++], "int32");
-            gameboy.gbcBGPalette = util.toTypedArray(state[index++], "int32");
-            gameboy.gbBGColorizedPalette = util.toTypedArray(state[index++], "int32");
-            gameboy.gbOBJColorizedPalette = util.toTypedArray(state[index++], "int32");
-            gameboy.cachedBGPaletteConversion = util.toTypedArray(state[index++], "int32");
-            gameboy.cachedOBJPaletteConversion = util.toTypedArray(state[index++], "int32");
-            gameboy.BGCHRBank1 = util.toTypedArray(state[index++], "uint8");
-            gameboy.BGCHRBank2 = util.toTypedArray(state[index++], "uint8");
+            gameboy.gbcOBJRawPalette = toTypedArray(state[index++], "uint8");
+            gameboy.gbcBGRawPalette = toTypedArray(state[index++], "uint8");
+            gameboy.gbOBJPalette = toTypedArray(state[index++], "int32");
+            gameboy.gbBGPalette = toTypedArray(state[index++], "int32");
+            gameboy.gbcOBJPalette = toTypedArray(state[index++], "int32");
+            gameboy.gbcBGPalette = toTypedArray(state[index++], "int32");
+            gameboy.gbBGColorizedPalette = toTypedArray(state[index++], "int32");
+            gameboy.gbOBJColorizedPalette = toTypedArray(state[index++], "int32");
+            gameboy.cachedBGPaletteConversion = toTypedArray(state[index++], "int32");
+            gameboy.cachedOBJPaletteConversion = toTypedArray(state[index++], "int32");
+            gameboy.BGCHRBank1 = toTypedArray(state[index++], "uint8");
+            gameboy.BGCHRBank2 = toTypedArray(state[index++], "uint8");
             gameboy.haltPostClocks = state[index++];
             gameboy.interruptsRequested = state[index++];
             gameboy.interruptsEnabled = state[index++];
@@ -8213,15 +9298,6 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         return Joypad;
       }();
 
-      GameBoyCore.prototype.saveSRAMState = function () {
-        return this.cartridgeSlot.cartridge.saveSRAMState();
-      };
-      GameBoyCore.prototype.saveRTCState = function () {
-        return this.cartridgeSlot.cartridge.mbc.rtc.saveState();
-      };
-      GameBoyCore.prototype.saveState = function () {
-        return this.stateManager.save();
-      };
       GameBoyCore.prototype.loadState = function (state) {
         this.stateManager.load(state);
 
@@ -8233,23 +9309,16 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         this.noiseSampleTable = this.channel4BitRange === 0x7fff ? this.LSFR15Table : this.LSFR7Table;
         this.channel4VolumeShifter = this.channel4BitRange === 0x7fff ? 15 : 7;
       };
-      GameBoyCore.prototype.loadRTCState2 = function () {
-        if (this.cartridgeSlot.cartridge && this.cartridgeSlot.cartridge.hasRTC && typeof this.loadRTCState === "function") {
-          var data = this.loadRTCState(this.cartridgeSlot.cartridge.name);
-          if (data) {
-            this.cartridgeSlot.cartridge.mbc.rtc.loadState(data);
-          }
-        }
-      };
       GameBoyCore.prototype.start = function (cartridge) {
         var _this = this;
 
         this.init();
         this.cartridgeSlot.insertCartridge(cartridge);
         this.cartridgeSlot.readCartridge();
+
         if (this.cartridgeSlot.cartridge && this.cartridgeSlot.cartridge.mbc) {
-          this.cartridgeSlot.cartridge.mbc.on("write", function () {
-            _this.onMBCWrite && _this.onMBCWrite();
+          this.cartridgeSlot.cartridge.mbc.on("ramWrite", function () {
+            _this.events.emit("sramWrite");
           });
         }
 
@@ -8269,12 +9338,12 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         this.stateManager.init();
         this.initMemory(); // Write the startup memory.
         this.lcd.init(); // Initialize the graphics.
-        this.initSound(); //Sound object initialization.
+        this.initSound(); // Sound object initialization.
       };
       GameBoyCore.prototype.setupRAM = function () {
         this.cartridgeSlot.cartridge.setupRAM();
 
-        //Setup the RAM for GBC mode.
+        // Setup the RAM for GBC mode.
         if (this.cartridgeSlot.cartridge.useGBCMode) {
           this.VRAM = util.getTypedArray(0x2000, 0, "uint8");
           this.GBCMemory = util.getTypedArray(0x7000, 0, "uint8");
@@ -8286,7 +9355,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         this.initializeModeSpecificArrays();
       };
       GameBoyCore.prototype.initMemory = function () {
-        //Initialize the RAM:
+        // Initialize the RAM:
         this.memory = util.getTypedArray(0x10000, 0, "uint8");
         this.frameBuffer = util.getTypedArray(23040, 0xf8f8f8, "int32");
         this.BGCHRBank1 = util.getTypedArray(0x800, 0, "uint8");
@@ -8301,8 +9370,8 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         return tileArray;
       };
       GameBoyCore.prototype.initSkipBootstrap = function () {
-        //Fill in the boot ROM set register values
-        //Default values to the GB boot ROM values, then fill in the GBC boot ROM values after ROM loading
+        // Fill in the boot ROM set register values
+        // Default values to the GB boot ROM values, then fill in the GBC boot ROM values after ROM loading
         var index = 0xff;
         while (index >= 0) {
           if (index >= 0x30 && index < 0x40) {
@@ -8335,7 +9404,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           this.memory[0xff74] = 0xff;
         }
 
-        //Start as an unset device:
+        // Start as an unset device:
         console.log("Starting without the GBC boot ROM.");
         this.registerA = this.cartridgeSlot.cartridge.useGBCMode ? 0x11 : 0x1;
         this.registerB = 0;
@@ -8490,7 +9559,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             this.memory[index] = this.cartridgeSlot.cartridge.rom.getByte(index); // Replace the GameBoy Color boot ROM with the game ROM.
           }
           if (!this.cartridgeSlot.cartridge.useGBCMode) {
-            //Clean up the post-boot (GB mode only) state:
+            // Clean up the post-boot (GB mode only) state:
             this.GBCtoGBModeAdjust();
           } else {
             this.recompileBootIOWriteHandling();
@@ -8594,11 +9663,11 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           this.LSFR7Table[0x680 | index] = randomFactor * 0xd;
           this.LSFR7Table[0x700 | index] = randomFactor * 0xe;
           this.LSFR7Table[0x780 | index] = randomFactor * 0xf;
-          //Recompute the LSFR algorithm:
+          // Recompute the LSFR algorithm:
           LSFRShifted = LSFR >> 1;
           LSFR = LSFRShifted | ((LSFRShifted ^ LSFR) & 0x1) << 6;
         }
-        //Set the default noise table:
+        // Set the default noise table:
         this.noiseSampleTable = this.LSFR15Table;
       };
       GameBoyCore.prototype.audioUnderrunAdjustment = function () {
@@ -10793,7 +11862,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           } else if (index < 0xa000) {
             this.memoryReader[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
           } else if (index >= 0xa000 && index < 0xc000) {
-            if (this.cartridgeSlot.cartridge.numRAMBanks === 1 / 16 && index < 0xa200 || this.cartridgeSlot.cartridge.numRAMBanks >= 1) {
+            if (this.cartridgeSlot.cartridge.mbc.numRAMBanks === 1 / 16 && index < 0xa200 || this.cartridgeSlot.cartridge.mbc.numRAMBanks >= 1) {
               if (this.cartridgeSlot.cartridge.hasMBC7) {
                 this.memoryReader[index] = this.memoryReadMBC7;
               } else if (!this.cartridgeSlot.cartridge.hasMBC3) {
@@ -11220,10 +12289,10 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         return this.cartridgeSlot.cartridge.mbc.readRAM(address);
       };
       GameBoyCore.prototype.memoryReadMBC7 = function (address) {
-        return this.cartridgeSlot.cartridge.mbc.read(address);
+        return this.cartridgeSlot.cartridge.mbc.readRAM(address);
       };
       GameBoyCore.prototype.memoryReadMBC3 = function (address) {
-        return this.cartridgeSlot.cartridge.mbc.read(address);
+        return this.cartridgeSlot.cartridge.mbc.readRAM(address);
       };
       GameBoyCore.prototype.memoryReadGBCMemory = function (address) {
         return this.GBCMemory[address + this.gbcRamBankPosition];
@@ -11330,7 +12399,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           } else if (index < 0xa000) {
             this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
           } else if (index < 0xc000) {
-            if (this.cartridgeSlot.cartridge.numRAMBanks === 1 / 16 && index < 0xa200 || this.cartridgeSlot.cartridge.numRAMBanks >= 1) {
+            if (this.cartridgeSlot.cartridge.mbc.numRAMBanks === 1 / 16 && index < 0xa200 || this.cartridgeSlot.cartridge.mbc.numRAMBanks >= 1) {
               if (!this.cartridgeSlot.cartridge.hasMBC3) {
                 this.memoryWriter[index] = this.memoryWriteMBCRAM;
               } else {
@@ -11423,12 +12492,10 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         this.memory[0xff00 | address] = data;
       };
       GameBoyCore.prototype.memoryWriteMBCRAM = function (address, data) {
-        if (this.cartridgeSlot.cartridge.mbc.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-          this.cartridgeSlot.cartridge.MBCRam[address + this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition] = data;
-        }
+        this.cartridgeSlot.cartridge.mbc.writeRAM(address, data);
       };
       GameBoyCore.prototype.memoryWriteMBC3RAM = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.write(address, data);
+        return this.cartridgeSlot.cartridge.mbc.writeRAM(address, data);
       };
       GameBoyCore.prototype.memoryWriteGBCRAM = function (address, data) {
         this.GBCMemory[address + this.gbcRamBankPosition] = data;
@@ -12498,6 +13565,170 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
         }
       };
 
+      _export('LocalStorage', LocalStorage = function () {
+        function LocalStorage() {
+          _classCallCheck(this, LocalStorage);
+        }
+
+        _createClass(LocalStorage, [{
+          key: "findState",
+          value: function findState(name) {
+            return this.find("state-" + name);
+          }
+        }, {
+          key: "findSRAM",
+          value: function findSRAM(name) {
+            return this.find("sram-" + name);
+          }
+        }, {
+          key: "findRTC",
+          value: function findRTC(name) {
+            return this.find("rtc-" + name);
+          }
+        }, {
+          key: "setState",
+          value: function () {
+            var _ref = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(name, buffer) {
+              return _regeneratorRuntime.wrap(function _callee$(_context) {
+                while (1) {
+                  switch (_context.prev = _context.next) {
+                    case 0:
+                      _context.next = 2;
+                      return this.set("state-" + name, buffer);
+
+                    case 2:
+                      return _context.abrupt("return", _context.sent);
+
+                    case 3:
+                    case "end":
+                      return _context.stop();
+                  }
+                }
+              }, _callee, this);
+            }));
+
+            function setState(_x, _x2) {
+              return _ref.apply(this, arguments);
+            }
+
+            return setState;
+          }()
+        }, {
+          key: "setSRAM",
+          value: function () {
+            var _ref2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee2(name, buffer) {
+              return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+                while (1) {
+                  switch (_context2.prev = _context2.next) {
+                    case 0:
+                      _context2.next = 2;
+                      return this.set("sram-" + name, buffer);
+
+                    case 2:
+                      return _context2.abrupt("return", _context2.sent);
+
+                    case 3:
+                    case "end":
+                      return _context2.stop();
+                  }
+                }
+              }, _callee2, this);
+            }));
+
+            function setSRAM(_x3, _x4) {
+              return _ref2.apply(this, arguments);
+            }
+
+            return setSRAM;
+          }()
+        }, {
+          key: "setRTC",
+          value: function () {
+            var _ref3 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee3(name, buffer) {
+              return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+                while (1) {
+                  switch (_context3.prev = _context3.next) {
+                    case 0:
+                      _context3.next = 2;
+                      return this.set("rtc-" + name, buffer);
+
+                    case 2:
+                      return _context3.abrupt("return", _context3.sent);
+
+                    case 3:
+                    case "end":
+                      return _context3.stop();
+                  }
+                }
+              }, _callee3, this);
+            }));
+
+            function setRTC(_x5, _x6) {
+              return _ref3.apply(this, arguments);
+            }
+
+            return setRTC;
+          }()
+        }, {
+          key: "find",
+          value: function find(name) {
+            var data = window.localStorage.getItem(name);
+            return base64ToArrayBuffer(data);
+          }
+        }, {
+          key: "set",
+          value: function set(name, buffer) {
+            var data = arrayBufferToBase64(buffer);
+            window.localStorage.setItem(name, data);
+          }
+        }]);
+
+        return LocalStorage;
+      }());
+
+      ActionRegistry = function (_EventEmitter) {
+        _inherits(ActionRegistry, _EventEmitter);
+
+        function ActionRegistry() {
+          var _ref;
+
+          var _temp, _this, _ret;
+
+          _classCallCheck(this, ActionRegistry);
+
+          for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = ActionRegistry.__proto__ || Object.getPrototypeOf(ActionRegistry)).call.apply(_ref, [this].concat(args))), _this), _this.map = {}, _temp), _possibleConstructorReturn(_this, _ret);
+        }
+
+        _createClass(ActionRegistry, [{
+          key: "register",
+          value: function register(action) {
+            this.map[action] = true;
+            return this;
+          }
+        }, {
+          key: "down",
+          value: function down(action, options) {
+            this.emit("down-" + action, options);
+          }
+        }, {
+          key: "change",
+          value: function change(action, options) {
+            this.emit("change-" + action, options);
+          }
+        }, {
+          key: "up",
+          value: function up(action, options) {
+            this.emit("up-" + action, options);
+          }
+        }]);
+
+        return ActionRegistry;
+      }(EventEmitter);
+
       _export('GameBoy', GameBoy$1 = function (_EventEmitter) {
         _inherits(GameBoy, _EventEmitter);
 
@@ -12509,23 +13740,59 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           _this.buttons = ["right", "left", "up", "down", "a", "b", "select", "start"];
 
           _this.debouncedAutoSave = debounce(_this.autoSave.bind(_this), 100);
-
-          _this.core = new GameBoyCore(canvas);
-          _this.core.loadSRAMState = _this.loadSRAMState.bind(_this);
-          _this.core.loadRTCState = _this.loadRTCState.bind(_this);
-          _this.core.onMBCWrite = function () {
+          _this.core = new GameBoyCore(_this, canvas);
+          _this.core.events.on("sramWrite", function () {
             if (!_this.core.cartridgeSlot.cartridge) return;
             _this.debouncedAutoSave();
-          };
+          });
 
           _this.isOn = false;
+          _this.actionRegistry = new ActionRegistry();
+          _this.registerActions();
+          _this.storage = new LocalStorage();
           return _this;
         }
 
         _createClass(GameBoy, [{
+          key: "setStorage",
+          value: function setStorage(storage) {
+            this.storage = storage;
+          }
+        }, {
+          key: "registerActions",
+          value: function registerActions() {
+            var _this2 = this;
+
+            this.buttons.forEach(function (button, index) {
+              _this2.actionRegistry.register(button).on("down-" + button, function () {
+                _this2.core.joypad.down(index);
+              }).on("up-" + button, function () {
+                _this2.core.joypad.up(index);
+              });
+            });
+
+            this.actionRegistry.register("speed").on("down-speed", function (options) {
+              return _this2.handleSpeed(options);
+            }).on("change-speed", function (options) {
+              return _this2.handleSpeed(options);
+            }).on("up-speed", function () {
+              _this2.setSpeed(1);
+            });
+          }
+        }, {
+          key: "handleSpeed",
+          value: function handleSpeed(options) {
+            var multiplier = 2;
+            if (options && typeof options.value === "number") {
+              multiplier = options.value * 2 + 1;
+            }
+
+            this.setSpeed(multiplier);
+          }
+        }, {
           key: "turnOn",
           value: function turnOn() {
-            var _this2 = this;
+            var _this3 = this;
 
             if (this.isOn) return;
             this.isOn = true;
@@ -12534,7 +13801,7 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             this.core.stopEmulator &= 1;
             this.interval = setInterval(function () {
               if (!document.hidden && !document.msHidden && !document.mozHidden && !document.webkitHidden) {
-                _this2.core.run();
+                _this3.core.run();
               }
             }, settings.runInterval);
           }
@@ -12579,13 +13846,18 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
           }
         }, {
           key: "actionDown",
-          value: function actionDown(action) {
-            this.core.joypad.down(this.getButtonIndex(action));
+          value: function actionDown(action, options) {
+            this.actionRegistry.down(action, options);
+          }
+        }, {
+          key: "actionChange",
+          value: function actionChange(action, options) {
+            this.actionRegistry.change(action, options);
           }
         }, {
           key: "actionUp",
-          value: function actionUp(action) {
-            this.core.joypad.up(this.getButtonIndex(action));
+          value: function actionUp(action, options) {
+            this.actionRegistry.up(action, options);
           }
         }, {
           key: "setSpeed",
@@ -12593,76 +13865,288 @@ $__System.register('a', ['f', '10', '12'], function (_export, _context) {
             this.core.setSpeed(multiplier);
           }
         }, {
-          key: "getButtonIndex",
-          value: function getButtonIndex(action) {
-            return this.buttons.indexOf(action);
-          }
-        }, {
           key: "autoSave",
           value: function autoSave() {
-            this.saveSRAMState(this.core.cartridgeSlot.cartridge.name);
-            this.saveRTCState(this.core.cartridgeSlot.cartridge.name);
-          }
-        }, {
-          key: "saveSRAMState",
-          value: function saveSRAMState(filename) {
-            var sram = this.core.saveSRAMState();
-            if (sram) {
-              this.setLocalStorageValue("SRAM_" + filename, sram);
-            }
-          }
-        }, {
-          key: "saveRTCState",
-          value: function saveRTCState(filename) {
-            var rtc = this.core.saveRTCState();
-            if (rtc) {
-              this.setLocalStorageValue("RTC_" + filename, rtc);
-            }
-          }
-        }, {
-          key: "loadSRAMState",
-          value: function loadSRAMState(filename) {
-            return this.findLocalStorageValue("SRAM_" + filename);
-          }
-        }, {
-          key: "loadRTCState",
-          value: function loadRTCState(filename) {
-            return this.findLocalStorageValue("RTC_" + filename);
+            this.saveSRAM();
+            this.saveRTC();
           }
         }, {
           key: "saveState",
-          value: function saveState(filename) {
-            this.setLocalStorageValue(filename, this.core.saveState());
-            this.emit("stateSaved", { filename: filename });
-          }
+          value: function () {
+            var _ref = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(state) {
+              var name;
+              return _regeneratorRuntime.wrap(function _callee$(_context) {
+                while (1) {
+                  switch (_context.prev = _context.next) {
+                    case 0:
+                      if (this.core.cartridgeSlot.cartridge) {
+                        _context.next = 2;
+                        break;
+                      }
+
+                      return _context.abrupt("return");
+
+                    case 2:
+                      name = this.core.cartridgeSlot.cartridge.name;
+
+                      if (state) {
+                        _context.next = 7;
+                        break;
+                      }
+
+                      state = this.core.stateManager.get();
+
+                      if (state) {
+                        _context.next = 7;
+                        break;
+                      }
+
+                      return _context.abrupt("return", false);
+
+                    case 7:
+                      _context.next = 9;
+                      return this.storage.setState(name, state);
+
+                    case 9:
+                      this.emit("stateSaved", { name: name, state: state });
+
+                    case 10:
+                    case "end":
+                      return _context.stop();
+                  }
+                }
+              }, _callee, this);
+            }));
+
+            function saveState(_x) {
+              return _ref.apply(this, arguments);
+            }
+
+            return saveState;
+          }()
+        }, {
+          key: "saveSRAM",
+          value: function () {
+            var _ref2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee2(sram) {
+              var name;
+              return _regeneratorRuntime.wrap(function _callee2$(_context2) {
+                while (1) {
+                  switch (_context2.prev = _context2.next) {
+                    case 0:
+                      if (this.core.cartridgeSlot.cartridge) {
+                        _context2.next = 2;
+                        break;
+                      }
+
+                      return _context2.abrupt("return");
+
+                    case 2:
+                      name = this.core.cartridgeSlot.cartridge.name;
+
+                      if (sram) {
+                        _context2.next = 7;
+                        break;
+                      }
+
+                      sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+
+                      if (sram) {
+                        _context2.next = 7;
+                        break;
+                      }
+
+                      return _context2.abrupt("return", false);
+
+                    case 7:
+                      _context2.next = 9;
+                      return this.storage.setSRAM(name, sram.buffer);
+
+                    case 9:
+                      this.emit("sramSaved", { name: name, sram: sram });
+
+                    case 10:
+                    case "end":
+                      return _context2.stop();
+                  }
+                }
+              }, _callee2, this);
+            }));
+
+            function saveSRAM(_x2) {
+              return _ref2.apply(this, arguments);
+            }
+
+            return saveSRAM;
+          }()
+        }, {
+          key: "saveRTC",
+          value: function () {
+            var _ref3 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee3(rtc) {
+              var name;
+              return _regeneratorRuntime.wrap(function _callee3$(_context3) {
+                while (1) {
+                  switch (_context3.prev = _context3.next) {
+                    case 0:
+                      if (this.core.cartridgeSlot.cartridge) {
+                        _context3.next = 2;
+                        break;
+                      }
+
+                      return _context3.abrupt("return");
+
+                    case 2:
+                      name = this.core.cartridgeSlot.cartridge.name;
+
+                      if (rtc) {
+                        _context3.next = 7;
+                        break;
+                      }
+
+                      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+
+                      if (rtc) {
+                        _context3.next = 7;
+                        break;
+                      }
+
+                      return _context3.abrupt("return", false);
+
+                    case 7:
+                      _context3.next = 9;
+                      return this.storage.setRTC(name, rtc.buffer);
+
+                    case 9:
+                      this.emit("rtcSaved", { name: name, rtc: rtc });
+
+                    case 10:
+                    case "end":
+                      return _context3.stop();
+                  }
+                }
+              }, _callee3, this);
+            }));
+
+            function saveRTC(_x3) {
+              return _ref3.apply(this, arguments);
+            }
+
+            return saveRTC;
+          }()
         }, {
           key: "loadState",
-          value: function loadState(filename) {
-            var value = this.findLocalStorageValue(filename);
-            if (value) {
-              this.core.savedStateFileName = filename;
-              this.core.loadState(value);
-              this.emit("stateLoaded", { filename: filename });
+          value: function loadState(state) {
+            if (!this.core.cartridgeSlot.cartridge) return;
+            var name = this.core.cartridgeSlot.cartridge.name;
+
+            if (!state) {
+              state = this.storage.findState(name);
+              if (!state) return false;
             }
+
+            this.core.loadState(state);
+            this.emit("stateLoaded", { name: name, state: state });
           }
         }, {
-          key: "setLocalStorageValue",
-          value: function setLocalStorageValue(key, value) {
-            window.localStorage.setItem(key, btoa(JSON.stringify(value)));
+          key: "loadSRAM",
+          value: function loadSRAM(sram) {
+            if (!this.core.cartridgeSlot.cartridge) return;
+            var name = this.core.cartridgeSlot.cartridge.name;
+
+            if (!sram) {
+              sram = this.storage.findSRAM(name);
+              if (!sram) return false;
+              sram = new Uint8Array(sram);
+            }
+
+            this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
+            this.emit("sramLoaded", { name: name, sram: sram });
           }
         }, {
-          key: "findLocalStorageValue",
-          value: function findLocalStorageValue(key) {
-            if (window.localStorage.getItem(key) !== null) {
-              return JSON.parse(atob(window.localStorage.getItem(key)));
+          key: "loadRTC",
+          value: function loadRTC(rtc) {
+            if (!this.core.cartridgeSlot.cartridge || !this.core.cartridgeSlot.cartridge.hasRTC) return;
+            var name = this.core.cartridgeSlot.cartridge.name;
+
+            if (!rtc) {
+              rtc = this.storage.findRTC(name);
+              if (!rtc) return false;
+              rtc = new Uint32Array(rtc);
             }
+
+            this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+            this.emit("rtcLoaded", { name: name, rtc: rtc });
           }
+        }, {
+          key: "getBatteryFileArrayBuffer",
+          value: function getBatteryFileArrayBuffer() {
+            if (!this.core.cartridgeSlot.cartridge) return;
+
+            var sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+            var rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+
+            return concatArrayBuffers(sram.buffer, rtc.buffer);
+          }
+        }, {
+          key: "loadBatteryFileArrayBuffer",
+          value: function () {
+            var _ref4 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(data) {
+              var sram, rtc;
+              return _regeneratorRuntime.wrap(function _callee4$(_context4) {
+                while (1) {
+                  switch (_context4.prev = _context4.next) {
+                    case 0:
+                      if (typeof data === "string") {
+                        data = stringToArrayBuffer(data);
+                      }
+
+                      sram = this.core.cartridgeSlot.cartridge.mbc.cutSRAMFromBatteryFileArray(data);
+                      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
+
+                      this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
+                      this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+
+                      _context4.next = 7;
+                      return this.saveSRAM(sram);
+
+                    case 7:
+                      _context4.next = 9;
+                      return this.saveRTC(rtc);
+
+                    case 9:
+
+                      this.restart();
+
+                    case 10:
+                    case "end":
+                      return _context4.stop();
+                  }
+                }
+              }, _callee4, this);
+            }));
+
+            function loadBatteryFileArrayBuffer(_x4) {
+              return _ref4.apply(this, arguments);
+            }
+
+            return loadBatteryFileArrayBuffer;
+          }()
+
+          // getStateFileArrayBuffer() {
+          //   let array = this.core.stateManager.save();
+          //   array = new Uint8Array(array);
+          //   return array;
+          // }
+
         }]);
 
         return GameBoy;
       }(EventEmitter));
 
       _export('GameBoy', GameBoy$1);
+
+      _export('LocalStorage', LocalStorage);
+
+      _export('util', util);
 
       _export('default', GameBoy$1);
     }

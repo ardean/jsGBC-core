@@ -1,4 +1,4 @@
-import util from "./util.js";
+import { fromTypedArray, toTypedArray, concatArrayBuffers } from "./util.js";
 import initialState from "./initial-state.js";
 
 export default class StateManager {
@@ -7,218 +7,230 @@ export default class StateManager {
   }
 
   init() {
-    this.load(initialState);
+    this.loadOld(initialState.slice(0));
   }
 
-  save() {
+  get() {
     const gameboy = this.gameboy;
-    return [
-      gameboy.inBootstrap,
-      gameboy.registerA,
-      gameboy.FZero,
-      gameboy.FSubtract,
-      gameboy.FHalfCarry,
-      gameboy.FCarry,
-      gameboy.registerB,
-      gameboy.registerC,
-      gameboy.registerD,
-      gameboy.registerE,
-      gameboy.registersHL,
-      gameboy.stackPointer,
-      gameboy.programCounter,
-      gameboy.halt,
-      gameboy.IME,
-      gameboy.hdmaRunning,
-      gameboy.CPUTicks,
-      gameboy.doubleSpeedShifter,
-      util.fromTypedArray(gameboy.memory),
-      util.fromTypedArray(gameboy.VRAM),
-      gameboy.currVRAMBank,
-      util.fromTypedArray(gameboy.GBCMemory),
-      gameboy.useGBCMode,
-      gameboy.gbcRamBank,
-      gameboy.gbcRamBankPosition,
-      gameboy.ROMBank1Offset,
-      gameboy.cartridgeSlot.cartridge.mbc.currentROMBank,
-      gameboy.modeSTAT,
-      gameboy.LYCMatchTriggerSTAT,
-      gameboy.mode2TriggerSTAT,
-      gameboy.mode1TriggerSTAT,
-      gameboy.mode0TriggerSTAT,
-      gameboy.LCDisOn,
-      gameboy.gfxWindowCHRBankPosition,
-      gameboy.gfxWindowDisplay,
-      gameboy.gfxSpriteShow,
-      gameboy.gfxSpriteNormalHeight,
-      gameboy.gfxBackgroundCHRBankPosition,
-      gameboy.gfxBackgroundBankOffset,
-      gameboy.TIMAEnabled,
-      gameboy.DIVTicks,
-      gameboy.LCDTicks,
-      gameboy.timerTicks,
-      gameboy.TACClocker,
-      gameboy.serialTimer,
-      gameboy.serialShiftTimer,
-      gameboy.serialShiftTimerAllocated,
-      gameboy.IRQEnableDelay,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.lastTime,
-      gameboy.drewBlank,
-      util.fromTypedArray(gameboy.frameBuffer),
-      gameboy.bgEnabled,
-      gameboy.BGPriorityEnabled,
-      gameboy.channel1FrequencyTracker,
-      gameboy.channel1FrequencyCounter,
-      gameboy.channel1totalLength,
-      gameboy.channel1envelopeVolume,
-      gameboy.channel1envelopeType,
-      gameboy.channel1envelopeSweeps,
-      gameboy.channel1envelopeSweepsLast,
-      gameboy.channel1consecutive,
-      gameboy.channel1frequency,
-      gameboy.channel1SweepFault,
-      gameboy.channel1ShadowFrequency,
-      gameboy.channel1timeSweep,
-      gameboy.channel1lastTimeSweep,
-      gameboy.channel1Swept,
-      gameboy.channel1frequencySweepDivider,
-      gameboy.channel1decreaseSweep,
-      gameboy.channel2FrequencyTracker,
-      gameboy.channel2FrequencyCounter,
-      gameboy.channel2totalLength,
-      gameboy.channel2envelopeVolume,
-      gameboy.channel2envelopeType,
-      gameboy.channel2envelopeSweeps,
-      gameboy.channel2envelopeSweepsLast,
-      gameboy.channel2consecutive,
-      gameboy.channel2frequency,
-      gameboy.channel3canPlay,
-      gameboy.channel3totalLength,
-      gameboy.channel3patternType,
-      gameboy.channel3frequency,
-      gameboy.channel3consecutive,
-      util.fromTypedArray(gameboy.channel3PCM),
-      gameboy.channel4FrequencyPeriod,
-      gameboy.channel4lastSampleLookup,
-      gameboy.channel4totalLength,
-      gameboy.channel4envelopeVolume,
-      gameboy.channel4currentVolume,
-      gameboy.channel4envelopeType,
-      gameboy.channel4envelopeSweeps,
-      gameboy.channel4envelopeSweepsLast,
-      gameboy.channel4consecutive,
-      gameboy.channel4BitRange,
-      gameboy.soundMasterEnabled,
-      gameboy.VinLeftChannelMasterVolume,
-      gameboy.VinRightChannelMasterVolume,
-      gameboy.leftChannel1,
-      gameboy.leftChannel2,
-      gameboy.leftChannel3,
-      gameboy.leftChannel4,
-      gameboy.rightChannel1,
-      gameboy.rightChannel2,
-      gameboy.rightChannel3,
-      gameboy.rightChannel4,
-      gameboy.channel1currentSampleLeft,
-      gameboy.channel1currentSampleRight,
-      gameboy.channel2currentSampleLeft,
-      gameboy.channel2currentSampleRight,
-      gameboy.channel3currentSampleLeft,
-      gameboy.channel3currentSampleRight,
-      gameboy.channel4currentSampleLeft,
-      gameboy.channel4currentSampleRight,
-      gameboy.channel1currentSampleLeftSecondary,
-      gameboy.channel1currentSampleRightSecondary,
-      gameboy.channel2currentSampleLeftSecondary,
-      gameboy.channel2currentSampleRightSecondary,
-      gameboy.channel3currentSampleLeftSecondary,
-      gameboy.channel3currentSampleRightSecondary,
-      gameboy.channel4currentSampleLeftSecondary,
-      gameboy.channel4currentSampleRightSecondary,
-      gameboy.channel1currentSampleLeftTrimary,
-      gameboy.channel1currentSampleRightTrimary,
-      gameboy.channel2currentSampleLeftTrimary,
-      gameboy.channel2currentSampleRightTrimary,
-      gameboy.mixerOutputCache,
-      gameboy.channel1DutyTracker,
-      gameboy.channel1CachedDuty,
-      gameboy.channel2DutyTracker,
-      gameboy.channel2CachedDuty,
-      gameboy.channel1Enabled,
-      gameboy.channel2Enabled,
-      gameboy.channel3Enabled,
-      gameboy.channel4Enabled,
-      gameboy.sequencerClocks,
-      gameboy.sequencePosition,
-      gameboy.channel3Counter,
-      gameboy.channel4Counter,
-      gameboy.cachedChannel3Sample,
-      gameboy.cachedChannel4Sample,
-      gameboy.channel3FrequencyPeriod,
-      gameboy.channel3lastSampleLookup,
-      gameboy.actualScanLine,
-      gameboy.lastUnrenderedLine,
-      gameboy.queuedScanLines,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCisLatched,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedSeconds,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedMinutes,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHours,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedLDays,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHDays,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCSeconds,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCMinutes,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHours,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDays,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDayOverFlow,
-      gameboy.cartridgeSlot.cartridge.hasRTC &&
-        gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHALT,
-      gameboy.usedBootROM,
-      gameboy.skipPCIncrement,
-      gameboy.STATTracker,
-      gameboy.gbcRamBankPositionECHO,
-      gameboy.windowY,
-      gameboy.windowX,
-      util.fromTypedArray(gameboy.gbcOBJRawPalette),
-      util.fromTypedArray(gameboy.gbcBGRawPalette),
-      util.fromTypedArray(gameboy.gbOBJPalette),
-      util.fromTypedArray(gameboy.gbBGPalette),
-      util.fromTypedArray(gameboy.gbcOBJPalette),
-      util.fromTypedArray(gameboy.gbcBGPalette),
-      util.fromTypedArray(gameboy.gbBGColorizedPalette),
-      util.fromTypedArray(gameboy.gbOBJColorizedPalette),
-      util.fromTypedArray(gameboy.cachedBGPaletteConversion),
-      util.fromTypedArray(gameboy.cachedOBJPaletteConversion),
-      util.fromTypedArray(gameboy.BGCHRBank1),
-      util.fromTypedArray(gameboy.BGCHRBank2),
-      gameboy.haltPostClocks,
-      gameboy.interruptsRequested,
-      gameboy.interruptsEnabled,
-      gameboy.remainingClocks,
-      gameboy.colorizedGBPalettes,
-      gameboy.backgroundY,
-      gameboy.backgroundX,
-      gameboy.CPUStopped,
-      gameboy.audioClocksUntilNextEvent,
-      gameboy.audioClocksUntilNextEventCounter
-    ];
+    if (!gameboy.cartridgeSlot.cartridge) return null;
+
+    return concatArrayBuffers(
+      gameboy.memory.buffer.slice(0),
+      gameboy.VRAM.buffer.slice(0)
+    );
+
+    // return [
+    //   gameboy.inBootstrap,
+    //   gameboy.registerA,
+    //   gameboy.FZero,
+    //   gameboy.FSubtract,
+    //   gameboy.FHalfCarry,
+    //   gameboy.FCarry,
+    //   gameboy.registerB,
+    //   gameboy.registerC,
+    //   gameboy.registerD,
+    //   gameboy.registerE,
+    //   gameboy.registersHL,
+    //   gameboy.stackPointer,
+    //   gameboy.programCounter,
+    //   gameboy.halt,
+    //   gameboy.IME,
+    //   gameboy.hdmaRunning,
+    //   gameboy.CPUTicks,
+    //   gameboy.doubleSpeedShifter,
+    //   // fromTypedArray(gameboy.memory),
+    //   // fromTypedArray(gameboy.VRAM),
+    //   gameboy.currVRAMBank,
+    //   fromTypedArray(gameboy.GBCMemory),
+    //   gameboy.useGBCMode,
+    //   gameboy.gbcRamBank,
+    //   gameboy.gbcRamBankPosition,
+    //   gameboy.ROMBank1Offset,
+    //   gameboy.cartridgeSlot.cartridge.mbc.currentROMBank,
+    //   gameboy.modeSTAT,
+    //   gameboy.LYCMatchTriggerSTAT,
+    //   gameboy.mode2TriggerSTAT,
+    //   gameboy.mode1TriggerSTAT,
+    //   gameboy.mode0TriggerSTAT,
+    //   gameboy.LCDisOn,
+    //   gameboy.gfxWindowCHRBankPosition,
+    //   gameboy.gfxWindowDisplay,
+    //   gameboy.gfxSpriteShow,
+    //   gameboy.gfxSpriteNormalHeight,
+    //   gameboy.gfxBackgroundCHRBankPosition,
+    //   gameboy.gfxBackgroundBankOffset,
+    //   gameboy.TIMAEnabled,
+    //   gameboy.DIVTicks,
+    //   gameboy.LCDTicks,
+    //   gameboy.timerTicks,
+    //   gameboy.TACClocker,
+    //   gameboy.serialTimer,
+    //   gameboy.serialShiftTimer,
+    //   gameboy.serialShiftTimerAllocated,
+    //   gameboy.IRQEnableDelay,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.lastTime,
+    //   gameboy.drewBlank,
+    //   fromTypedArray(gameboy.frameBuffer),
+    //   gameboy.bgEnabled,
+    //   gameboy.BGPriorityEnabled,
+    //   gameboy.channel1FrequencyTracker,
+    //   gameboy.channel1FrequencyCounter,
+    //   gameboy.channel1totalLength,
+    //   gameboy.channel1envelopeVolume,
+    //   gameboy.channel1envelopeType,
+    //   gameboy.channel1envelopeSweeps,
+    //   gameboy.channel1envelopeSweepsLast,
+    //   gameboy.channel1consecutive,
+    //   gameboy.channel1frequency,
+    //   gameboy.channel1SweepFault,
+    //   gameboy.channel1ShadowFrequency,
+    //   gameboy.channel1timeSweep,
+    //   gameboy.channel1lastTimeSweep,
+    //   gameboy.channel1Swept,
+    //   gameboy.channel1frequencySweepDivider,
+    //   gameboy.channel1decreaseSweep,
+    //   gameboy.channel2FrequencyTracker,
+    //   gameboy.channel2FrequencyCounter,
+    //   gameboy.channel2totalLength,
+    //   gameboy.channel2envelopeVolume,
+    //   gameboy.channel2envelopeType,
+    //   gameboy.channel2envelopeSweeps,
+    //   gameboy.channel2envelopeSweepsLast,
+    //   gameboy.channel2consecutive,
+    //   gameboy.channel2frequency,
+    //   gameboy.channel3canPlay,
+    //   gameboy.channel3totalLength,
+    //   gameboy.channel3patternType,
+    //   gameboy.channel3frequency,
+    //   gameboy.channel3consecutive,
+    //   fromTypedArray(gameboy.channel3PCM),
+    //   gameboy.channel4FrequencyPeriod,
+    //   gameboy.channel4lastSampleLookup,
+    //   gameboy.channel4totalLength,
+    //   gameboy.channel4envelopeVolume,
+    //   gameboy.channel4currentVolume,
+    //   gameboy.channel4envelopeType,
+    //   gameboy.channel4envelopeSweeps,
+    //   gameboy.channel4envelopeSweepsLast,
+    //   gameboy.channel4consecutive,
+    //   gameboy.channel4BitRange,
+    //   gameboy.soundMasterEnabled,
+    //   gameboy.VinLeftChannelMasterVolume,
+    //   gameboy.VinRightChannelMasterVolume,
+    //   gameboy.leftChannel1,
+    //   gameboy.leftChannel2,
+    //   gameboy.leftChannel3,
+    //   gameboy.leftChannel4,
+    //   gameboy.rightChannel1,
+    //   gameboy.rightChannel2,
+    //   gameboy.rightChannel3,
+    //   gameboy.rightChannel4,
+    //   gameboy.channel1currentSampleLeft,
+    //   gameboy.channel1currentSampleRight,
+    //   gameboy.channel2currentSampleLeft,
+    //   gameboy.channel2currentSampleRight,
+    //   gameboy.channel3currentSampleLeft,
+    //   gameboy.channel3currentSampleRight,
+    //   gameboy.channel4currentSampleLeft,
+    //   gameboy.channel4currentSampleRight,
+    //   gameboy.channel1currentSampleLeftSecondary,
+    //   gameboy.channel1currentSampleRightSecondary,
+    //   gameboy.channel2currentSampleLeftSecondary,
+    //   gameboy.channel2currentSampleRightSecondary,
+    //   gameboy.channel3currentSampleLeftSecondary,
+    //   gameboy.channel3currentSampleRightSecondary,
+    //   gameboy.channel4currentSampleLeftSecondary,
+    //   gameboy.channel4currentSampleRightSecondary,
+    //   gameboy.channel1currentSampleLeftTrimary,
+    //   gameboy.channel1currentSampleRightTrimary,
+    //   gameboy.channel2currentSampleLeftTrimary,
+    //   gameboy.channel2currentSampleRightTrimary,
+    //   gameboy.mixerOutputCache,
+    //   gameboy.channel1DutyTracker,
+    //   gameboy.channel1CachedDuty,
+    //   gameboy.channel2DutyTracker,
+    //   gameboy.channel2CachedDuty,
+    //   gameboy.channel1Enabled,
+    //   gameboy.channel2Enabled,
+    //   gameboy.channel3Enabled,
+    //   gameboy.channel4Enabled,
+    //   gameboy.sequencerClocks,
+    //   gameboy.sequencePosition,
+    //   gameboy.channel3Counter,
+    //   gameboy.channel4Counter,
+    //   gameboy.cachedChannel3Sample,
+    //   gameboy.cachedChannel4Sample,
+    //   gameboy.channel3FrequencyPeriod,
+    //   gameboy.channel3lastSampleLookup,
+    //   gameboy.actualScanLine,
+    //   gameboy.lastUnrenderedLine,
+    //   gameboy.queuedScanLines,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCisLatched,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedSeconds,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedMinutes,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHours,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedLDays,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHDays,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCSeconds,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCMinutes,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHours,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDays,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDayOverFlow,
+    //   gameboy.cartridgeSlot.cartridge.hasRTC &&
+    //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHALT,
+    //   gameboy.usedBootROM,
+    //   gameboy.skipPCIncrement,
+    //   gameboy.STATTracker,
+    //   gameboy.gbcRamBankPositionECHO,
+    //   gameboy.windowY,
+    //   gameboy.windowX,
+    //   fromTypedArray(gameboy.gbcOBJRawPalette),
+    //   fromTypedArray(gameboy.gbcBGRawPalette),
+    //   fromTypedArray(gameboy.gbOBJPalette),
+    //   fromTypedArray(gameboy.gbBGPalette),
+    //   fromTypedArray(gameboy.gbcOBJPalette),
+    //   fromTypedArray(gameboy.gbcBGPalette),
+    //   fromTypedArray(gameboy.gbBGColorizedPalette),
+    //   fromTypedArray(gameboy.gbOBJColorizedPalette),
+    //   fromTypedArray(gameboy.cachedBGPaletteConversion),
+    //   fromTypedArray(gameboy.cachedOBJPaletteConversion),
+    //   fromTypedArray(gameboy.BGCHRBank1),
+    //   fromTypedArray(gameboy.BGCHRBank2),
+    //   gameboy.haltPostClocks,
+    //   gameboy.interruptsRequested,
+    //   gameboy.interruptsEnabled,
+    //   gameboy.remainingClocks,
+    //   gameboy.colorizedGBPalettes,
+    //   gameboy.backgroundY,
+    //   gameboy.backgroundX,
+    //   gameboy.CPUStopped,
+    //   gameboy.audioClocksUntilNextEvent,
+    //   gameboy.audioClocksUntilNextEventCounter
+    // ];
   }
 
   load(state) {
     let index = 0;
-    state = state.concat();
-
     const gameboy = this.gameboy;
+
+  }
+
+  loadOld(state) {
+    let index = 0;
+    const gameboy = this.gameboy;
+
     gameboy.inBootstrap = state[index++];
     gameboy.registerA = state[index++];
     gameboy.FZero = state[index++];
@@ -237,10 +249,10 @@ export default class StateManager {
     gameboy.hdmaRunning = state[index++];
     gameboy.CPUTicks = state[index++];
     gameboy.doubleSpeedShifter = state[index++];
-    gameboy.memory = util.toTypedArray(state[index++], "uint8");
-    gameboy.VRAM = util.toTypedArray(state[index++], "uint8");
+    gameboy.memory = toTypedArray(state[index++], "uint8");
+    gameboy.VRAM = toTypedArray(state[index++], "uint8");
     gameboy.currVRAMBank = state[index++];
-    gameboy.GBCMemory = util.toTypedArray(state[index++], "uint8");
+    gameboy.GBCMemory = toTypedArray(state[index++], "uint8");
     gameboy.useGBCMode = state[index++];
     gameboy.gbcRamBank = state[index++];
     gameboy.gbcRamBankPosition = state[index++];
@@ -248,7 +260,7 @@ export default class StateManager {
     if (gameboy.cartridgeSlot.cartridge) {
       gameboy.cartridgeSlot.cartridge.mbc.currentROMBank = state[index++];
     } else {
-      ++index;
+      index++;
     }
     gameboy.modeSTAT = state[index++];
     gameboy.LYCMatchTriggerSTAT = state[index++];
@@ -277,7 +289,7 @@ export default class StateManager {
       index++;
     }
     gameboy.drewBlank = state[index++];
-    gameboy.frameBuffer = util.toTypedArray(state[index++], "int32");
+    gameboy.frameBuffer = toTypedArray(state[index++], "int32");
     gameboy.bgEnabled = state[index++];
     gameboy.BGPriorityEnabled = state[index++];
     gameboy.channel1FrequencyTracker = state[index++];
@@ -310,7 +322,7 @@ export default class StateManager {
     gameboy.channel3patternType = state[index++];
     gameboy.channel3frequency = state[index++];
     gameboy.channel3consecutive = state[index++];
-    gameboy.channel3PCM = util.toTypedArray(state[index++], "int8");
+    gameboy.channel3PCM = toTypedArray(state[index++], "int8");
     gameboy.channel4FrequencyPeriod = state[index++];
     gameboy.channel4lastSampleLookup = state[index++];
     gameboy.channel4totalLength = state[index++];
@@ -394,24 +406,24 @@ export default class StateManager {
     gameboy.gbcRamBankPositionECHO = state[index++];
     gameboy.windowY = state[index++];
     gameboy.windowX = state[index++];
-    gameboy.gbcOBJRawPalette = util.toTypedArray(state[index++], "uint8");
-    gameboy.gbcBGRawPalette = util.toTypedArray(state[index++], "uint8");
-    gameboy.gbOBJPalette = util.toTypedArray(state[index++], "int32");
-    gameboy.gbBGPalette = util.toTypedArray(state[index++], "int32");
-    gameboy.gbcOBJPalette = util.toTypedArray(state[index++], "int32");
-    gameboy.gbcBGPalette = util.toTypedArray(state[index++], "int32");
-    gameboy.gbBGColorizedPalette = util.toTypedArray(state[index++], "int32");
-    gameboy.gbOBJColorizedPalette = util.toTypedArray(state[index++], "int32");
-    gameboy.cachedBGPaletteConversion = util.toTypedArray(
+    gameboy.gbcOBJRawPalette = toTypedArray(state[index++], "uint8");
+    gameboy.gbcBGRawPalette = toTypedArray(state[index++], "uint8");
+    gameboy.gbOBJPalette = toTypedArray(state[index++], "int32");
+    gameboy.gbBGPalette = toTypedArray(state[index++], "int32");
+    gameboy.gbcOBJPalette = toTypedArray(state[index++], "int32");
+    gameboy.gbcBGPalette = toTypedArray(state[index++], "int32");
+    gameboy.gbBGColorizedPalette = toTypedArray(state[index++], "int32");
+    gameboy.gbOBJColorizedPalette = toTypedArray(state[index++], "int32");
+    gameboy.cachedBGPaletteConversion = toTypedArray(
       state[index++],
       "int32"
     );
-    gameboy.cachedOBJPaletteConversion = util.toTypedArray(
+    gameboy.cachedOBJPaletteConversion = toTypedArray(
       state[index++],
       "int32"
     );
-    gameboy.BGCHRBank1 = util.toTypedArray(state[index++], "uint8");
-    gameboy.BGCHRBank2 = util.toTypedArray(state[index++], "uint8");
+    gameboy.BGCHRBank1 = toTypedArray(state[index++], "uint8");
+    gameboy.BGCHRBank2 = toTypedArray(state[index++], "uint8");
     gameboy.haltPostClocks = state[index++];
     gameboy.interruptsRequested = state[index++];
     gameboy.interruptsEnabled = state[index++];
