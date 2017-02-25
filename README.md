@@ -18,6 +18,8 @@ Please checkout the [direct/index.html](https://ardean.github.io/jsGBC-core/dire
 
 [MIT](LICENSE.md)
 
+Z80 implementation borrowed from [GameBoy-Online](https://github.com/taisel/GameBoy-Online)
+
 [downloads-image]: https://img.shields.io/npm/dm/jsgbc.svg
 [downloads-url]: https://npmjs.org/package/jsgbc
 [npm-image]: https://img.shields.io/npm/v/jsgbc.svg
