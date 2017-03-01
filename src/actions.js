@@ -1,11 +1,19 @@
 import EventEmitter from "events";
 
-export default class ActionRegistry extends EventEmitter {
+export default class Actions extends EventEmitter {
   map = {};
 
   register(action) {
     this.map[action] = true;
     return this;
+  }
+
+  getAll() {
+    return Object.keys(this.map);
+  }
+
+  is(action) {
+    return !!this.map[action];
   }
 
   down(action, options) {

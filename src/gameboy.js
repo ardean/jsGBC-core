@@ -4,7 +4,7 @@ import { stringToArrayBuffer, concatArrayBuffers } from "./core/util.js";
 import GameBoyCore from "./core/index.js";
 import LocalStorage from "./storages/localstorage.js";
 import Cartridge from "./core/cartridge/index.js";
-import ActionRegistry from "./action-registry.js";
+import Actions from "./actions.js";
 import EventEmitter from "events";
 import debounce from "debounce";
 
@@ -22,7 +22,7 @@ export default class GameBoy extends EventEmitter {
     });
 
     this.isOn = false;
-    this.actionRegistry = new ActionRegistry();
+    this.actions = new Actions();
     this.registerActions();
     this.storage = new LocalStorage();
   }
@@ -33,7 +33,7 @@ export default class GameBoy extends EventEmitter {
 
   registerActions() {
     this.buttons.forEach((button, index) => {
-      this.actionRegistry
+      this.actions
         .register(button)
         .on("down-" + button, () => {
           this.core.joypad.down(index);
@@ -43,7 +43,7 @@ export default class GameBoy extends EventEmitter {
         });
     });
 
-    this.actionRegistry
+    this.actions
       .register("speed")
       .on("down-speed", options => this.handleSpeed(options))
       .on("change-speed", options => this.handleSpeed(options))
@@ -116,15 +116,15 @@ export default class GameBoy extends EventEmitter {
   }
 
   actionDown(action, options) {
-    this.actionRegistry.down(action, options);
+    this.actions.down(action, options);
   }
 
   actionChange(action, options) {
-    this.actionRegistry.change(action, options);
+    this.actions.change(action, options);
   }
 
   actionUp(action, options) {
-    this.actionRegistry.up(action, options);
+    this.actions.up(action, options);
   }
 
   setSpeed(multiplier) {

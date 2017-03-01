@@ -12195,7 +12195,7 @@ $__System.registerDynamic('13', ['12'], true, function ($__require, exports, mod
 $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
   "use strict";
 
-  var EventEmitter, debounce, $$1, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, ActionRegistry, GameBoy$1, _this, keyMap, $lcd, gameboy;
+  var EventEmitter, debounce, $$1, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, Actions, GameBoy$1, _this, keyMap, $lcd, gameboy;
 
   function toTypedArray(baseArray, memtype) {
     try {
@@ -23479,28 +23479,38 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
         return LocalStorage;
       }();
 
-      ActionRegistry = function (_EventEmitter) {
-        _inherits(ActionRegistry, _EventEmitter);
+      Actions = function (_EventEmitter) {
+        _inherits(Actions, _EventEmitter);
 
-        function ActionRegistry() {
+        function Actions() {
           var _ref;
 
           var _temp, _this, _ret;
 
-          _classCallCheck(this, ActionRegistry);
+          _classCallCheck(this, Actions);
 
           for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
 
-          return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = ActionRegistry.__proto__ || Object.getPrototypeOf(ActionRegistry)).call.apply(_ref, [this].concat(args))), _this), _this.map = {}, _temp), _possibleConstructorReturn(_this, _ret);
+          return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Actions.__proto__ || Object.getPrototypeOf(Actions)).call.apply(_ref, [this].concat(args))), _this), _this.map = {}, _temp), _possibleConstructorReturn(_this, _ret);
         }
 
-        _createClass(ActionRegistry, [{
+        _createClass(Actions, [{
           key: "register",
           value: function register(action) {
             this.map[action] = true;
             return this;
+          }
+        }, {
+          key: "getAll",
+          value: function getAll() {
+            return Object.keys(this.map);
+          }
+        }, {
+          key: "is",
+          value: function is(action) {
+            return !!this.map[action];
           }
         }, {
           key: "down",
@@ -23519,7 +23529,7 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
           }
         }]);
 
-        return ActionRegistry;
+        return Actions;
       }(EventEmitter);
 
       GameBoy$1 = function (_EventEmitter) {
@@ -23540,7 +23550,7 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
           });
 
           _this.isOn = false;
-          _this.actionRegistry = new ActionRegistry();
+          _this.actions = new Actions();
           _this.registerActions();
           _this.storage = new LocalStorage();
           return _this;
@@ -23557,14 +23567,14 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
             var _this2 = this;
 
             this.buttons.forEach(function (button, index) {
-              _this2.actionRegistry.register(button).on("down-" + button, function () {
+              _this2.actions.register(button).on("down-" + button, function () {
                 _this2.core.joypad.down(index);
               }).on("up-" + button, function () {
                 _this2.core.joypad.up(index);
               });
             });
 
-            this.actionRegistry.register("speed").on("down-speed", function (options) {
+            this.actions.register("speed").on("down-speed", function (options) {
               return _this2.handleSpeed(options);
             }).on("change-speed", function (options) {
               return _this2.handleSpeed(options);
@@ -23640,17 +23650,17 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
         }, {
           key: "actionDown",
           value: function actionDown(action, options) {
-            this.actionRegistry.down(action, options);
+            this.actions.down(action, options);
           }
         }, {
           key: "actionChange",
           value: function actionChange(action, options) {
-            this.actionRegistry.change(action, options);
+            this.actions.change(action, options);
           }
         }, {
           key: "actionUp",
           value: function actionUp(action, options) {
-            this.actionRegistry.up(action, options);
+            this.actions.up(action, options);
           }
         }, {
           key: "setSpeed",
