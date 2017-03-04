@@ -12192,10 +12192,10 @@ $__System.registerDynamic('13', ['12'], true, function ($__require, exports, mod
     };
   };
 });
-$__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
+$__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
   "use strict";
 
-  var EventEmitter, debounce, $$1, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, Actions, GameBoy$1, _this, keyMap, $lcd, gameboy;
+  var $, EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, Actions, GameBoy$1, _this, keyMap, $lcd, gameboy;
 
   function toTypedArray(baseArray, memtype) {
     try {
@@ -12486,12 +12486,12 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
   }
 
   return {
-    setters: [function (_) {}, function (_2) {
+    setters: [function (_) {}, function (_b) {
+      $ = _b.default;
+    }, function (_2) {
       EventEmitter = _2.default;
     }, function (_3) {
       debounce = _3.default;
-    }, function (_b) {
-      $$1 = _b.default;
     }],
     execute: function () {
       _regeneratorRuntime = function (module) {
@@ -23965,13 +23965,13 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
         48: "load",
         80: "speed"
       };
-      $lcd = $$1(".lcd");
+      $lcd = $(".lcd");
       gameboy = new GameBoy$1($lcd.get(0));
 
 
       window.gameboy = gameboy;
 
-      $$1(window).on("keydown", function (_ref) {
+      $(window).on("keydown", function (_ref) {
         var keyCode = _ref.keyCode;
 
         if (keyMap[keyCode]) {
@@ -23985,7 +23985,7 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
         }
       });
 
-      $$1(".rom-select").on("click", _asyncToGenerator(_regeneratorRuntime.mark(function _callee() {
+      $(".rom-select").on("click", _asyncToGenerator(_regeneratorRuntime.mark(function _callee() {
         var result;
         return _regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
@@ -24007,11 +24007,11 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
         }, _callee, _this);
       })));
 
-      $$1(".download-battery-file").on("click", function () {
+      $(".download-battery-file").on("click", function () {
         util.downloadFile(gameboy.core.cartridgeSlot.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
       });
 
-      $$1(".upload-battery-file").on("click", _asyncToGenerator(_regeneratorRuntime.mark(function _callee2() {
+      $(".upload-battery-file").on("click", _asyncToGenerator(_regeneratorRuntime.mark(function _callee2() {
         var result;
         return _regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
@@ -24033,7 +24033,7 @@ $__System.register('a', ['10', '11', '13', 'b'], function (_export, _context5) {
         }, _callee2, _this);
       })));
 
-      $$1(".loading").hide();
+      $(".loading").hide();
     }
   };
 });
