@@ -1,6 +1,6 @@
 {
   "name": "jsgbc",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "jsGBC Core Emulator",
   "main": "./dist/jsgbc-core.min.js",
   "repository": "https://github.com/ardean/jsGBC-core",
