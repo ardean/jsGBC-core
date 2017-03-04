@@ -1,4 +1,5 @@
 import settings from "../settings";
+import $ from "jquery";
 
 export function toTypedArray(baseArray, memtype) {
   try {
