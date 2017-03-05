@@ -13512,53 +13512,60 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
 
           var _this = _possibleConstructorReturn(this, (MBC.__proto__ || Object.getPrototypeOf(MBC)).call(this));
 
+          _this.romSizes = [0x00008000, // 32K
+          0x00010000, // 64K
+          0x00020000, // 128K
+          0x00040000, // 256K
+          0x00080000, // 512K
+          0x00100000, // 1024K
+          0x00200000, // 2048K
+          0x00400000, // 4096K
+          0x00800000 // 8192K
+          ];
+          _this.ramSizes = [0x00000000, // 0K
+          0x00002000, // 2K  // Changed to 2000 to avoid problems
+          0x00002000, // 8K
+          0x00008000, // 32K
+          0x00020000, // 128K
+          0x00010000 // 64K
+          ];
+
           _this.cartridge = cartridge;
           _this.MBCRAMBanksEnabled = false; // MBC RAM Access Control.
           _this.currentRAMBankPosition = -0xa000; // MBC Position Adder;
           _this.currentMBCRAMBank = 0; // MBC Currently Indexed RAM Bank
           _this.ROMBankEdge = Math.floor(cartridge.rom.length / 0x4000);
-          _this.numRAMBanks = 0; // How many RAM banks were actually allocated?
           return _this;
         }
 
         _createClass(MBC, [{
+          key: "setupROM",
+          value: function setupROM() {
+            this.romSize = this.romSizes[this.cartridge.romSizeType];
+            console.log("ROM size 0x" + this.romSize.toString(16));
+          }
+        }, {
           key: "setupRAM",
           value: function setupRAM() {
-            // TODO: set banks amount on specific mbc type
-            // Setup the auxilliary/switchable RAM:
-            if (this.cartridge.hasMBC2) {
-              this.numRAMBanks = 1 / 16;
-            } else if (this.cartridge.hasMBC1 || this.cartridge.cRUMBLE || this.cartridge.hasMBC3 || this.cartridge.cHuC3) {
-              this.numRAMBanks = 4;
-            } else if (this.cartridge.hasMBC5) {
-              this.numRAMBanks = 16;
-            } else if (this.cartridge.hasSRAM) {
-              this.numRAMBanks = 1;
-            }
-
-            this.allocatedRamBytes = this.numRAMBanks * 0x2000;
-
-            console.log("Actual bytes of MBC RAM allocated: 0x" + this.allocatedRamBytes.toString(16));
-
-            if (this.numRAMBanks > 0) {
-              this.RAM = util.getTypedArray(this.allocatedRamBytes, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
-            }
+            this.ramSize = this.ramSizes[this.cartridge.ramSizeType];
+            console.log("RAM size 0x" + this.ramSize.toString(16));
+            this.RAM = util.getTypedArray(this.ramSize, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
           }
         }, {
           key: "loadSRAM",
           value: function loadSRAM(data) {
-            if (data.length !== this.allocatedRamBytes) return;
+            if (data.length !== this.ramSize) return;
             this.RAM = data.slice(0);
           }
         }, {
           key: "getSRAM",
           value: function getSRAM() {
-            return new Uint8Array(this.RAM.buffer.slice(0, this.allocatedRamBytes));
+            return new Uint8Array(this.RAM.buffer.slice(0, this.ramSize));
           }
         }, {
           key: "cutSRAMFromBatteryFileArray",
           value: function cutSRAMFromBatteryFileArray(data) {
-            return new Uint8Array(data.buffer.slice(0, this.allocatedRamBytes));
+            return new Uint8Array(data.buffer.slice(0, this.ramSize));
           }
         }, {
           key: "saveState",
@@ -13817,7 +13824,7 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
         }, {
           key: "cutBatteryFileArray",
           value: function cutBatteryFileArray(data) {
-            return new Uint32Array(data.buffer.slice(this.mbc.allocatedRamBytes, this.mbc.allocatedRamBytes + 4 * 12));
+            return new Uint32Array(data.buffer.slice(this.mbc.ramSize, this.mbc.ramSize + 4 * 12));
           }
         }, {
           key: "extract",
@@ -14135,15 +14142,6 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
           this.cHuC3 = false; // Does the cartridge use HuC3 (Hudson Soft / modified MBC3)?
           this.cHuC1 = false; // Does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
           this.hasRTC = false; // Does the cartridge have an RTC?
-
-          this.ROMBanks = [
-          // 1 Bank = 16 KBytes = 256 Kbits
-          2, 4, 8, 16, 32, 64, 128, 256, 512];
-          this.ROMBanks[0x52] = 72;
-          this.ROMBanks[0x53] = 80;
-          this.ROMBanks[0x54] = 96;
-
-          this.RAMBanks = [0, 1, 2, 4, 16]; // Used to map the RAM banks to maximum size the MBC used can do.
         }
 
         _createClass(Cartridge, [{
@@ -14225,30 +14223,8 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
               console.log("Cartridge Type Name: " + this.typeName);
             }
 
-            this.romSize = this.rom.getByte(0x148);
-            this.ramSize = this.rom.getByte(0x149);
-
-            // ROM and RAM banks
-            this.numROMBanks = this.ROMBanks[this.romSize];
-
-            console.log(this.numROMBanks + " ROM banks.");
-
-            switch (this.RAMBanks[this.ramSize]) {
-              case 0:
-                console.log("No RAM banking requested for allocation or MBC is of type 2.");
-                break;
-              case 2:
-                console.log("1 RAM bank requested for allocation.");
-                break;
-              case 3:
-                console.log("4 RAM banks requested for allocation.");
-                break;
-              case 4:
-                console.log("16 RAM banks requested for allocation.");
-                break;
-              default:
-                console.log("RAM bank amount requested is unknown, will use maximum allowed by specified MBC type.");
-            }
+            this.romSizeType = this.rom.getByte(0x148);
+            this.ramSizeType = this.rom.getByte(0x149);
 
             // Check the GB/GBC mode byte:
             if (!this.gameboy.usedBootROM) {
@@ -19109,6 +19085,7 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
         this.init();
         this.cartridgeSlot.insertCartridge(cartridge);
         this.cartridgeSlot.readCartridge();
+        this.cartridgeSlot.cartridge.mbc.setupROM();
 
         if (this.cartridgeSlot.cartridge && this.cartridgeSlot.cartridge.mbc) {
           this.cartridgeSlot.cartridge.mbc.on("ramWrite", function () {
@@ -21656,7 +21633,7 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
           } else if (index < 0xa000) {
             this.memoryReader[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
           } else if (index >= 0xa000 && index < 0xc000) {
-            if (this.cartridgeSlot.cartridge.mbc.numRAMBanks === 1 / 16 && index < 0xa200 || this.cartridgeSlot.cartridge.mbc.numRAMBanks >= 1) {
+            if (this.cartridgeSlot.cartridge.ramSize !== 0) {
               if (this.cartridgeSlot.cartridge.hasMBC7) {
                 this.memoryReader[index] = this.memoryReadMBC7;
               } else if (!this.cartridgeSlot.cartridge.hasMBC3) {
@@ -22193,7 +22170,7 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
           } else if (index < 0xa000) {
             this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
           } else if (index < 0xc000) {
-            if (this.cartridgeSlot.cartridge.mbc.numRAMBanks === 1 / 16 && index < 0xa200 || this.cartridgeSlot.cartridge.mbc.numRAMBanks >= 1) {
+            if (this.cartridgeSlot.cartridge.ramSize !== 0) {
               if (!this.cartridgeSlot.cartridge.hasMBC3) {
                 this.memoryWriter[index] = this.memoryWriteMBCRAM;
               } else {
@@ -23799,30 +23776,38 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
                       return _context3.abrupt("return");
 
                     case 2:
+                      if (this.core.cartridgeSlot.cartridge.hasRTC) {
+                        _context3.next = 4;
+                        break;
+                      }
+
+                      return _context3.abrupt("return");
+
+                    case 4:
                       name = this.core.cartridgeSlot.cartridge.name;
 
                       if (rtc) {
-                        _context3.next = 7;
+                        _context3.next = 9;
                         break;
                       }
 
                       rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
 
                       if (rtc) {
-                        _context3.next = 7;
+                        _context3.next = 9;
                         break;
                       }
 
                       return _context3.abrupt("return", false);
 
-                    case 7:
-                      _context3.next = 9;
+                    case 9:
+                      _context3.next = 11;
                       return this.storage.setRTC(name, rtc.buffer);
 
-                    case 9:
+                    case 11:
                       this.emit("rtcSaved", { name: name, rtc: rtc });
 
-                    case 10:
+                    case 12:
                     case "end":
                       return _context3.stop();
                   }
@@ -23868,7 +23853,8 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
         }, {
           key: "loadRTC",
           value: function loadRTC(rtc) {
-            if (!this.core.cartridgeSlot.cartridge || !this.core.cartridgeSlot.cartridge.hasRTC) return;
+            if (!this.core.cartridgeSlot.cartridge) return;
+            if (!this.core.cartridgeSlot.cartridge.hasRTC) return;
             var name = this.core.cartridgeSlot.cartridge.name;
 
             if (!rtc) {
@@ -23886,9 +23872,10 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
             if (!this.core.cartridgeSlot.cartridge) return;
 
             var sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
-            var rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+            var rtc = null;
+            if (this.core.cartridgeSlot.cartridge.mbc.rtc) rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
 
-            return concatArrayBuffers(sram.buffer, rtc.buffer);
+            return rtc ? concatArrayBuffers(sram.buffer, rtc.buffer) : sram.buffer;
           }
         }, {
           key: "loadBatteryFileArrayBuffer",
@@ -23904,23 +23891,30 @@ $__System.register('a', ['f', '13', '10', '12'], function (_export, _context5) {
                       }
 
                       sram = this.core.cartridgeSlot.cartridge.mbc.cutSRAMFromBatteryFileArray(data);
-                      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
+                      rtc = null;
+
+                      if (this.core.cartridgeSlot.cartridge.hasRTC) rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
 
                       this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
-                      this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+                      if (rtc) this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
 
-                      _context4.next = 7;
+                      _context4.next = 8;
                       return this.saveSRAM(sram);
 
-                    case 7:
-                      _context4.next = 9;
+                    case 8:
+                      if (!rtc) {
+                        _context4.next = 11;
+                        break;
+                      }
+
+                      _context4.next = 11;
                       return this.saveRTC(rtc);
 
-                    case 9:
+                    case 11:
 
                       this.restart();
 
-                    case 10:
+                    case 12:
                     case "end":
                       return _context4.stop();
                   }

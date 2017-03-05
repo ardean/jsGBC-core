@@ -134,8 +134,8 @@ export default class RTC {
   cutBatteryFileArray(data) {
     return new Uint32Array(
       data.buffer.slice(
-        this.mbc.allocatedRamBytes,
-        this.mbc.allocatedRamBytes + 4 * 12
+        this.mbc.ramSize,
+        this.mbc.ramSize + 4 * 12
       )
     );
   }

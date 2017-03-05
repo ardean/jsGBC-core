@@ -138,6 +138,7 @@ GameBoyCore.prototype.start = function (cartridge) {
   this.init();
   this.cartridgeSlot.insertCartridge(cartridge);
   this.cartridgeSlot.readCartridge();
+  this.cartridgeSlot.cartridge.mbc.setupROM();
 
   if (this.cartridgeSlot.cartridge && this.cartridgeSlot.cartridge.mbc) {
     this.cartridgeSlot.cartridge.mbc.on("ramWrite", () => {
@@ -3349,10 +3350,7 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         this.VRAMCHRReadCGBCPU :
         this.VRAMCHRReadDMGCPU;
     } else if (index >= 0xa000 && index < 0xc000) {
-      if (
-        this.cartridgeSlot.cartridge.mbc.numRAMBanks === 1 / 16 && index < 0xa200 ||
-        this.cartridgeSlot.cartridge.mbc.numRAMBanks >= 1
-      ) {
+      if (this.cartridgeSlot.cartridge.ramSize !== 0) {
         if (this.cartridgeSlot.cartridge.hasMBC7) {
           this.memoryReader[index] = this.memoryReadMBC7;
         } else if (!this.cartridgeSlot.cartridge.hasMBC3) {
@@ -3973,10 +3971,7 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
         this.VRAMGBCCHRMAPWrite :
         this.VRAMGBCHRMAPWrite;
     } else if (index < 0xc000) {
-      if (
-        this.cartridgeSlot.cartridge.mbc.numRAMBanks === 1 / 16 && index < 0xa200 ||
-        this.cartridgeSlot.cartridge.mbc.numRAMBanks >= 1
-      ) {
+      if (this.cartridgeSlot.cartridge.ramSize !== 0) {
         if (!this.cartridgeSlot.cartridge.hasMBC3) {
           this.memoryWriter[index] = this.memoryWriteMBCRAM;
         } else {

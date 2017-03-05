@@ -3,6 +3,27 @@ import settings from "../../settings.js";
 import util from "../util.js";
 
 export default class MBC extends EventEmitter {
+  romSizes = [
+    0x00008000, // 32K
+    0x00010000, // 64K
+    0x00020000, // 128K
+    0x00040000, // 256K
+    0x00080000, // 512K
+    0x00100000, // 1024K
+    0x00200000, // 2048K
+    0x00400000, // 4096K
+    0x00800000 // 8192K
+  ]
+
+  ramSizes = [
+    0x00000000, // 0K
+    0x00002000, // 2K  // Changed to 2000 to avoid problems
+    0x00002000, // 8K
+    0x00008000, // 32K
+    0x00020000, // 128K
+    0x00010000 // 64K
+  ]
+
   constructor(cartridge) {
     super();
     this.cartridge = cartridge;
@@ -10,50 +31,30 @@ export default class MBC extends EventEmitter {
     this.currentRAMBankPosition = -0xa000; // MBC Position Adder;
     this.currentMBCRAMBank = 0; // MBC Currently Indexed RAM Bank
     this.ROMBankEdge = Math.floor(cartridge.rom.length / 0x4000);
-    this.numRAMBanks = 0; // How many RAM banks were actually allocated?
+  }
+
+  setupROM() {
+    this.romSize = this.romSizes[this.cartridge.romSizeType];
+    console.log("ROM size 0x" + this.romSize.toString(16));
   }
 
   setupRAM() {
-    // TODO: set banks amount on specific mbc type
-    // Setup the auxilliary/switchable RAM:
-    if (this.cartridge.hasMBC2) {
-      this.numRAMBanks = 1 / 16;
-    } else if (
-      this.cartridge.hasMBC1 ||
-      this.cartridge.cRUMBLE ||
-      this.cartridge.hasMBC3 ||
-      this.cartridge.cHuC3
-    ) {
-      this.numRAMBanks = 4;
-    } else if (this.cartridge.hasMBC5) {
-      this.numRAMBanks = 16;
-    } else if (this.cartridge.hasSRAM) {
-      this.numRAMBanks = 1;
-    }
-
-    this.allocatedRamBytes = this.numRAMBanks * 0x2000;
-
-    console.log(
-      "Actual bytes of MBC RAM allocated: 0x" +
-        this.allocatedRamBytes.toString(16)
-    );
-
-    if (this.numRAMBanks > 0) {
-      this.RAM = util.getTypedArray(this.allocatedRamBytes, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
-    }
+    this.ramSize = this.ramSizes[this.cartridge.ramSizeType];
+    console.log("RAM size 0x" + this.ramSize.toString(16));
+    this.RAM = util.getTypedArray(this.ramSize, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
   }
 
   loadSRAM(data) {
-    if (data.length !== this.allocatedRamBytes) return;
+    if (data.length !== this.ramSize) return;
     this.RAM = data.slice(0);
   }
 
   getSRAM() {
-    return new Uint8Array(this.RAM.buffer.slice(0, this.allocatedRamBytes));
+    return new Uint8Array(this.RAM.buffer.slice(0, this.ramSize));
   }
 
   cutSRAMFromBatteryFileArray(data) {
-    return new Uint8Array(data.buffer.slice(0, this.allocatedRamBytes));
+    return new Uint8Array(data.buffer.slice(0, this.ramSize));
   }
 
   saveState() {

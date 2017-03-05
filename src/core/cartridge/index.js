@@ -25,24 +25,6 @@ export default class Cartridge {
     this.cHuC3 = false; // Does the cartridge use HuC3 (Hudson Soft / modified MBC3)?
     this.cHuC1 = false; // Does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
     this.hasRTC = false; // Does the cartridge have an RTC?
-
-    this.ROMBanks = [
-      // 1 Bank = 16 KBytes = 256 Kbits
-      2,
-      4,
-      8,
-      16,
-      32,
-      64,
-      128,
-      256,
-      512
-    ];
-    this.ROMBanks[0x52] = 72;
-    this.ROMBanks[0x53] = 80;
-    this.ROMBanks[0x54] = 96;
-
-    this.RAMBanks = [0, 1, 2, 4, 16]; // Used to map the RAM banks to maximum size the MBC used can do.
   }
 
   connect(gameboy) {
@@ -122,68 +104,41 @@ export default class Cartridge {
       console.log("Cartridge Type Name: " + this.typeName);
     }
 
-    this.romSize = this.rom.getByte(0x148);
-    this.ramSize = this.rom.getByte(0x149);
-
-    // ROM and RAM banks
-    this.numROMBanks = this.ROMBanks[this.romSize];
-
-    console.log(this.numROMBanks + " ROM banks.");
-
-    switch (this.RAMBanks[this.ramSize]) {
-      case 0:
-        console.log(
-          "No RAM banking requested for allocation or MBC is of type 2."
-        );
-        break;
-      case 2:
-        console.log("1 RAM bank requested for allocation.");
-        break;
-      case 3:
-        console.log("4 RAM banks requested for allocation.");
-        break;
-      case 4:
-        console.log("16 RAM banks requested for allocation.");
-        break;
-      default:
-        console.log(
-          "RAM bank amount requested is unknown, will use maximum allowed by specified MBC type."
-        );
-    }
+    this.romSizeType = this.rom.getByte(0x148);
+    this.ramSizeType = this.rom.getByte(0x149);
 
     // Check the GB/GBC mode byte:
     if (!this.gameboy.usedBootROM) {
       switch (this.colorCompatibilityByte) {
-        case 0x00: // GB only
-          this.useGBCMode = false;
-          break;
-        case 0x32: // Exception to the GBC identifying code:
-          if (
-            !settings.gbHasPriority &&
-            this.name + this.gameCode + this.colorCompatibilityByte ===
-              "Game and Watch 50"
-          ) {
-            this.useGBCMode = true;
-            console.log(
-              "Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge)."
-            );
-          } else {
-            this.useGBCMode = false;
-          }
-          break;
-        case 0x80: //Both GB + GBC modes
-          this.useGBCMode = !settings.gbHasPriority;
-          break;
-        case 0xc0: //Only GBC mode
+      case 0x00: // GB only
+        this.useGBCMode = false;
+        break;
+      case 0x32: // Exception to the GBC identifying code:
+        if (!settings.gbHasPriority &&
+          this.name + this.gameCode + this.colorCompatibilityByte ===
+          "Game and Watch 50"
+        ) {
           this.useGBCMode = true;
-          break;
-        default:
-          this.useGBCMode = false;
-          console.warn(
-            "Unknown GameBoy game type code #" +
-              this.colorCompatibilityByte +
-              ", defaulting to GB mode (Old games don't have a type code)."
+          console.log(
+            "Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge)."
           );
+        } else {
+          this.useGBCMode = false;
+        }
+        break;
+      case 0x80: //Both GB + GBC modes
+        this.useGBCMode = !settings.gbHasPriority;
+        break;
+      case 0xc0: //Only GBC mode
+        this.useGBCMode = true;
+        break;
+      default:
+        this.useGBCMode = false;
+        console.warn(
+          "Unknown GameBoy game type code #" +
+          this.colorCompatibilityByte +
+          ", defaulting to GB mode (Old games don't have a type code)."
+        );
       }
     } else {
       console.log("used boot rom");
@@ -204,144 +159,144 @@ export default class Cartridge {
 
   setTypeName() {
     switch (this.type) {
-      case 0x00:
-        //ROM w/o bank switching
-        if (!settings.enableMBC1Override) {
-          this.typeName = "ROM";
-        }
-      case 0x01:
-        this.hasMBC1 = true;
-        this.typeName = "MBC1";
-        break;
-      case 0x02:
-        this.hasMBC1 = true;
-        this.hasSRAM = true;
-        this.typeName = "MBC1 + SRAM";
-        break;
-      case 0x03:
-        this.hasMBC1 = true;
-        this.hasSRAM = true;
-        this.hasBattery = true;
-        this.typeName = "MBC1 + SRAM + Battery";
-        break;
-      case 0x05:
-        this.hasMBC2 = true;
-        this.typeName = "MBC2";
-        break;
-      case 0x06:
-        this.hasMBC2 = true;
-        this.hasBattery = true;
-        this.typeName = "MBC2 + Battery";
-        break;
-      case 0x08:
-        this.hasSRAM = true;
-        this.typeName = "ROM + SRAM";
-        break;
-      case 0x09:
-        this.hasSRAM = true;
-        this.hasBattery = true;
-        this.typeName = "ROM + SRAM + Battery";
-        break;
-      case 0x0b:
-        this.cMMMO1 = true;
-        this.typeName = "MMMO1";
-        break;
-      case 0x0c:
-        this.cMMMO1 = true;
-        this.hasSRAM = true;
-        this.typeName = "MMMO1 + SRAM";
-        break;
-      case 0x0d:
-        this.cMMMO1 = true;
-        this.hasSRAM = true;
-        this.hasBattery = true;
-        this.typeName = "MMMO1 + SRAM + Battery";
-        break;
-      case 0x0f:
-        this.hasMBC3 = true;
-        this.hasRTC = true;
-        this.hasBattery = true;
-        this.typeName = "MBC3 + RTC + Battery";
-        break;
-      case 0x10:
-        this.hasMBC3 = true;
-        this.hasRTC = true;
-        this.hasBattery = true;
-        this.hasSRAM = true;
-        this.typeName = "MBC3 + RTC + Battery + SRAM";
-        break;
-      case 0x11:
-        this.hasMBC3 = true;
-        this.typeName = "MBC3";
-        break;
-      case 0x12:
-        this.hasMBC3 = true;
-        this.hasSRAM = true;
-        this.typeName = "MBC3 + SRAM";
-        break;
-      case 0x13:
-        this.hasMBC3 = true;
-        this.hasSRAM = true;
-        this.hasBattery = true;
-        this.typeName = "MBC3 + SRAM + Battery";
-        break;
-      case 0x19:
-        this.hasMBC5 = true;
-        this.typeName = "MBC5";
-        break;
-      case 0x1a:
-        this.hasMBC5 = true;
-        this.hasSRAM = true;
-        this.typeName = "MBC5 + SRAM";
-        break;
-      case 0x1b:
-        this.hasMBC5 = true;
-        this.hasSRAM = true;
-        this.hasBattery = true;
-        this.typeName = "MBC5 + SRAM + Battery";
-        break;
-      case 0x1c:
-        this.cRUMBLE = true;
-        this.typeName = "RUMBLE";
-        break;
-      case 0x1d:
-        this.cRUMBLE = true;
-        this.hasSRAM = true;
-        this.typeName = "RUMBLE + SRAM";
-        break;
-      case 0x1e:
-        this.cRUMBLE = true;
-        this.hasSRAM = true;
-        this.hasBattery = true;
-        this.typeName = "RUMBLE + SRAM + Battery";
-        break;
-      case 0x1f:
-        this.cCamera = true;
-        this.typeName = "GameBoy Camera";
-        break;
-      case 0x22:
-        this.hasMBC7 = true;
-        this.hasSRAM = true;
-        this.hasBattery = true;
-        this.typeName = "MBC7 + SRAM + Battery";
-        break;
-      case 0xfd:
-        this.cTAMA5 = true;
-        this.typeName = "TAMA5";
-        break;
-      case 0xfe:
-        this.cHuC3 = true;
-        this.typeName = "HuC3";
-        break;
-      case 0xff:
-        this.cHuC1 = true;
-        this.typeName = "HuC1";
-        break;
-      default:
-        this.typeName = "Unknown";
-        console.log("Cartridge type is unknown.");
-        // TODO error
-        break;
+    case 0x00:
+      //ROM w/o bank switching
+      if (!settings.enableMBC1Override) {
+        this.typeName = "ROM";
+      }
+    case 0x01:
+      this.hasMBC1 = true;
+      this.typeName = "MBC1";
+      break;
+    case 0x02:
+      this.hasMBC1 = true;
+      this.hasSRAM = true;
+      this.typeName = "MBC1 + SRAM";
+      break;
+    case 0x03:
+      this.hasMBC1 = true;
+      this.hasSRAM = true;
+      this.hasBattery = true;
+      this.typeName = "MBC1 + SRAM + Battery";
+      break;
+    case 0x05:
+      this.hasMBC2 = true;
+      this.typeName = "MBC2";
+      break;
+    case 0x06:
+      this.hasMBC2 = true;
+      this.hasBattery = true;
+      this.typeName = "MBC2 + Battery";
+      break;
+    case 0x08:
+      this.hasSRAM = true;
+      this.typeName = "ROM + SRAM";
+      break;
+    case 0x09:
+      this.hasSRAM = true;
+      this.hasBattery = true;
+      this.typeName = "ROM + SRAM + Battery";
+      break;
+    case 0x0b:
+      this.cMMMO1 = true;
+      this.typeName = "MMMO1";
+      break;
+    case 0x0c:
+      this.cMMMO1 = true;
+      this.hasSRAM = true;
+      this.typeName = "MMMO1 + SRAM";
+      break;
+    case 0x0d:
+      this.cMMMO1 = true;
+      this.hasSRAM = true;
+      this.hasBattery = true;
+      this.typeName = "MMMO1 + SRAM + Battery";
+      break;
+    case 0x0f:
+      this.hasMBC3 = true;
+      this.hasRTC = true;
+      this.hasBattery = true;
+      this.typeName = "MBC3 + RTC + Battery";
+      break;
+    case 0x10:
+      this.hasMBC3 = true;
+      this.hasRTC = true;
+      this.hasBattery = true;
+      this.hasSRAM = true;
+      this.typeName = "MBC3 + RTC + Battery + SRAM";
+      break;
+    case 0x11:
+      this.hasMBC3 = true;
+      this.typeName = "MBC3";
+      break;
+    case 0x12:
+      this.hasMBC3 = true;
+      this.hasSRAM = true;
+      this.typeName = "MBC3 + SRAM";
+      break;
+    case 0x13:
+      this.hasMBC3 = true;
+      this.hasSRAM = true;
+      this.hasBattery = true;
+      this.typeName = "MBC3 + SRAM + Battery";
+      break;
+    case 0x19:
+      this.hasMBC5 = true;
+      this.typeName = "MBC5";
+      break;
+    case 0x1a:
+      this.hasMBC5 = true;
+      this.hasSRAM = true;
+      this.typeName = "MBC5 + SRAM";
+      break;
+    case 0x1b:
+      this.hasMBC5 = true;
+      this.hasSRAM = true;
+      this.hasBattery = true;
+      this.typeName = "MBC5 + SRAM + Battery";
+      break;
+    case 0x1c:
+      this.cRUMBLE = true;
+      this.typeName = "RUMBLE";
+      break;
+    case 0x1d:
+      this.cRUMBLE = true;
+      this.hasSRAM = true;
+      this.typeName = "RUMBLE + SRAM";
+      break;
+    case 0x1e:
+      this.cRUMBLE = true;
+      this.hasSRAM = true;
+      this.hasBattery = true;
+      this.typeName = "RUMBLE + SRAM + Battery";
+      break;
+    case 0x1f:
+      this.cCamera = true;
+      this.typeName = "GameBoy Camera";
+      break;
+    case 0x22:
+      this.hasMBC7 = true;
+      this.hasSRAM = true;
+      this.hasBattery = true;
+      this.typeName = "MBC7 + SRAM + Battery";
+      break;
+    case 0xfd:
+      this.cTAMA5 = true;
+      this.typeName = "TAMA5";
+      break;
+    case 0xfe:
+      this.cHuC3 = true;
+      this.typeName = "HuC3";
+      break;
+    case 0xff:
+      this.cHuC1 = true;
+      this.typeName = "HuC1";
+      break;
+    default:
+      this.typeName = "Unknown";
+      console.log("Cartridge type is unknown.");
+      // TODO error
+      break;
     }
 
     if (this.hasMBC1) {
