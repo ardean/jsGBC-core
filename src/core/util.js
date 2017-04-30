@@ -3,12 +3,8 @@ import $ from "jquery";
 
 export function toTypedArray(baseArray, memtype) {
   try {
-    if (settings.disallowTypedArrays) {
-      return baseArray;
-    }
-    if (!baseArray || !baseArray.length) {
-      return [];
-    }
+    if (!baseArray || !baseArray.length < 1) return [];
+
     var length = baseArray.length;
 
     let typedArrayTemp;
@@ -56,9 +52,6 @@ export function fromTypedArray(baseArray) {
 export function getTypedArray(length, defaultValue, numberType) {
   let arrayHandle;
   try {
-    if (settings.disallowTypedArrays) {
-      throw (new Error("Settings forced typed arrays to be disabled."));
-    }
     switch (numberType) {
     case "int8":
       arrayHandle = new Int8Array(length);
@@ -109,6 +102,11 @@ export function downloadFile(filename, arrayBuffer) {
   a.click();
   $a.remove();
   URL.revokeObjectURL(url);
+}
+
+export async function fetchFileAsArrayBuffer(url) {
+  const res = await fetch(url);
+  return await res.arrayBuffer(); // Chrome, Opera, Firefox and Edge support only!
 }
 
 export function uploadFile(extensions) {

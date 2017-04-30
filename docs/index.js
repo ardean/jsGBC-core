@@ -12195,16 +12195,12 @@ $__System.registerDynamic('13', ['12'], true, function ($__require, exports, mod
 $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
   "use strict";
 
-  var $, EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, Actions, GameBoy$1, _this, keyMap, $lcd, gameboy;
+  var $, EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, Actions, GameBoy$1, _this, keyMap, $lcd, gameboy;
 
   function toTypedArray(baseArray, memtype) {
     try {
-      if (settings.disallowTypedArrays) {
-        return baseArray;
-      }
-      if (!baseArray || !baseArray.length) {
-        return [];
-      }
+      if (!baseArray || !baseArray.length < 1) return [];
+
       var length = baseArray.length;
 
       var typedArrayTemp = void 0;
@@ -12252,9 +12248,6 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
   function getTypedArray(length, defaultValue, numberType) {
     var arrayHandle = void 0;
     try {
-      if (settings.disallowTypedArrays) {
-        throw new Error("Settings forced typed arrays to be disabled.");
-      }
       switch (numberType) {
         case "int8":
           arrayHandle = new Int8Array(length);
@@ -12368,6 +12361,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
     //GB BOOT ROM
     //Add 256 byte boot rom here if you are going to use it.
     this.GBBOOTROM = [];
+
     //GBC BOOT ROM
     //Add 2048 byte boot rom here if you are going to use it.
     this.GBCBOOTROM = [];
@@ -13227,7 +13221,6 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         gbHasPriority: false, // Give priority to GameBoy mode
         soundVolume: 0.7, // Volume level set.
         colorizeGBMode: true, // Colorize GB mode?
-        disallowTypedArrays: false, // Disallow typed arrays?
         runInterval: 8, // Interval for the emulator loop.
         minAudioBufferSpanAmountOverXInterpreterIterations: 10, // Audio buffer minimum span amount over x interpreter iterations.
         maxAudioBufferSpanAmountOverXInterpreterIterations: 20, // Audio buffer maximum span amount over x interpreter iterations.
@@ -13237,6 +13230,38 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         // User controlled channel enables.
         enabledChannels: [true, true, true, true]
       };
+
+      fetchFileAsArrayBuffer = function () {
+        var _ref = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(url) {
+          var res;
+          return _regeneratorRuntime.wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  _context.next = 2;
+                  return fetch(url);
+
+                case 2:
+                  res = _context.sent;
+                  _context.next = 5;
+                  return res.arrayBuffer();
+
+                case 5:
+                  return _context.abrupt("return", _context.sent);
+
+                case 6:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee, this);
+        }));
+
+        return function fetchFileAsArrayBuffer(_x) {
+          return _ref.apply(this, arguments);
+        };
+      }();
+
       util = {
         getTypedArray: getTypedArray,
         fromTypedArray: fromTypedArray,
@@ -14161,34 +14186,39 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
 
             var romIndex = 0;
             if (this.gameboy.usedBootROM) {
-              // if (!settings.forceGBBootRom) {
-              //   //Patch in the GBC boot ROM into the memory map:
-              //   for (; romIndex < 0x100; ++romIndex) {
-              //     this.memory[romIndex] = this.GBCBOOTROM[romIndex]; //Load in the GameBoy Color BOOT ROM.
-              //     this.ROM[romIndex] = this.rom.getByte(romIndex); //Decode the ROM binary for the switch out.
-              //   }
-              //
-              //   for (; romIndex < 0x200; ++romIndex) {
-              //     this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); //Load in the game ROM.
-              //   }
-              //
-              //   for (; romIndex < 0x900; ++romIndex) {
-              //     this.memory[romIndex] = this.GBCBOOTROM[romIndex - 0x100]; //Load in the GameBoy Color BOOT ROM.
-              //     this.ROM[romIndex] = this.rom.getByte(romIndex); //Decode the ROM binary for the switch out.
-              //   }
-              //
-              //   this.usedGBCBootROM = true;
-              // } else {
-              //   //Patch in the GB boot ROM into the memory map:
-              //   for (; romIndex < 0x100; ++romIndex) {
-              //     this.memory[romIndex] = this.GBBOOTROM[romIndex]; //Load in the GameBoy BOOT ROM.
-              //     this.ROM[romIndex] = this.rom.getByte(romIndex); //Decode the ROM binary for the switch out.
-              //   }
-              // }
-              //
-              // for (; romIndex < 0x4000; ++romIndex) {
-              //   this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); //Load in the game ROM.
-              // }
+              if (!settings.forceGBBootRom) {
+                // Patch in the GBC boot ROM into the memory map:
+                while (romIndex < 0x100) {
+                  this.memory[romIndex] = this.GBCBOOTROM[romIndex]; // Load in the GameBoy Color BOOT ROM.
+                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+                  ++romIndex;
+                }
+
+                while (romIndex < 0x200) {
+                  this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
+                  ++romIndex;
+                }
+
+                while (romIndex < 0x900) {
+                  this.memory[romIndex] = this.GBCBOOTROM[romIndex - 0x100]; // Load in the GameBoy Color BOOT ROM.
+                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+                  ++romIndex;
+                }
+
+                this.usedGBCBootROM = true;
+              } else {
+                // Patch in the GB boot ROM into the memory map:
+                while (romIndex < 0x100) {
+                  this.memory[romIndex] = this.GBBOOTROM[romIndex]; // Load in the GameBoy BOOT ROM.
+                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+                  ++romIndex;
+                }
+              }
+
+              while (romIndex < 0x4000) {
+                this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
+                ++romIndex;
+              }
             } else {
               // Don't load in the boot ROM:
               while (romIndex < 0x4000) {
@@ -14412,25 +14442,11 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
                 break;
             }
 
-            if (this.hasMBC1) {
-              this.mbc1 = new MBC1(this);
-            }
-
-            if (this.hasMBC2) {
-              this.mbc2 = new MBC2(this);
-            }
-
-            if (this.hasMBC3) {
-              this.mbc3 = new MBC3(this);
-            }
-
-            if (this.hasMBC5) {
-              this.mbc5 = new MBC5(this);
-            }
-
-            if (this.hasMBC7) {
-              this.mbc7 = new MBC7(this);
-            }
+            if (this.hasMBC1) this.mbc1 = new MBC1(this);
+            if (this.hasMBC2) this.mbc2 = new MBC2(this);
+            if (this.hasMBC3) this.mbc3 = new MBC3(this);
+            if (this.hasMBC5) this.mbc5 = new MBC5(this);
+            if (this.hasMBC7) this.mbc7 = new MBC7(this);
 
             this.mbc = this.mbc1 || this.mbc2 || this.mbc3 || this.mbc5 || this.mbc7 || null;
           }
@@ -19101,7 +19117,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
           this.initBootstrap();
         }
 
-        //Check for IRQ matching upon initialization:
+        // Check for IRQ matching upon initialization:
         this.checkIRQMatching();
       };
       GameBoyCore.prototype.init = function () {

@@ -27,6 +27,7 @@ function GameBoyCore(api, canvas, options) {
   //GB BOOT ROM
   //Add 256 byte boot rom here if you are going to use it.
   this.GBBOOTROM = [];
+
   //GBC BOOT ROM
   //Add 2048 byte boot rom here if you are going to use it.
   this.GBCBOOTROM = [];
@@ -155,7 +156,7 @@ GameBoyCore.prototype.start = function (cartridge) {
     this.initBootstrap();
   }
 
-  //Check for IRQ matching upon initialization:
+  // Check for IRQ matching upon initialization:
   this.checkIRQMatching();
 };
 GameBoyCore.prototype.init = function () {
@@ -4047,16 +4048,16 @@ GameBoyCore.prototype.RUMBLEWriteRAMBank = function (address, data) {
   //MBC5 RAM bank switching
   //Like MBC5, but bit 3 of the lower nibble is used for rumbling and bit 2 is ignored.
   this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank = data & 0x03;
-  this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank <<
-      13) -
-    0xa000;
+  this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (
+    this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank << 13
+  ) - 0xa000;
 };
 GameBoyCore.prototype.HuC3WriteRAMBank = function (address, data) {
   //HuC3 RAM bank switching
   this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank = data & 0x03;
-  this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank <<
-      13) -
-    0xa000;
+  this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (
+    this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank << 13
+  ) - 0xa000;
 };
 GameBoyCore.prototype.cartIgnoreWrite = function (address, data) {
   //We might have encountered illegal RAM writing or such, so just do nothing...
@@ -5247,10 +5248,7 @@ GameBoyCore.prototype.recompileModelSpecificIOWriteHandling = function () {
         this.memory[0xff40] = data;
       }
     };
-    this.memoryHighWriter[0x41] = this.memoryWriter[0xff41] = (
-      address,
-      data
-    ) => {
+    this.memoryHighWriter[0x41] = this.memoryWriter[0xff41] = (address, data) => {
       this.LYCMatchTriggerSTAT = (data & 0x40) === 0x40;
       this.mode2TriggerSTAT = (data & 0x20) === 0x20;
       this.mode1TriggerSTAT = (data & 0x10) === 0x10;

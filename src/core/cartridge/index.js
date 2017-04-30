@@ -44,34 +44,39 @@ export default class Cartridge {
 
     let romIndex = 0;
     if (this.gameboy.usedBootROM) {
-      // if (!settings.forceGBBootRom) {
-      //   //Patch in the GBC boot ROM into the memory map:
-      //   for (; romIndex < 0x100; ++romIndex) {
-      //     this.memory[romIndex] = this.GBCBOOTROM[romIndex]; //Load in the GameBoy Color BOOT ROM.
-      //     this.ROM[romIndex] = this.rom.getByte(romIndex); //Decode the ROM binary for the switch out.
-      //   }
-      //
-      //   for (; romIndex < 0x200; ++romIndex) {
-      //     this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); //Load in the game ROM.
-      //   }
-      //
-      //   for (; romIndex < 0x900; ++romIndex) {
-      //     this.memory[romIndex] = this.GBCBOOTROM[romIndex - 0x100]; //Load in the GameBoy Color BOOT ROM.
-      //     this.ROM[romIndex] = this.rom.getByte(romIndex); //Decode the ROM binary for the switch out.
-      //   }
-      //
-      //   this.usedGBCBootROM = true;
-      // } else {
-      //   //Patch in the GB boot ROM into the memory map:
-      //   for (; romIndex < 0x100; ++romIndex) {
-      //     this.memory[romIndex] = this.GBBOOTROM[romIndex]; //Load in the GameBoy BOOT ROM.
-      //     this.ROM[romIndex] = this.rom.getByte(romIndex); //Decode the ROM binary for the switch out.
-      //   }
-      // }
-      //
-      // for (; romIndex < 0x4000; ++romIndex) {
-      //   this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); //Load in the game ROM.
-      // }
+      if (!settings.forceGBBootRom) {
+        // Patch in the GBC boot ROM into the memory map:
+        while (romIndex < 0x100) {
+          this.memory[romIndex] = this.GBCBOOTROM[romIndex]; // Load in the GameBoy Color BOOT ROM.
+          this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+          ++romIndex;
+        }
+
+        while (romIndex < 0x200) {
+          this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
+          ++romIndex;
+        }
+
+        while (romIndex < 0x900) {
+          this.memory[romIndex] = this.GBCBOOTROM[romIndex - 0x100]; // Load in the GameBoy Color BOOT ROM.
+          this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+          ++romIndex;
+        }
+
+        this.usedGBCBootROM = true;
+      } else {
+        // Patch in the GB boot ROM into the memory map:
+        while (romIndex < 0x100) {
+          this.memory[romIndex] = this.GBBOOTROM[romIndex]; // Load in the GameBoy BOOT ROM.
+          this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+          ++romIndex;
+        }
+      }
+
+      while (romIndex < 0x4000) {
+        this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
+        ++romIndex;
+      }
     } else {
       // Don't load in the boot ROM:
       while (romIndex < 0x4000) {
@@ -114,10 +119,7 @@ export default class Cartridge {
         this.useGBCMode = false;
         break;
       case 0x32: // Exception to the GBC identifying code:
-        if (!settings.gbHasPriority &&
-          this.name + this.gameCode + this.colorCompatibilityByte ===
-          "Game and Watch 50"
-        ) {
+        if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === "Game and Watch 50") {
           this.useGBCMode = true;
           console.log(
             "Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge)."
@@ -299,25 +301,11 @@ export default class Cartridge {
       break;
     }
 
-    if (this.hasMBC1) {
-      this.mbc1 = new MBC1(this);
-    }
-
-    if (this.hasMBC2) {
-      this.mbc2 = new MBC2(this);
-    }
-
-    if (this.hasMBC3) {
-      this.mbc3 = new MBC3(this);
-    }
-
-    if (this.hasMBC5) {
-      this.mbc5 = new MBC5(this);
-    }
-
-    if (this.hasMBC7) {
-      this.mbc7 = new MBC7(this);
-    }
+    if (this.hasMBC1) this.mbc1 = new MBC1(this);
+    if (this.hasMBC2) this.mbc2 = new MBC2(this);
+    if (this.hasMBC3) this.mbc3 = new MBC3(this);
+    if (this.hasMBC5) this.mbc5 = new MBC5(this);
+    if (this.hasMBC7) this.mbc7 = new MBC7(this);
 
     this.mbc = this.mbc1 ||
       this.mbc2 ||

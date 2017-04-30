@@ -13,7 +13,7 @@ export default class MBC extends EventEmitter {
     0x00200000, // 2048K
     0x00400000, // 4096K
     0x00800000 // 8192K
-  ]
+  ];
 
   ramSizes = [
     0x00000000, // 0K
@@ -22,7 +22,7 @@ export default class MBC extends EventEmitter {
     0x00008000, // 32K
     0x00020000, // 128K
     0x00010000 // 64K
-  ]
+  ];
 
   constructor(cartridge) {
     super();
