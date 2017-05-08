@@ -1,5 +1,4 @@
 import settings from "../settings";
-import $ from "jquery";
 
 export function toTypedArray(baseArray, memtype) {
   try {
@@ -91,50 +90,10 @@ export function stringToArrayBuffer(data) {
   return array;
 }
 
-export function downloadFile(filename, arrayBuffer) {
-  const blob = new Blob([new Uint8Array(arrayBuffer)], { type: "application/octet-binary" });
-  const $a = $("<a />");
-  const a = $a.get(0);
-  const url = URL.createObjectURL(blob);
-  a.href = url;
-  a.download = filename;
-  $a.appendTo("body");
-  a.click();
-  $a.remove();
-  URL.revokeObjectURL(url);
-}
-
 export async function fetchFileAsArrayBuffer(url) {
   const res = await fetch(url);
   return await res.arrayBuffer(); // Chrome, Opera, Firefox and Edge support only!
 }
-
-export function uploadFile(extensions) {
-  return new Promise((resolve) => {
-    const $input = $("<input type='file' accept='" + extensions.map(extension => "." + extension).join(", ") + "' />");
-    $input.one("change", function () {
-      if (this.files.length > 0) {
-        const file = this.files[0];
-        const binaryHandle = new FileReader();
-        binaryHandle.addEventListener("load", function () {
-          if (this.readyState === 2) {
-            resolve(this.result);
-          }
-        });
-        binaryHandle.readAsBinaryString(file);
-      }
-    });
-    $input.click();
-  });
-}
-
-export default {
-  getTypedArray,
-  fromTypedArray,
-  toTypedArray,
-  uploadFile,
-  downloadFile
-};
 
 export function concatArrayBuffers(...buffers) {
   let totalLength = 0;
@@ -154,4 +113,41 @@ export function concatArrayBuffers(...buffers) {
   }
 
   return array.buffer;
+}
+
+export function downloadFile(filename, arrayBuffer) {
+  const a = document.createElement("a");
+  const blob = new Blob([new Uint8Array(arrayBuffer)], { type: "application/octet-binary" });
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.parentNode.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function uploadFile(extensions) {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = extensions.map(extension => "." + extension).join(", ");
+
+    function inputChange() {
+      if (this.files.length > 0) {
+        const file = this.files[0];
+        const binaryHandle = new FileReader();
+        binaryHandle.addEventListener("load", function () {
+          if (this.readyState === 2) {
+            resolve(this.result);
+          }
+        });
+        binaryHandle.readAsBinaryString(file);
+      }
+      input.removeEventListener("change", inputChange);
+    }
+
+    input.addEventListener("change", inputChange);
+    input.click();
+  });
 }

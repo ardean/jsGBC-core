@@ -1,4 +1,3 @@
-import util from "../util.js";
 import settings from "../../settings.js";
 import ROM from "./rom.js";
 import MBC1 from "./mbc1.js";

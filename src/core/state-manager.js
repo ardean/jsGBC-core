@@ -1,4 +1,4 @@
-import { fromTypedArray, toTypedArray, concatArrayBuffers } from "./util.js";
+import { toTypedArray, concatArrayBuffers } from "./util.js";
 import initialState from "./initial-state.js";
 
 export default class StateManager {

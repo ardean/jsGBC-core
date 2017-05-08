@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 import settings from "../../settings.js";
-import util from "../util.js";
+import * as util from "../util";
 
 export default class MBC extends EventEmitter {
   romSizes = [

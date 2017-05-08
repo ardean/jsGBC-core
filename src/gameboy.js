@@ -1,4 +1,3 @@
-import { Buffer } from "buffer";
 import settings from "./settings.js";
 import { stringToArrayBuffer, concatArrayBuffers } from "./core/util.js";
 import GameBoyCore from "./core/index.js";
@@ -11,11 +10,22 @@ import debounce from "debounce";
 export default class GameBoy extends EventEmitter {
   buttons = ["right", "left", "up", "down", "a", "b", "select", "start"];
 
-  constructor(canvas) {
+  constructor({
+    isPaused,
+    lcd,
+    isSoundEnabled
+  } = {}) {
     super();
 
+    if (typeof isSoundEnabled === "boolean") settings.soundOn = isSoundEnabled;
+    if (isPaused) this.isPaused = isPaused;
+
+    this.core = new GameBoyCore({
+      api: this,
+      lcd
+    });
+
     this.debouncedAutoSave = debounce(this.autoSave.bind(this), 100);
-    this.core = new GameBoyCore(this, canvas);
     this.core.events.on("sramWrite", () => {
       if (!this.core.cartridgeSlot.cartridge) return;
       this.debouncedAutoSave();
@@ -24,7 +34,13 @@ export default class GameBoy extends EventEmitter {
     this.isOn = false;
     this.actions = new Actions();
     this.registerActions();
-    this.storage = new LocalStorage();
+    if (typeof document !== "undefined") {
+      this.storage = new LocalStorage();
+    }
+  }
+
+  isPaused() {
+    return typeof document !== "undefined" && document.hidden;
   }
 
   setStorage(storage) {
@@ -67,18 +83,10 @@ export default class GameBoy extends EventEmitter {
 
     this.core.start(this.cartridge);
     this.core.stopEmulator &= 1;
-    this.interval = setInterval(
-      () => {
-        if (!document.hidden &&
-          !document.msHidden &&
-          !document.mozHidden &&
-          !document.webkitHidden
-        ) {
-          this.core.run();
-        }
-      },
-      settings.runInterval
-    );
+    this.interval = setInterval(() => { // TODO: request animation frame & performance.now()
+      if (this.isPaused()) return;
+      this.core.run();
+    }, settings.runInterval);
   }
 
   turnOff() {
@@ -137,6 +145,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   async saveState(state) {
+    if (!this.storage) return;
     if (!this.core.cartridgeSlot.cartridge) return;
     const name = this.core.cartridgeSlot.cartridge.name;
 
@@ -150,6 +159,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   async saveSRAM(sram) {
+    if (!this.storage) return;
     if (!this.core.cartridgeSlot.cartridge) return;
     const name = this.core.cartridgeSlot.cartridge.name;
 
@@ -163,6 +173,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   async saveRTC(rtc) {
+    if (!this.storage) return;
     if (!this.core.cartridgeSlot.cartridge) return;
     if (!this.core.cartridgeSlot.cartridge.hasRTC) return;
     const name = this.core.cartridgeSlot.cartridge.name;
@@ -177,6 +188,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   loadState(state) {
+    if (!this.storage) return;
     if (!this.core.cartridgeSlot.cartridge) return;
     const name = this.core.cartridgeSlot.cartridge.name;
 
@@ -190,6 +202,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   loadSRAM(sram) {
+    if (!this.storage) return;
     if (!this.core.cartridgeSlot.cartridge) return;
     const name = this.core.cartridgeSlot.cartridge.name;
 
@@ -204,6 +217,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   loadRTC(rtc) {
+    if (!this.storage) return;
     if (!this.core.cartridgeSlot.cartridge) return;
     if (!this.core.cartridgeSlot.cartridge.hasRTC) return;
     const name = this.core.cartridgeSlot.cartridge.name;
@@ -237,9 +251,9 @@ export default class GameBoy extends EventEmitter {
       data
     );
     let rtc = null;
-    if (this.core.cartridgeSlot.cartridge.hasRTC) rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(
-      data
-    );
+    if (this.core.cartridgeSlot.cartridge.hasRTC) {
+      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
+    }
 
     this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
     if (rtc) this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);

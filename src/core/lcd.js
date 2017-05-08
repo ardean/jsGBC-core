@@ -1,50 +1,69 @@
-import util from "./util";
+import * as util from "./util";
 
 export default class LCD {
-  constructor(canvas, options, gameboy) {
-    options = options || {};
-
+  constructor({
+    canvas,
+    context,
+    offscreenCanvas,
+    offscreenContext,
+    gameboy,
+    width,
+    height
+  }) {
     this.canvas = canvas;
+    this.context = context;
+    this.offscreenCanvas = offscreenCanvas;
+    this.offscreenContext = offscreenContext;
     this.gameboy = gameboy;
-
-    this.width = options.width || 160;
-    this.height = options.height || 144;
-
-    this.drawContext = null; // LCD Context
-    this.swizzledFrame = null; //The secondary gfx buffer that holds the converted RGBA values.
-    this.canvasBuffer = null; //imageData handle
-    this.onscreenWidth = this.width;
-    this.onscreenHeight = this.height;
     this.offscreenWidth = 160;
     this.offscreenHeight = 144;
     this.offscreenRGBCount = this.offscreenWidth * this.offscreenHeight * 3;
     this.offscreenRGBACount = this.offscreenWidth * this.offscreenHeight * 4;
+    this.width = width || this.offscreenWidth;
+    this.height = height || this.offscreenHeight;
+    this.swizzledFrame = null; // The secondary gfx buffer that holds the converted RGBA values.
+    this.canvasBuffer = null; // imageData handle
 
     this.resizePathClear = true;
 
-    this.canvas.height = this.height;
-    this.canvas.width = this.width;
-    this.onscreenContext = this.canvas.getContext("2d");
+    if (typeof document !== "undefined") {
+      if (!this.canvas) this.canvas = document.createElement("canvas");
+      if (!this.offscreenCanvas) this.offscreenCanvas = document.createElement("canvas");
+    }
 
-    this.offscreenCanvas = document.createElement("canvas");
-    this.offscreenContext = this.offscreenCanvas.getContext("2d");
+    if (this.canvas) {
+      this.canvas.height = this.height;
+      this.canvas.width = this.width;
+
+      if (!this.context) this.context = this.canvas.getContext("2d");
+    }
+
+    if (this.offscreenCanvas) {
+      this.offscreenCanvas.height = this.offscreenHeight;
+      this.offscreenCanvas.width = this.offscreenWidth;
+
+      if (!this.offscreenContext) this.offscreenContext = this.offscreenCanvas.getContext("2d");
+    }
+
+    if (!this.context) {
+      throw new Error("please provide a canvas context in the lcd options");
+    }
+
+    if (!this.offscreenContext) {
+      throw new Error("please provide a canvas offscreen context in the lcd options");
+    }
   }
 
   init() {
-    this.recomputeDimension();
-
-    this.offscreenCanvas.width = this.offscreenWidth;
-    this.offscreenCanvas.height = this.offscreenHeight;
-
     this.offscreenContext.msImageSmoothingEnabled = false;
     this.offscreenContext.mozImageSmoothingEnabled = false;
     this.offscreenContext.webkitImageSmoothingEnabled = false;
     this.offscreenContext.imageSmoothingEnabled = false;
 
-    this.onscreenContext.msImageSmoothingEnabled = false;
-    this.onscreenContext.mozImageSmoothingEnabled = false;
-    this.onscreenContext.webkitImageSmoothingEnabled = false;
-    this.onscreenContext.imageSmoothingEnabled = false;
+    this.context.msImageSmoothingEnabled = false;
+    this.context.mozImageSmoothingEnabled = false;
+    this.context.webkitImageSmoothingEnabled = false;
+    this.context.imageSmoothingEnabled = false;
 
     this.canvasBuffer = this.offscreenContext.createImageData(
       this.offscreenWidth,
@@ -73,29 +92,20 @@ export default class LCD {
     this.requestDraw();
   }
 
-  recomputeDimension() {
-    // Cache some dimension info:
-    this.onscreenWidth = this.width;
-    this.onscreenHeight = this.height;
-    this.offscreenWidth = 160;
-    this.offscreenHeight = 144;
-    this.offscreenRGBACount = this.offscreenWidth * this.offscreenHeight * 4;
-  }
-
   graphicsBlit() {
     if (
-      this.offscreenWidth === this.onscreenWidth &&
-        this.offscreenHeight === this.onscreenHeight
+      this.offscreenWidth === this.width &&
+      this.offscreenHeight === this.height
     ) {
-      this.onscreenContext.putImageData(this.canvasBuffer, 0, 0);
+      this.context.putImageData(this.canvasBuffer, 0, 0);
     } else {
       this.offscreenContext.putImageData(this.canvasBuffer, 0, 0);
-      this.onscreenContext.drawImage(
+      this.context.drawImage(
         this.offscreenCanvas,
         0,
         0,
-        this.onscreenWidth,
-        this.onscreenHeight
+        this.width,
+        this.height
       );
     }
   }
@@ -163,7 +173,7 @@ export default class LCD {
 
   DisplayShowOff() {
     if (this.drewBlank === 0) {
-      //Output a blank screen to the output framebuffer:
+      // Output a blank screen to the output framebuffer:
       this.clearFrameBuffer();
       this.drewFrame = true;
     }

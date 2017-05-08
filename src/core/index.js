@@ -1,8 +1,7 @@
 import LCD from "./lcd.js";
-import util from "./util.js";
+import * as util from "./util";
 import settings from "../settings.js";
 import TickTable from "./tick-table.js";
-import Cartridge from "./cartridge/index.js";
 import CartridgeSlot from "./cartridge-slot.js";
 import AudioServer from "../audio-server.js";
 import mainInstructions from "./main-instructions.js";
@@ -12,15 +11,15 @@ import dutyLookup from "./duty-lookup.js";
 import Joypad from "./joypad.js";
 import EventEmitter from "events";
 
-function GameBoyCore(api, canvas, options) {
-  options = options || {};
-
+function GameBoyCore({ api, lcd: lcdOptions = {} }) {
   this.api = api;
   this.events = new EventEmitter(); // TODO: use as super
 
+  lcdOptions.gameboy = this;
+
   this.joypad = new Joypad(this);
   this.cartridgeSlot = new CartridgeSlot(this);
-  this.lcd = new LCD(canvas, options, this);
+  this.lcd = new LCD(lcdOptions);
   this.stateManager = new StateManager(this);
   this.stateManager.init();
 
@@ -428,18 +427,23 @@ GameBoyCore.prototype.initSound = function () {
     if (this.audioServer) this.audioServer.changeVolume(0);
   } else {
     if (!this.audioServer) {
-      this.audioServer = new AudioServer(
-        2,
-        this.clocksPerSecond / this.audioResamplerFirstPassFactor,
-        0,
-        Math.max(
-          this.baseCPUCyclesPerIteration *
-          settings.maxAudioBufferSpanAmountOverXInterpreterIterations /
-          this.audioResamplerFirstPassFactor,
-          8192
-        ) << 1,
-        settings.soundVolume
-      );
+      const sampleRate = this.clocksPerSecond / this.audioResamplerFirstPassFactor;
+      const maxBufferSize = Math.max(this.baseCPUCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 8192) << 1;
+
+      console.log({
+        channels: 2,
+        sampleRate,
+        minBufferSize: 0,
+        maxBufferSize,
+        volume: settings.soundVolume
+      });
+      this.audioServer = new AudioServer({
+        channels: 2,
+        sampleRate,
+        minBufferSize: 0,
+        maxBufferSize,
+        volume: settings.soundVolume
+      });
       this.initAudioBuffer();
     }
   }
@@ -524,15 +528,12 @@ GameBoyCore.prototype.intializeWhiteNoise = function () {
   this.noiseSampleTable = this.LSFR15Table;
 };
 GameBoyCore.prototype.audioUnderrunAdjustment = function () {
-  if (settings.soundOn) {
-    var underrunAmount = this.audioServer.remainingBuffer();
-    if (typeof underrunAmount === "number") {
-      underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
-      if (underrunAmount > 0) {
-        this.recalculateIterationClockLimitForAudio(
-          (underrunAmount >> 1) * this.audioResamplerFirstPassFactor
-        );
-      }
+  if (!this.audioServer) return;
+  let underrunAmount = this.audioServer.remainingBuffer();
+  if (typeof underrunAmount === "number") {
+    underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
+    if (underrunAmount > 0) {
+      this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.audioResamplerFirstPassFactor);
     }
   }
 };

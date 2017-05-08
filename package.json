@@ -1,6 +1,6 @@
 {
   "name": "jsgbc",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "description": "jsGBC Core Emulator",
   "main": "./dist/jsgbc-core.min.js",
   "repository": "https://github.com/ardean/jsGBC-core",
@@ -20,6 +20,7 @@
     "jsgbc"
   ],
   "scripts": {
+    "node-demo": "node node.js",
     "start": "node dev-server/index.js",
     "build": "npm run cleanup && npm run build-src && npm run build-src-min && npm run build-docs",
     "build-src": "jspm build src/index.js dist/jsgbc-core.js --global-name jsGBC --format umd --externals events --global-deps \"{'events':'EventEmitter'}\"",
@@ -29,10 +30,13 @@
     "cleanup": "del-cli dist"
   },
   "devDependencies": {
+    "babel-eslint": "^7.2.3",
+    "canvas": "^1.6.5",
     "cpy-cli": "^1.0.1",
     "del-cli": "^0.2.1",
+    "eslint": "^3.19.0",
     "express": "^4.14.1",
-    "jspm": "^0.17.0-beta.38"
+    "jspm": "^0.17.0-beta.41"
   },
   "jspm": {
     "main": "src/index.js",

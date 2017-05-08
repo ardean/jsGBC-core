@@ -1,4 +1,4 @@
-!function(e){function t(e){Object.defineProperty(this,e,{enumerable:!0,get:function(){return this[v][e]}})}function r(e){var t;if(e&&e.__esModule){t={};for(var r in e)Object.hasOwnProperty.call(e,r)&&(t[r]=e[r]);t.default=e}else{if("[object Module]"===Object.prototype.toString.call(e)||"undefined"!=typeof System&&System.isModule&&System.isModule(e))return e;t={default:e,__useDefault:!0}}return new o(t)}function o(e){Object.defineProperty(this,v,{value:e}),Object.keys(e).forEach(t,this)}function n(e){return"@node/"===e.substr(0,6)?c(e,r(m(e.substr(6))),{}):p[e]}function u(e){var t=n(e);if(!t)throw new Error('Module "'+e+'" expected, but not contained in build.');if(t.module)return t.module;var r=t.linkRecord;return d(t,r),a(t,r,[]),t.module}function d(e,t){if(!t.depLoads){t.declare&&i(e,t),t.depLoads=[];for(var r=0;r<t.deps.length;r++){var o=n(t.deps[r]);t.depLoads.push(o),o.linkRecord&&d(o,o.linkRecord);var u=t.setters&&t.setters[r];u&&(u(o.module||o.linkRecord.moduleObj),o.importerSetters.push(u))}return e}}function i(t,r){var o=r.moduleObj,n=t.importerSetters,u=!1,d=r.declare.call(e,function(e,t){if(!u){if("object"==typeof e)for(var r in e)"__useDefault"!==r&&(o[r]=e[r]);else o[e]=t;u=!0;for(var d=0;d<n.length;d++)n[d](o);return u=!1,t}},{id:t.key});"function"!=typeof d?(r.setters=d.setters,r.execute=d.execute):(r.setters=[],r.execute=d)}function l(e,t,r){return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:r,setters:void 0,execute:void 0,moduleObj:{}}}}function f(e,t,r,o){return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:void 0,execute:o,executingRequire:r,moduleObj:{default:{},__useDefault:!0},setters:void 0}}}function s(e,t,r){return function(o){for(var n=0;n<e.length;n++)if(e[n]===o){var u,d=t[n];return u=-1===r.indexOf(d)?a(d,d.linkRecord,r):d.linkRecord.moduleObj,u.__useDefault?u.default:u}}}function a(t,r,n){if(n.push(t),t.module)return t.module;var u;if(r.setters){for(var d=0;d<r.deps.length;d++){var i=r.depLoads[d],l=i.linkRecord;l&&-1===n.indexOf(i)&&(u=a(i,l,l.setters?n:[]))}r.execute.call(y)}else{var f={id:t.key},c=r.moduleObj;Object.defineProperty(f,"exports",{configurable:!0,set:function(e){c.default=e},get:function(){return c.default}});var p=s(r.deps,r.depLoads,n);if(!r.executingRequire)for(var d=0;d<r.deps.length;d++)p(r.deps[d]);var v=r.execute.call(e,p,c.default,f);if(void 0!==v?c.default=v:f.exports!==c.default&&(c.default=f.exports),c.default&&c.default.__esModule)for(var m in c.default)Object.hasOwnProperty.call(c.default,m)&&"default"!==m&&(c[m]=c.default[m])}var f=t.module=new o(r.moduleObj);if(!r.setters)for(var d=0;d<t.importerSetters.length;d++)t.importerSetters[d](f);return f}function c(e,t){return p[e]={key:e,module:t,importerSetters:[],linkRecord:void 0}}var p={},v="undefined"!=typeof Symbol?Symbol():"@@baseObject";o.prototype=Object.create(null),"undefined"!=typeof Symbol&&Symbol.toStringTag&&(o.prototype[Symbol.toStringTag]="Module");var m="undefined"!=typeof System&&System._nodeRequire||"undefined"!=typeof require&&"undefined"!=typeof require.resolve&&"undefined"!=typeof process&&process.platform&&require,y={};return Object.freeze&&Object.freeze(y),function(e,t,n,d){return function(i){i(function(i){var s={_nodeRequire:m,register:l,registerDynamic:f,registry:{get:function(e){return p[e].module},set:c},newModule:function(e){return new o(e)}};c("@empty",new o({}));for(var a=0;a<t.length;a++)c(t[a],r(arguments[a],{}));d(s);var v=u(e[0]);if(e.length>1)for(var a=1;a<e.length;a++)u(e[a]);return n?v.default:(v instanceof o&&Object.defineProperty(v,"__esModule",{value:!0}),v)})}}}("undefined"!=typeof self?self:global)
+!function(e){function t(e){Object.defineProperty(this,e,{enumerable:!0,get:function(){return this[m][e]}})}function r(e){var t;if(e&&e.__esModule){t={};for(var r in e)Object.hasOwnProperty.call(e,r)&&(t[r]=e[r]);t.__useDefault&&delete t.__useDefault,t.__esModule=!0}else{if("[object Module]"===Object.prototype.toString.call(e)||"undefined"!=typeof System&&System.isModule&&System.isModule(e))return e;t={default:e,__useDefault:!0}}return new o(t)}function o(e){Object.defineProperty(this,m,{value:e}),Object.keys(e).forEach(t,this)}function n(e){return"@node/"===e.substr(0,6)?c(e,r(v(e.substr(6))),{}):p[e]}function u(e){var t=n(e);if(!t)throw new Error('Module "'+e+'" expected, but not contained in build.');if(t.module)return t.module;var r=t.linkRecord;return d(t,r),a(t,r,[]),t.module}function d(e,t){if(!t.depLoads){t.declare&&i(e,t),t.depLoads=[];for(var r=0;r<t.deps.length;r++){var o=n(t.deps[r]);t.depLoads.push(o),o.linkRecord&&d(o,o.linkRecord);var u=t.setters&&t.setters[r];u&&(u(o.module||o.linkRecord.moduleObj),o.importerSetters.push(u))}return e}}function i(t,r){var o=r.moduleObj,n=t.importerSetters,u=!1,d=r.declare.call(e,function(e,t){if(!u){if("object"==typeof e)for(var r in e)"__useDefault"!==r&&(o[r]=e[r]);else o[e]=t;u=!0;for(var d=0;d<n.length;d++)n[d](o);return u=!1,t}},{id:t.key});"function"!=typeof d?(r.setters=d.setters,r.execute=d.execute):(r.setters=[],r.execute=d)}function l(e,t,r){return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:r,setters:void 0,execute:void 0,moduleObj:{}}}}function f(e,t,r,o){return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:void 0,execute:o,executingRequire:r,moduleObj:{default:{},__useDefault:!0},setters:void 0}}}function s(e,t,r){return function(o){for(var n=0;n<e.length;n++)if(e[n]===o){var u,d=t[n],i=d.linkRecord;return u=i?-1===r.indexOf(d)?a(d,i,r):i.moduleObj:d.module,u.__useDefault?u.default:u}}}function a(t,r,n){if(n.push(t),t.module)return t.module;var u;if(r.setters){for(var d=0;d<r.deps.length;d++){var i=r.depLoads[d],l=i.linkRecord;l&&-1===n.indexOf(i)&&(u=a(i,l,l.setters?n:[]))}r.execute.call(y)}else{var f={id:t.key},c=r.moduleObj;Object.defineProperty(f,"exports",{configurable:!0,set:function(e){c.default=e},get:function(){return c.default}});var p=s(r.deps,r.depLoads,n);if(!r.executingRequire)for(var d=0;d<r.deps.length;d++)p(r.deps[d]);var m=r.execute.call(e,p,c.default,f);if(void 0!==m?c.default=m:f.exports!==c.default&&(c.default=f.exports),c.default&&c.default.__esModule)for(var v in c.default)Object.hasOwnProperty.call(c.default,v)&&"default"!==v&&(c[v]=c.default[v])}var f=t.module=new o(r.moduleObj);if(!r.setters)for(var d=0;d<t.importerSetters.length;d++)t.importerSetters[d](f);return f}function c(e,t){return p[e]={key:e,module:t,importerSetters:[],linkRecord:void 0}}var p={},m="undefined"!=typeof Symbol?Symbol():"@@baseObject";o.prototype=Object.create(null),"undefined"!=typeof Symbol&&Symbol.toStringTag&&(o.prototype[Symbol.toStringTag]="Module");var v="undefined"!=typeof System&&System._nodeRequire||"undefined"!=typeof require&&"undefined"!=typeof require.resolve&&"undefined"!=typeof process&&process.platform&&require,y={};return Object.freeze&&Object.freeze(y),function(e,t,n,d){return function(i){i(function(i){var s={_nodeRequire:v,register:l,registerDynamic:f,registry:{get:function(e){return p[e].module},set:c},newModule:function(e){return new o(e)}};c("@empty",new o({}));for(var a=0;a<t.length;a++)c(t[a],r(arguments[a],{}));d(s);var m=u(e[0]);if(e.length>1)for(var a=1;a<e.length;a++)u(e[a]);return n?m.default:(m instanceof o&&Object.defineProperty(m,"__esModule",{value:!0}),m)})}}}("undefined"!=typeof self?self:global)
 
 (["a"], [], false, function($__System) {
 var require = this.require, exports = this.exports, module = this.module;
@@ -9795,2073 +9795,6 @@ var require = this.require, exports = this.exports, module = this.module;
 	return jQuery;
 });
 $__System.registerDynamic('c', [], true, function ($__require, exports, module) {
-  'use strict';
-
-  var global = this || self,
-      GLOBAL = global;
-  exports.byteLength = byteLength;
-  exports.toByteArray = toByteArray;
-  exports.fromByteArray = fromByteArray;
-
-  var lookup = [];
-  var revLookup = [];
-  var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
-
-  var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  for (var i = 0, len = code.length; i < len; ++i) {
-    lookup[i] = code[i];
-    revLookup[code.charCodeAt(i)] = i;
-  }
-
-  revLookup['-'.charCodeAt(0)] = 62;
-  revLookup['_'.charCodeAt(0)] = 63;
-
-  function placeHoldersCount(b64) {
-    var len = b64.length;
-    if (len % 4 > 0) {
-      throw new Error('Invalid string. Length must be a multiple of 4');
-    }
-
-    // the number of equal signs (place holders)
-    // if there are two placeholders, than the two characters before it
-    // represent one byte
-    // if there is only one, then the three characters before it represent 2 bytes
-    // this is just a cheap hack to not do indexOf twice
-    return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0;
-  }
-
-  function byteLength(b64) {
-    // base64 is 4/3 + up to two characters of the original data
-    return b64.length * 3 / 4 - placeHoldersCount(b64);
-  }
-
-  function toByteArray(b64) {
-    var i, j, l, tmp, placeHolders, arr;
-    var len = b64.length;
-    placeHolders = placeHoldersCount(b64);
-
-    arr = new Arr(len * 3 / 4 - placeHolders);
-
-    // if there are placeholders, only get up to the last complete 4 chars
-    l = placeHolders > 0 ? len - 4 : len;
-
-    var L = 0;
-
-    for (i = 0, j = 0; i < l; i += 4, j += 3) {
-      tmp = revLookup[b64.charCodeAt(i)] << 18 | revLookup[b64.charCodeAt(i + 1)] << 12 | revLookup[b64.charCodeAt(i + 2)] << 6 | revLookup[b64.charCodeAt(i + 3)];
-      arr[L++] = tmp >> 16 & 0xFF;
-      arr[L++] = tmp >> 8 & 0xFF;
-      arr[L++] = tmp & 0xFF;
-    }
-
-    if (placeHolders === 2) {
-      tmp = revLookup[b64.charCodeAt(i)] << 2 | revLookup[b64.charCodeAt(i + 1)] >> 4;
-      arr[L++] = tmp & 0xFF;
-    } else if (placeHolders === 1) {
-      tmp = revLookup[b64.charCodeAt(i)] << 10 | revLookup[b64.charCodeAt(i + 1)] << 4 | revLookup[b64.charCodeAt(i + 2)] >> 2;
-      arr[L++] = tmp >> 8 & 0xFF;
-      arr[L++] = tmp & 0xFF;
-    }
-
-    return arr;
-  }
-
-  function tripletToBase64(num) {
-    return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F];
-  }
-
-  function encodeChunk(uint8, start, end) {
-    var tmp;
-    var output = [];
-    for (var i = start; i < end; i += 3) {
-      tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + uint8[i + 2];
-      output.push(tripletToBase64(tmp));
-    }
-    return output.join('');
-  }
-
-  function fromByteArray(uint8) {
-    var tmp;
-    var len = uint8.length;
-    var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
-    var output = '';
-    var parts = [];
-    var maxChunkLength = 16383; // must be multiple of 3
-
-    // go through the array every three bytes, we'll deal with trailing stuff later
-    for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
-      parts.push(encodeChunk(uint8, i, i + maxChunkLength > len2 ? len2 : i + maxChunkLength));
-    }
-
-    // pad the end with zeros, but make sure to not forget the extra bytes
-    if (extraBytes === 1) {
-      tmp = uint8[len - 1];
-      output += lookup[tmp >> 2];
-      output += lookup[tmp << 4 & 0x3F];
-      output += '==';
-    } else if (extraBytes === 2) {
-      tmp = (uint8[len - 2] << 8) + uint8[len - 1];
-      output += lookup[tmp >> 10];
-      output += lookup[tmp >> 4 & 0x3F];
-      output += lookup[tmp << 2 & 0x3F];
-      output += '=';
-    }
-
-    parts.push(output);
-
-    return parts.join('');
-  }
-});
-$__System.registerDynamic("d", [], true, function ($__require, exports, module) {
-  var global = this || self,
-      GLOBAL = global;
-  exports.read = function (buffer, offset, isLE, mLen, nBytes) {
-    var e, m;
-    var eLen = nBytes * 8 - mLen - 1;
-    var eMax = (1 << eLen) - 1;
-    var eBias = eMax >> 1;
-    var nBits = -7;
-    var i = isLE ? nBytes - 1 : 0;
-    var d = isLE ? -1 : 1;
-    var s = buffer[offset + i];
-
-    i += d;
-
-    e = s & (1 << -nBits) - 1;
-    s >>= -nBits;
-    nBits += eLen;
-    for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-
-    m = e & (1 << -nBits) - 1;
-    e >>= -nBits;
-    nBits += mLen;
-    for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-
-    if (e === 0) {
-      e = 1 - eBias;
-    } else if (e === eMax) {
-      return m ? NaN : (s ? -1 : 1) * Infinity;
-    } else {
-      m = m + Math.pow(2, mLen);
-      e = e - eBias;
-    }
-    return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
-  };
-
-  exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
-    var e, m, c;
-    var eLen = nBytes * 8 - mLen - 1;
-    var eMax = (1 << eLen) - 1;
-    var eBias = eMax >> 1;
-    var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
-    var i = isLE ? 0 : nBytes - 1;
-    var d = isLE ? 1 : -1;
-    var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
-
-    value = Math.abs(value);
-
-    if (isNaN(value) || value === Infinity) {
-      m = isNaN(value) ? 1 : 0;
-      e = eMax;
-    } else {
-      e = Math.floor(Math.log(value) / Math.LN2);
-      if (value * (c = Math.pow(2, -e)) < 1) {
-        e--;
-        c *= 2;
-      }
-      if (e + eBias >= 1) {
-        value += rt / c;
-      } else {
-        value += rt * Math.pow(2, 1 - eBias);
-      }
-      if (value * c >= 2) {
-        e++;
-        c /= 2;
-      }
-
-      if (e + eBias >= eMax) {
-        m = 0;
-        e = eMax;
-      } else if (e + eBias >= 1) {
-        m = (value * c - 1) * Math.pow(2, mLen);
-        e = e + eBias;
-      } else {
-        m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
-        e = 0;
-      }
-    }
-
-    for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
-
-    e = e << mLen | m;
-    eLen += mLen;
-    for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
-
-    buffer[offset + i - d] |= s * 128;
-  };
-});
-$__System.registerDynamic('e', [], true, function ($__require, exports, module) {
-  var global = this || self,
-      GLOBAL = global;
-  var toString = {}.toString;
-
-  module.exports = Array.isArray || function (arr) {
-    return toString.call(arr) == '[object Array]';
-  };
-});
-$__System.registerDynamic("@system-env", [], true, function() {
-  return {
-    "default": true
-  };
-});
-
-$__System.registerDynamic('f', ['@system-env'], true, function ($__require, exports, module) {
-    var global = this || self,
-        GLOBAL = global;
-    // From https://github.com/defunctzombie/node-process/blob/master/browser.js
-    // shim for using process in browser
-
-    var productionEnv = $__require('@system-env').production;
-
-    var process = module.exports = {};
-    var queue = [];
-    var draining = false;
-    var currentQueue;
-    var queueIndex = -1;
-
-    function cleanUpNextTick() {
-        draining = false;
-        if (currentQueue.length) {
-            queue = currentQueue.concat(queue);
-        } else {
-            queueIndex = -1;
-        }
-        if (queue.length) {
-            drainQueue();
-        }
-    }
-
-    function drainQueue() {
-        if (draining) {
-            return;
-        }
-        var timeout = setTimeout(cleanUpNextTick);
-        draining = true;
-
-        var len = queue.length;
-        while (len) {
-            currentQueue = queue;
-            queue = [];
-            while (++queueIndex < len) {
-                if (currentQueue) {
-                    currentQueue[queueIndex].run();
-                }
-            }
-            queueIndex = -1;
-            len = queue.length;
-        }
-        currentQueue = null;
-        draining = false;
-        clearTimeout(timeout);
-    }
-
-    process.nextTick = function (fun) {
-        var args = new Array(arguments.length - 1);
-        if (arguments.length > 1) {
-            for (var i = 1; i < arguments.length; i++) {
-                args[i - 1] = arguments[i];
-            }
-        }
-        queue.push(new Item(fun, args));
-        if (queue.length === 1 && !draining) {
-            setTimeout(drainQueue, 0);
-        }
-    };
-
-    // v8 likes predictible objects
-    function Item(fun, array) {
-        this.fun = fun;
-        this.array = array;
-    }
-    Item.prototype.run = function () {
-        this.fun.apply(null, this.array);
-    };
-    process.title = 'browser';
-    process.browser = true;
-    process.env = {
-        NODE_ENV: productionEnv ? 'production' : 'development'
-    };
-    process.argv = [];
-    process.version = ''; // empty string to avoid regexp issues
-    process.versions = {};
-
-    function noop() {}
-
-    process.on = noop;
-    process.addListener = noop;
-    process.once = noop;
-    process.off = noop;
-    process.removeListener = noop;
-    process.removeAllListeners = noop;
-    process.emit = noop;
-
-    process.binding = function (name) {
-        throw new Error('process.binding is not supported');
-    };
-
-    process.cwd = function () {
-        return '/';
-    };
-    process.chdir = function (dir) {
-        throw new Error('process.chdir is not supported');
-    };
-    process.umask = function () {
-        return 0;
-    };
-});
-$__System.registerDynamic('10', ['c', 'd', 'e', 'f'], true, function ($__require, exports, module) {
-  /*!
-   * The buffer module from node.js, for the browser.
-   *
-   * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
-   * @license  MIT
-   */
-  /* eslint-disable no-proto */
-
-  'use strict';
-
-  var process = $__require('f');
-  var global = this || self,
-      GLOBAL = global;
-  var base64 = $__require('c');
-  var ieee754 = $__require('d');
-  var isArray = $__require('e');
-
-  exports.Buffer = Buffer;
-  exports.SlowBuffer = SlowBuffer;
-  exports.INSPECT_MAX_BYTES = 50;
-
-  /**
-   * If `Buffer.TYPED_ARRAY_SUPPORT`:
-   *   === true    Use Uint8Array implementation (fastest)
-   *   === false   Use Object implementation (most compatible, even IE6)
-   *
-   * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
-   * Opera 11.6+, iOS 4.2+.
-   *
-   * Due to various browser bugs, sometimes the Object implementation will be used even
-   * when the browser supports typed arrays.
-   *
-   * Note:
-   *
-   *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
-   *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
-   *
-   *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
-   *
-   *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
-   *     incorrect length in some situations.
-  
-   * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
-   * get the Object implementation, which is slower but behaves correctly.
-   */
-  Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined ? global.TYPED_ARRAY_SUPPORT : typedArraySupport();
-
-  /*
-   * Export kMaxLength after typed array support is determined.
-   */
-  exports.kMaxLength = kMaxLength();
-
-  function typedArraySupport() {
-    try {
-      var arr = new Uint8Array(1);
-      arr.__proto__ = { __proto__: Uint8Array.prototype, foo: function () {
-          return 42;
-        } };
-      return arr.foo() === 42 && // typed array instances can be augmented
-      typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
-      arr.subarray(1, 1).byteLength === 0; // ie10 has broken `subarray`
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function kMaxLength() {
-    return Buffer.TYPED_ARRAY_SUPPORT ? 0x7fffffff : 0x3fffffff;
-  }
-
-  function createBuffer(that, length) {
-    if (kMaxLength() < length) {
-      throw new RangeError('Invalid typed array length');
-    }
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      // Return an augmented `Uint8Array` instance, for best performance
-      that = new Uint8Array(length);
-      that.__proto__ = Buffer.prototype;
-    } else {
-      // Fallback: Return an object instance of the Buffer class
-      if (that === null) {
-        that = new Buffer(length);
-      }
-      that.length = length;
-    }
-
-    return that;
-  }
-
-  /**
-   * The Buffer constructor returns instances of `Uint8Array` that have their
-   * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
-   * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
-   * and the `Uint8Array` methods. Square bracket notation works as expected -- it
-   * returns a single octet.
-   *
-   * The `Uint8Array` prototype remains unmodified.
-   */
-
-  function Buffer(arg, encodingOrOffset, length) {
-    if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
-      return new Buffer(arg, encodingOrOffset, length);
-    }
-
-    // Common case.
-    if (typeof arg === 'number') {
-      if (typeof encodingOrOffset === 'string') {
-        throw new Error('If encoding is specified then the first argument must be a string');
-      }
-      return allocUnsafe(this, arg);
-    }
-    return from(this, arg, encodingOrOffset, length);
-  }
-
-  Buffer.poolSize = 8192; // not used by this implementation
-
-  // TODO: Legacy, not needed anymore. Remove in next major version.
-  Buffer._augment = function (arr) {
-    arr.__proto__ = Buffer.prototype;
-    return arr;
-  };
-
-  function from(that, value, encodingOrOffset, length) {
-    if (typeof value === 'number') {
-      throw new TypeError('"value" argument must not be a number');
-    }
-
-    if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
-      return fromArrayBuffer(that, value, encodingOrOffset, length);
-    }
-
-    if (typeof value === 'string') {
-      return fromString(that, value, encodingOrOffset);
-    }
-
-    return fromObject(that, value);
-  }
-
-  /**
-   * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
-   * if value is a number.
-   * Buffer.from(str[, encoding])
-   * Buffer.from(array)
-   * Buffer.from(buffer)
-   * Buffer.from(arrayBuffer[, byteOffset[, length]])
-   **/
-  Buffer.from = function (value, encodingOrOffset, length) {
-    return from(null, value, encodingOrOffset, length);
-  };
-
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
-    Buffer.prototype.__proto__ = Uint8Array.prototype;
-    Buffer.__proto__ = Uint8Array;
-    if (typeof Symbol !== 'undefined' && Symbol.species && Buffer[Symbol.species] === Buffer) {
-      // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
-      Object.defineProperty(Buffer, Symbol.species, {
-        value: null,
-        configurable: true
-      });
-    }
-  }
-
-  function assertSize(size) {
-    if (typeof size !== 'number') {
-      throw new TypeError('"size" argument must be a number');
-    } else if (size < 0) {
-      throw new RangeError('"size" argument must not be negative');
-    }
-  }
-
-  function alloc(that, size, fill, encoding) {
-    assertSize(size);
-    if (size <= 0) {
-      return createBuffer(that, size);
-    }
-    if (fill !== undefined) {
-      // Only pay attention to encoding if it's a string. This
-      // prevents accidentally sending in a number that would
-      // be interpretted as a start offset.
-      return typeof encoding === 'string' ? createBuffer(that, size).fill(fill, encoding) : createBuffer(that, size).fill(fill);
-    }
-    return createBuffer(that, size);
-  }
-
-  /**
-   * Creates a new filled Buffer instance.
-   * alloc(size[, fill[, encoding]])
-   **/
-  Buffer.alloc = function (size, fill, encoding) {
-    return alloc(null, size, fill, encoding);
-  };
-
-  function allocUnsafe(that, size) {
-    assertSize(size);
-    that = createBuffer(that, size < 0 ? 0 : checked(size) | 0);
-    if (!Buffer.TYPED_ARRAY_SUPPORT) {
-      for (var i = 0; i < size; ++i) {
-        that[i] = 0;
-      }
-    }
-    return that;
-  }
-
-  /**
-   * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
-   * */
-  Buffer.allocUnsafe = function (size) {
-    return allocUnsafe(null, size);
-  };
-  /**
-   * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
-   */
-  Buffer.allocUnsafeSlow = function (size) {
-    return allocUnsafe(null, size);
-  };
-
-  function fromString(that, string, encoding) {
-    if (typeof encoding !== 'string' || encoding === '') {
-      encoding = 'utf8';
-    }
-
-    if (!Buffer.isEncoding(encoding)) {
-      throw new TypeError('"encoding" must be a valid string encoding');
-    }
-
-    var length = byteLength(string, encoding) | 0;
-    that = createBuffer(that, length);
-
-    var actual = that.write(string, encoding);
-
-    if (actual !== length) {
-      // Writing a hex string, for example, that contains invalid characters will
-      // cause everything after the first invalid character to be ignored. (e.g.
-      // 'abxxcd' will be treated as 'ab')
-      that = that.slice(0, actual);
-    }
-
-    return that;
-  }
-
-  function fromArrayLike(that, array) {
-    var length = array.length < 0 ? 0 : checked(array.length) | 0;
-    that = createBuffer(that, length);
-    for (var i = 0; i < length; i += 1) {
-      that[i] = array[i] & 255;
-    }
-    return that;
-  }
-
-  function fromArrayBuffer(that, array, byteOffset, length) {
-    array.byteLength; // this throws if `array` is not a valid ArrayBuffer
-
-    if (byteOffset < 0 || array.byteLength < byteOffset) {
-      throw new RangeError('\'offset\' is out of bounds');
-    }
-
-    if (array.byteLength < byteOffset + (length || 0)) {
-      throw new RangeError('\'length\' is out of bounds');
-    }
-
-    if (byteOffset === undefined && length === undefined) {
-      array = new Uint8Array(array);
-    } else if (length === undefined) {
-      array = new Uint8Array(array, byteOffset);
-    } else {
-      array = new Uint8Array(array, byteOffset, length);
-    }
-
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      // Return an augmented `Uint8Array` instance, for best performance
-      that = array;
-      that.__proto__ = Buffer.prototype;
-    } else {
-      // Fallback: Return an object instance of the Buffer class
-      that = fromArrayLike(that, array);
-    }
-    return that;
-  }
-
-  function fromObject(that, obj) {
-    if (Buffer.isBuffer(obj)) {
-      var len = checked(obj.length) | 0;
-      that = createBuffer(that, len);
-
-      if (that.length === 0) {
-        return that;
-      }
-
-      obj.copy(that, 0, 0, len);
-      return that;
-    }
-
-    if (obj) {
-      if (typeof ArrayBuffer !== 'undefined' && obj.buffer instanceof ArrayBuffer || 'length' in obj) {
-        if (typeof obj.length !== 'number' || isnan(obj.length)) {
-          return createBuffer(that, 0);
-        }
-        return fromArrayLike(that, obj);
-      }
-
-      if (obj.type === 'Buffer' && isArray(obj.data)) {
-        return fromArrayLike(that, obj.data);
-      }
-    }
-
-    throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.');
-  }
-
-  function checked(length) {
-    // Note: cannot use `length < kMaxLength()` here because that fails when
-    // length is NaN (which is otherwise coerced to zero.)
-    if (length >= kMaxLength()) {
-      throw new RangeError('Attempt to allocate Buffer larger than maximum ' + 'size: 0x' + kMaxLength().toString(16) + ' bytes');
-    }
-    return length | 0;
-  }
-
-  function SlowBuffer(length) {
-    if (+length != length) {
-      // eslint-disable-line eqeqeq
-      length = 0;
-    }
-    return Buffer.alloc(+length);
-  }
-
-  Buffer.isBuffer = function isBuffer(b) {
-    return !!(b != null && b._isBuffer);
-  };
-
-  Buffer.compare = function compare(a, b) {
-    if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
-      throw new TypeError('Arguments must be Buffers');
-    }
-
-    if (a === b) return 0;
-
-    var x = a.length;
-    var y = b.length;
-
-    for (var i = 0, len = Math.min(x, y); i < len; ++i) {
-      if (a[i] !== b[i]) {
-        x = a[i];
-        y = b[i];
-        break;
-      }
-    }
-
-    if (x < y) return -1;
-    if (y < x) return 1;
-    return 0;
-  };
-
-  Buffer.isEncoding = function isEncoding(encoding) {
-    switch (String(encoding).toLowerCase()) {
-      case 'hex':
-      case 'utf8':
-      case 'utf-8':
-      case 'ascii':
-      case 'latin1':
-      case 'binary':
-      case 'base64':
-      case 'ucs2':
-      case 'ucs-2':
-      case 'utf16le':
-      case 'utf-16le':
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  Buffer.concat = function concat(list, length) {
-    if (!isArray(list)) {
-      throw new TypeError('"list" argument must be an Array of Buffers');
-    }
-
-    if (list.length === 0) {
-      return Buffer.alloc(0);
-    }
-
-    var i;
-    if (length === undefined) {
-      length = 0;
-      for (i = 0; i < list.length; ++i) {
-        length += list[i].length;
-      }
-    }
-
-    var buffer = Buffer.allocUnsafe(length);
-    var pos = 0;
-    for (i = 0; i < list.length; ++i) {
-      var buf = list[i];
-      if (!Buffer.isBuffer(buf)) {
-        throw new TypeError('"list" argument must be an Array of Buffers');
-      }
-      buf.copy(buffer, pos);
-      pos += buf.length;
-    }
-    return buffer;
-  };
-
-  function byteLength(string, encoding) {
-    if (Buffer.isBuffer(string)) {
-      return string.length;
-    }
-    if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' && (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
-      return string.byteLength;
-    }
-    if (typeof string !== 'string') {
-      string = '' + string;
-    }
-
-    var len = string.length;
-    if (len === 0) return 0;
-
-    // Use a for loop to avoid recursion
-    var loweredCase = false;
-    for (;;) {
-      switch (encoding) {
-        case 'ascii':
-        case 'latin1':
-        case 'binary':
-          return len;
-        case 'utf8':
-        case 'utf-8':
-        case undefined:
-          return utf8ToBytes(string).length;
-        case 'ucs2':
-        case 'ucs-2':
-        case 'utf16le':
-        case 'utf-16le':
-          return len * 2;
-        case 'hex':
-          return len >>> 1;
-        case 'base64':
-          return base64ToBytes(string).length;
-        default:
-          if (loweredCase) return utf8ToBytes(string).length; // assume utf8
-          encoding = ('' + encoding).toLowerCase();
-          loweredCase = true;
-      }
-    }
-  }
-  Buffer.byteLength = byteLength;
-
-  function slowToString(encoding, start, end) {
-    var loweredCase = false;
-
-    // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
-    // property of a typed array.
-
-    // This behaves neither like String nor Uint8Array in that we set start/end
-    // to their upper/lower bounds if the value passed is out of range.
-    // undefined is handled specially as per ECMA-262 6th Edition,
-    // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
-    if (start === undefined || start < 0) {
-      start = 0;
-    }
-    // Return early if start > this.length. Done here to prevent potential uint32
-    // coercion fail below.
-    if (start > this.length) {
-      return '';
-    }
-
-    if (end === undefined || end > this.length) {
-      end = this.length;
-    }
-
-    if (end <= 0) {
-      return '';
-    }
-
-    // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
-    end >>>= 0;
-    start >>>= 0;
-
-    if (end <= start) {
-      return '';
-    }
-
-    if (!encoding) encoding = 'utf8';
-
-    while (true) {
-      switch (encoding) {
-        case 'hex':
-          return hexSlice(this, start, end);
-
-        case 'utf8':
-        case 'utf-8':
-          return utf8Slice(this, start, end);
-
-        case 'ascii':
-          return asciiSlice(this, start, end);
-
-        case 'latin1':
-        case 'binary':
-          return latin1Slice(this, start, end);
-
-        case 'base64':
-          return base64Slice(this, start, end);
-
-        case 'ucs2':
-        case 'ucs-2':
-        case 'utf16le':
-        case 'utf-16le':
-          return utf16leSlice(this, start, end);
-
-        default:
-          if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding);
-          encoding = (encoding + '').toLowerCase();
-          loweredCase = true;
-      }
-    }
-  }
-
-  // The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
-  // Buffer instances.
-  Buffer.prototype._isBuffer = true;
-
-  function swap(b, n, m) {
-    var i = b[n];
-    b[n] = b[m];
-    b[m] = i;
-  }
-
-  Buffer.prototype.swap16 = function swap16() {
-    var len = this.length;
-    if (len % 2 !== 0) {
-      throw new RangeError('Buffer size must be a multiple of 16-bits');
-    }
-    for (var i = 0; i < len; i += 2) {
-      swap(this, i, i + 1);
-    }
-    return this;
-  };
-
-  Buffer.prototype.swap32 = function swap32() {
-    var len = this.length;
-    if (len % 4 !== 0) {
-      throw new RangeError('Buffer size must be a multiple of 32-bits');
-    }
-    for (var i = 0; i < len; i += 4) {
-      swap(this, i, i + 3);
-      swap(this, i + 1, i + 2);
-    }
-    return this;
-  };
-
-  Buffer.prototype.swap64 = function swap64() {
-    var len = this.length;
-    if (len % 8 !== 0) {
-      throw new RangeError('Buffer size must be a multiple of 64-bits');
-    }
-    for (var i = 0; i < len; i += 8) {
-      swap(this, i, i + 7);
-      swap(this, i + 1, i + 6);
-      swap(this, i + 2, i + 5);
-      swap(this, i + 3, i + 4);
-    }
-    return this;
-  };
-
-  Buffer.prototype.toString = function toString() {
-    var length = this.length | 0;
-    if (length === 0) return '';
-    if (arguments.length === 0) return utf8Slice(this, 0, length);
-    return slowToString.apply(this, arguments);
-  };
-
-  Buffer.prototype.equals = function equals(b) {
-    if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer');
-    if (this === b) return true;
-    return Buffer.compare(this, b) === 0;
-  };
-
-  Buffer.prototype.inspect = function inspect() {
-    var str = '';
-    var max = exports.INSPECT_MAX_BYTES;
-    if (this.length > 0) {
-      str = this.toString('hex', 0, max).match(/.{2}/g).join(' ');
-      if (this.length > max) str += ' ... ';
-    }
-    return '<Buffer ' + str + '>';
-  };
-
-  Buffer.prototype.compare = function compare(target, start, end, thisStart, thisEnd) {
-    if (!Buffer.isBuffer(target)) {
-      throw new TypeError('Argument must be a Buffer');
-    }
-
-    if (start === undefined) {
-      start = 0;
-    }
-    if (end === undefined) {
-      end = target ? target.length : 0;
-    }
-    if (thisStart === undefined) {
-      thisStart = 0;
-    }
-    if (thisEnd === undefined) {
-      thisEnd = this.length;
-    }
-
-    if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
-      throw new RangeError('out of range index');
-    }
-
-    if (thisStart >= thisEnd && start >= end) {
-      return 0;
-    }
-    if (thisStart >= thisEnd) {
-      return -1;
-    }
-    if (start >= end) {
-      return 1;
-    }
-
-    start >>>= 0;
-    end >>>= 0;
-    thisStart >>>= 0;
-    thisEnd >>>= 0;
-
-    if (this === target) return 0;
-
-    var x = thisEnd - thisStart;
-    var y = end - start;
-    var len = Math.min(x, y);
-
-    var thisCopy = this.slice(thisStart, thisEnd);
-    var targetCopy = target.slice(start, end);
-
-    for (var i = 0; i < len; ++i) {
-      if (thisCopy[i] !== targetCopy[i]) {
-        x = thisCopy[i];
-        y = targetCopy[i];
-        break;
-      }
-    }
-
-    if (x < y) return -1;
-    if (y < x) return 1;
-    return 0;
-  };
-
-  // Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
-  // OR the last index of `val` in `buffer` at offset <= `byteOffset`.
-  //
-  // Arguments:
-  // - buffer - a Buffer to search
-  // - val - a string, Buffer, or number
-  // - byteOffset - an index into `buffer`; will be clamped to an int32
-  // - encoding - an optional encoding, relevant is val is a string
-  // - dir - true for indexOf, false for lastIndexOf
-  function bidirectionalIndexOf(buffer, val, byteOffset, encoding, dir) {
-    // Empty buffer means no match
-    if (buffer.length === 0) return -1;
-
-    // Normalize byteOffset
-    if (typeof byteOffset === 'string') {
-      encoding = byteOffset;
-      byteOffset = 0;
-    } else if (byteOffset > 0x7fffffff) {
-      byteOffset = 0x7fffffff;
-    } else if (byteOffset < -0x80000000) {
-      byteOffset = -0x80000000;
-    }
-    byteOffset = +byteOffset; // Coerce to Number.
-    if (isNaN(byteOffset)) {
-      // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
-      byteOffset = dir ? 0 : buffer.length - 1;
-    }
-
-    // Normalize byteOffset: negative offsets start from the end of the buffer
-    if (byteOffset < 0) byteOffset = buffer.length + byteOffset;
-    if (byteOffset >= buffer.length) {
-      if (dir) return -1;else byteOffset = buffer.length - 1;
-    } else if (byteOffset < 0) {
-      if (dir) byteOffset = 0;else return -1;
-    }
-
-    // Normalize val
-    if (typeof val === 'string') {
-      val = Buffer.from(val, encoding);
-    }
-
-    // Finally, search either indexOf (if dir is true) or lastIndexOf
-    if (Buffer.isBuffer(val)) {
-      // Special case: looking for empty string/buffer always fails
-      if (val.length === 0) {
-        return -1;
-      }
-      return arrayIndexOf(buffer, val, byteOffset, encoding, dir);
-    } else if (typeof val === 'number') {
-      val = val & 0xFF; // Search for a byte value [0-255]
-      if (Buffer.TYPED_ARRAY_SUPPORT && typeof Uint8Array.prototype.indexOf === 'function') {
-        if (dir) {
-          return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset);
-        } else {
-          return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset);
-        }
-      }
-      return arrayIndexOf(buffer, [val], byteOffset, encoding, dir);
-    }
-
-    throw new TypeError('val must be string, number or Buffer');
-  }
-
-  function arrayIndexOf(arr, val, byteOffset, encoding, dir) {
-    var indexSize = 1;
-    var arrLength = arr.length;
-    var valLength = val.length;
-
-    if (encoding !== undefined) {
-      encoding = String(encoding).toLowerCase();
-      if (encoding === 'ucs2' || encoding === 'ucs-2' || encoding === 'utf16le' || encoding === 'utf-16le') {
-        if (arr.length < 2 || val.length < 2) {
-          return -1;
-        }
-        indexSize = 2;
-        arrLength /= 2;
-        valLength /= 2;
-        byteOffset /= 2;
-      }
-    }
-
-    function read(buf, i) {
-      if (indexSize === 1) {
-        return buf[i];
-      } else {
-        return buf.readUInt16BE(i * indexSize);
-      }
-    }
-
-    var i;
-    if (dir) {
-      var foundIndex = -1;
-      for (i = byteOffset; i < arrLength; i++) {
-        if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
-          if (foundIndex === -1) foundIndex = i;
-          if (i - foundIndex + 1 === valLength) return foundIndex * indexSize;
-        } else {
-          if (foundIndex !== -1) i -= i - foundIndex;
-          foundIndex = -1;
-        }
-      }
-    } else {
-      if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength;
-      for (i = byteOffset; i >= 0; i--) {
-        var found = true;
-        for (var j = 0; j < valLength; j++) {
-          if (read(arr, i + j) !== read(val, j)) {
-            found = false;
-            break;
-          }
-        }
-        if (found) return i;
-      }
-    }
-
-    return -1;
-  }
-
-  Buffer.prototype.includes = function includes(val, byteOffset, encoding) {
-    return this.indexOf(val, byteOffset, encoding) !== -1;
-  };
-
-  Buffer.prototype.indexOf = function indexOf(val, byteOffset, encoding) {
-    return bidirectionalIndexOf(this, val, byteOffset, encoding, true);
-  };
-
-  Buffer.prototype.lastIndexOf = function lastIndexOf(val, byteOffset, encoding) {
-    return bidirectionalIndexOf(this, val, byteOffset, encoding, false);
-  };
-
-  function hexWrite(buf, string, offset, length) {
-    offset = Number(offset) || 0;
-    var remaining = buf.length - offset;
-    if (!length) {
-      length = remaining;
-    } else {
-      length = Number(length);
-      if (length > remaining) {
-        length = remaining;
-      }
-    }
-
-    // must be an even number of digits
-    var strLen = string.length;
-    if (strLen % 2 !== 0) throw new TypeError('Invalid hex string');
-
-    if (length > strLen / 2) {
-      length = strLen / 2;
-    }
-    for (var i = 0; i < length; ++i) {
-      var parsed = parseInt(string.substr(i * 2, 2), 16);
-      if (isNaN(parsed)) return i;
-      buf[offset + i] = parsed;
-    }
-    return i;
-  }
-
-  function utf8Write(buf, string, offset, length) {
-    return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length);
-  }
-
-  function asciiWrite(buf, string, offset, length) {
-    return blitBuffer(asciiToBytes(string), buf, offset, length);
-  }
-
-  function latin1Write(buf, string, offset, length) {
-    return asciiWrite(buf, string, offset, length);
-  }
-
-  function base64Write(buf, string, offset, length) {
-    return blitBuffer(base64ToBytes(string), buf, offset, length);
-  }
-
-  function ucs2Write(buf, string, offset, length) {
-    return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length);
-  }
-
-  Buffer.prototype.write = function write(string, offset, length, encoding) {
-    // Buffer#write(string)
-    if (offset === undefined) {
-      encoding = 'utf8';
-      length = this.length;
-      offset = 0;
-      // Buffer#write(string, encoding)
-    } else if (length === undefined && typeof offset === 'string') {
-      encoding = offset;
-      length = this.length;
-      offset = 0;
-      // Buffer#write(string, offset[, length][, encoding])
-    } else if (isFinite(offset)) {
-      offset = offset | 0;
-      if (isFinite(length)) {
-        length = length | 0;
-        if (encoding === undefined) encoding = 'utf8';
-      } else {
-        encoding = length;
-        length = undefined;
-      }
-      // legacy write(string, encoding, offset, length) - remove in v0.13
-    } else {
-      throw new Error('Buffer.write(string, encoding, offset[, length]) is no longer supported');
-    }
-
-    var remaining = this.length - offset;
-    if (length === undefined || length > remaining) length = remaining;
-
-    if (string.length > 0 && (length < 0 || offset < 0) || offset > this.length) {
-      throw new RangeError('Attempt to write outside buffer bounds');
-    }
-
-    if (!encoding) encoding = 'utf8';
-
-    var loweredCase = false;
-    for (;;) {
-      switch (encoding) {
-        case 'hex':
-          return hexWrite(this, string, offset, length);
-
-        case 'utf8':
-        case 'utf-8':
-          return utf8Write(this, string, offset, length);
-
-        case 'ascii':
-          return asciiWrite(this, string, offset, length);
-
-        case 'latin1':
-        case 'binary':
-          return latin1Write(this, string, offset, length);
-
-        case 'base64':
-          // Warning: maxLength not taken into account in base64Write
-          return base64Write(this, string, offset, length);
-
-        case 'ucs2':
-        case 'ucs-2':
-        case 'utf16le':
-        case 'utf-16le':
-          return ucs2Write(this, string, offset, length);
-
-        default:
-          if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding);
-          encoding = ('' + encoding).toLowerCase();
-          loweredCase = true;
-      }
-    }
-  };
-
-  Buffer.prototype.toJSON = function toJSON() {
-    return {
-      type: 'Buffer',
-      data: Array.prototype.slice.call(this._arr || this, 0)
-    };
-  };
-
-  function base64Slice(buf, start, end) {
-    if (start === 0 && end === buf.length) {
-      return base64.fromByteArray(buf);
-    } else {
-      return base64.fromByteArray(buf.slice(start, end));
-    }
-  }
-
-  function utf8Slice(buf, start, end) {
-    end = Math.min(buf.length, end);
-    var res = [];
-
-    var i = start;
-    while (i < end) {
-      var firstByte = buf[i];
-      var codePoint = null;
-      var bytesPerSequence = firstByte > 0xEF ? 4 : firstByte > 0xDF ? 3 : firstByte > 0xBF ? 2 : 1;
-
-      if (i + bytesPerSequence <= end) {
-        var secondByte, thirdByte, fourthByte, tempCodePoint;
-
-        switch (bytesPerSequence) {
-          case 1:
-            if (firstByte < 0x80) {
-              codePoint = firstByte;
-            }
-            break;
-          case 2:
-            secondByte = buf[i + 1];
-            if ((secondByte & 0xC0) === 0x80) {
-              tempCodePoint = (firstByte & 0x1F) << 0x6 | secondByte & 0x3F;
-              if (tempCodePoint > 0x7F) {
-                codePoint = tempCodePoint;
-              }
-            }
-            break;
-          case 3:
-            secondByte = buf[i + 1];
-            thirdByte = buf[i + 2];
-            if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
-              tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | thirdByte & 0x3F;
-              if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
-                codePoint = tempCodePoint;
-              }
-            }
-            break;
-          case 4:
-            secondByte = buf[i + 1];
-            thirdByte = buf[i + 2];
-            fourthByte = buf[i + 3];
-            if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
-              tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | fourthByte & 0x3F;
-              if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
-                codePoint = tempCodePoint;
-              }
-            }
-        }
-      }
-
-      if (codePoint === null) {
-        // we did not generate a valid codePoint so insert a
-        // replacement char (U+FFFD) and advance only 1 byte
-        codePoint = 0xFFFD;
-        bytesPerSequence = 1;
-      } else if (codePoint > 0xFFFF) {
-        // encode to utf16 (surrogate pair dance)
-        codePoint -= 0x10000;
-        res.push(codePoint >>> 10 & 0x3FF | 0xD800);
-        codePoint = 0xDC00 | codePoint & 0x3FF;
-      }
-
-      res.push(codePoint);
-      i += bytesPerSequence;
-    }
-
-    return decodeCodePointsArray(res);
-  }
-
-  // Based on http://stackoverflow.com/a/22747272/680742, the browser with
-  // the lowest limit is Chrome, with 0x10000 args.
-  // We go 1 magnitude less, for safety
-  var MAX_ARGUMENTS_LENGTH = 0x1000;
-
-  function decodeCodePointsArray(codePoints) {
-    var len = codePoints.length;
-    if (len <= MAX_ARGUMENTS_LENGTH) {
-      return String.fromCharCode.apply(String, codePoints); // avoid extra slice()
-    }
-
-    // Decode in chunks to avoid "call stack size exceeded".
-    var res = '';
-    var i = 0;
-    while (i < len) {
-      res += String.fromCharCode.apply(String, codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH));
-    }
-    return res;
-  }
-
-  function asciiSlice(buf, start, end) {
-    var ret = '';
-    end = Math.min(buf.length, end);
-
-    for (var i = start; i < end; ++i) {
-      ret += String.fromCharCode(buf[i] & 0x7F);
-    }
-    return ret;
-  }
-
-  function latin1Slice(buf, start, end) {
-    var ret = '';
-    end = Math.min(buf.length, end);
-
-    for (var i = start; i < end; ++i) {
-      ret += String.fromCharCode(buf[i]);
-    }
-    return ret;
-  }
-
-  function hexSlice(buf, start, end) {
-    var len = buf.length;
-
-    if (!start || start < 0) start = 0;
-    if (!end || end < 0 || end > len) end = len;
-
-    var out = '';
-    for (var i = start; i < end; ++i) {
-      out += toHex(buf[i]);
-    }
-    return out;
-  }
-
-  function utf16leSlice(buf, start, end) {
-    var bytes = buf.slice(start, end);
-    var res = '';
-    for (var i = 0; i < bytes.length; i += 2) {
-      res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256);
-    }
-    return res;
-  }
-
-  Buffer.prototype.slice = function slice(start, end) {
-    var len = this.length;
-    start = ~~start;
-    end = end === undefined ? len : ~~end;
-
-    if (start < 0) {
-      start += len;
-      if (start < 0) start = 0;
-    } else if (start > len) {
-      start = len;
-    }
-
-    if (end < 0) {
-      end += len;
-      if (end < 0) end = 0;
-    } else if (end > len) {
-      end = len;
-    }
-
-    if (end < start) end = start;
-
-    var newBuf;
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      newBuf = this.subarray(start, end);
-      newBuf.__proto__ = Buffer.prototype;
-    } else {
-      var sliceLen = end - start;
-      newBuf = new Buffer(sliceLen, undefined);
-      for (var i = 0; i < sliceLen; ++i) {
-        newBuf[i] = this[i + start];
-      }
-    }
-
-    return newBuf;
-  };
-
-  /*
-   * Need to make sure that buffer isn't trying to write out of bounds.
-   */
-  function checkOffset(offset, ext, length) {
-    if (offset % 1 !== 0 || offset < 0) throw new RangeError('offset is not uint');
-    if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length');
-  }
-
-  Buffer.prototype.readUIntLE = function readUIntLE(offset, byteLength, noAssert) {
-    offset = offset | 0;
-    byteLength = byteLength | 0;
-    if (!noAssert) checkOffset(offset, byteLength, this.length);
-
-    var val = this[offset];
-    var mul = 1;
-    var i = 0;
-    while (++i < byteLength && (mul *= 0x100)) {
-      val += this[offset + i] * mul;
-    }
-
-    return val;
-  };
-
-  Buffer.prototype.readUIntBE = function readUIntBE(offset, byteLength, noAssert) {
-    offset = offset | 0;
-    byteLength = byteLength | 0;
-    if (!noAssert) {
-      checkOffset(offset, byteLength, this.length);
-    }
-
-    var val = this[offset + --byteLength];
-    var mul = 1;
-    while (byteLength > 0 && (mul *= 0x100)) {
-      val += this[offset + --byteLength] * mul;
-    }
-
-    return val;
-  };
-
-  Buffer.prototype.readUInt8 = function readUInt8(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 1, this.length);
-    return this[offset];
-  };
-
-  Buffer.prototype.readUInt16LE = function readUInt16LE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 2, this.length);
-    return this[offset] | this[offset + 1] << 8;
-  };
-
-  Buffer.prototype.readUInt16BE = function readUInt16BE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 2, this.length);
-    return this[offset] << 8 | this[offset + 1];
-  };
-
-  Buffer.prototype.readUInt32LE = function readUInt32LE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 4, this.length);
-
-    return (this[offset] | this[offset + 1] << 8 | this[offset + 2] << 16) + this[offset + 3] * 0x1000000;
-  };
-
-  Buffer.prototype.readUInt32BE = function readUInt32BE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 4, this.length);
-
-    return this[offset] * 0x1000000 + (this[offset + 1] << 16 | this[offset + 2] << 8 | this[offset + 3]);
-  };
-
-  Buffer.prototype.readIntLE = function readIntLE(offset, byteLength, noAssert) {
-    offset = offset | 0;
-    byteLength = byteLength | 0;
-    if (!noAssert) checkOffset(offset, byteLength, this.length);
-
-    var val = this[offset];
-    var mul = 1;
-    var i = 0;
-    while (++i < byteLength && (mul *= 0x100)) {
-      val += this[offset + i] * mul;
-    }
-    mul *= 0x80;
-
-    if (val >= mul) val -= Math.pow(2, 8 * byteLength);
-
-    return val;
-  };
-
-  Buffer.prototype.readIntBE = function readIntBE(offset, byteLength, noAssert) {
-    offset = offset | 0;
-    byteLength = byteLength | 0;
-    if (!noAssert) checkOffset(offset, byteLength, this.length);
-
-    var i = byteLength;
-    var mul = 1;
-    var val = this[offset + --i];
-    while (i > 0 && (mul *= 0x100)) {
-      val += this[offset + --i] * mul;
-    }
-    mul *= 0x80;
-
-    if (val >= mul) val -= Math.pow(2, 8 * byteLength);
-
-    return val;
-  };
-
-  Buffer.prototype.readInt8 = function readInt8(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 1, this.length);
-    if (!(this[offset] & 0x80)) return this[offset];
-    return (0xff - this[offset] + 1) * -1;
-  };
-
-  Buffer.prototype.readInt16LE = function readInt16LE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 2, this.length);
-    var val = this[offset] | this[offset + 1] << 8;
-    return val & 0x8000 ? val | 0xFFFF0000 : val;
-  };
-
-  Buffer.prototype.readInt16BE = function readInt16BE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 2, this.length);
-    var val = this[offset + 1] | this[offset] << 8;
-    return val & 0x8000 ? val | 0xFFFF0000 : val;
-  };
-
-  Buffer.prototype.readInt32LE = function readInt32LE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 4, this.length);
-
-    return this[offset] | this[offset + 1] << 8 | this[offset + 2] << 16 | this[offset + 3] << 24;
-  };
-
-  Buffer.prototype.readInt32BE = function readInt32BE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 4, this.length);
-
-    return this[offset] << 24 | this[offset + 1] << 16 | this[offset + 2] << 8 | this[offset + 3];
-  };
-
-  Buffer.prototype.readFloatLE = function readFloatLE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 4, this.length);
-    return ieee754.read(this, offset, true, 23, 4);
-  };
-
-  Buffer.prototype.readFloatBE = function readFloatBE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 4, this.length);
-    return ieee754.read(this, offset, false, 23, 4);
-  };
-
-  Buffer.prototype.readDoubleLE = function readDoubleLE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 8, this.length);
-    return ieee754.read(this, offset, true, 52, 8);
-  };
-
-  Buffer.prototype.readDoubleBE = function readDoubleBE(offset, noAssert) {
-    if (!noAssert) checkOffset(offset, 8, this.length);
-    return ieee754.read(this, offset, false, 52, 8);
-  };
-
-  function checkInt(buf, value, offset, ext, max, min) {
-    if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance');
-    if (value > max || value < min) throw new RangeError('"value" argument is out of bounds');
-    if (offset + ext > buf.length) throw new RangeError('Index out of range');
-  }
-
-  Buffer.prototype.writeUIntLE = function writeUIntLE(value, offset, byteLength, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    byteLength = byteLength | 0;
-    if (!noAssert) {
-      var maxBytes = Math.pow(2, 8 * byteLength) - 1;
-      checkInt(this, value, offset, byteLength, maxBytes, 0);
-    }
-
-    var mul = 1;
-    var i = 0;
-    this[offset] = value & 0xFF;
-    while (++i < byteLength && (mul *= 0x100)) {
-      this[offset + i] = value / mul & 0xFF;
-    }
-
-    return offset + byteLength;
-  };
-
-  Buffer.prototype.writeUIntBE = function writeUIntBE(value, offset, byteLength, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    byteLength = byteLength | 0;
-    if (!noAssert) {
-      var maxBytes = Math.pow(2, 8 * byteLength) - 1;
-      checkInt(this, value, offset, byteLength, maxBytes, 0);
-    }
-
-    var i = byteLength - 1;
-    var mul = 1;
-    this[offset + i] = value & 0xFF;
-    while (--i >= 0 && (mul *= 0x100)) {
-      this[offset + i] = value / mul & 0xFF;
-    }
-
-    return offset + byteLength;
-  };
-
-  Buffer.prototype.writeUInt8 = function writeUInt8(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0);
-    if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
-    this[offset] = value & 0xff;
-    return offset + 1;
-  };
-
-  function objectWriteUInt16(buf, value, offset, littleEndian) {
-    if (value < 0) value = 0xffff + value + 1;
-    for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
-      buf[offset + i] = (value & 0xff << 8 * (littleEndian ? i : 1 - i)) >>> (littleEndian ? i : 1 - i) * 8;
-    }
-  }
-
-  Buffer.prototype.writeUInt16LE = function writeUInt16LE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset] = value & 0xff;
-      this[offset + 1] = value >>> 8;
-    } else {
-      objectWriteUInt16(this, value, offset, true);
-    }
-    return offset + 2;
-  };
-
-  Buffer.prototype.writeUInt16BE = function writeUInt16BE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset] = value >>> 8;
-      this[offset + 1] = value & 0xff;
-    } else {
-      objectWriteUInt16(this, value, offset, false);
-    }
-    return offset + 2;
-  };
-
-  function objectWriteUInt32(buf, value, offset, littleEndian) {
-    if (value < 0) value = 0xffffffff + value + 1;
-    for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
-      buf[offset + i] = value >>> (littleEndian ? i : 3 - i) * 8 & 0xff;
-    }
-  }
-
-  Buffer.prototype.writeUInt32LE = function writeUInt32LE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset + 3] = value >>> 24;
-      this[offset + 2] = value >>> 16;
-      this[offset + 1] = value >>> 8;
-      this[offset] = value & 0xff;
-    } else {
-      objectWriteUInt32(this, value, offset, true);
-    }
-    return offset + 4;
-  };
-
-  Buffer.prototype.writeUInt32BE = function writeUInt32BE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset] = value >>> 24;
-      this[offset + 1] = value >>> 16;
-      this[offset + 2] = value >>> 8;
-      this[offset + 3] = value & 0xff;
-    } else {
-      objectWriteUInt32(this, value, offset, false);
-    }
-    return offset + 4;
-  };
-
-  Buffer.prototype.writeIntLE = function writeIntLE(value, offset, byteLength, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) {
-      var limit = Math.pow(2, 8 * byteLength - 1);
-
-      checkInt(this, value, offset, byteLength, limit - 1, -limit);
-    }
-
-    var i = 0;
-    var mul = 1;
-    var sub = 0;
-    this[offset] = value & 0xFF;
-    while (++i < byteLength && (mul *= 0x100)) {
-      if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
-        sub = 1;
-      }
-      this[offset + i] = (value / mul >> 0) - sub & 0xFF;
-    }
-
-    return offset + byteLength;
-  };
-
-  Buffer.prototype.writeIntBE = function writeIntBE(value, offset, byteLength, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) {
-      var limit = Math.pow(2, 8 * byteLength - 1);
-
-      checkInt(this, value, offset, byteLength, limit - 1, -limit);
-    }
-
-    var i = byteLength - 1;
-    var mul = 1;
-    var sub = 0;
-    this[offset + i] = value & 0xFF;
-    while (--i >= 0 && (mul *= 0x100)) {
-      if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
-        sub = 1;
-      }
-      this[offset + i] = (value / mul >> 0) - sub & 0xFF;
-    }
-
-    return offset + byteLength;
-  };
-
-  Buffer.prototype.writeInt8 = function writeInt8(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80);
-    if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
-    if (value < 0) value = 0xff + value + 1;
-    this[offset] = value & 0xff;
-    return offset + 1;
-  };
-
-  Buffer.prototype.writeInt16LE = function writeInt16LE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset] = value & 0xff;
-      this[offset + 1] = value >>> 8;
-    } else {
-      objectWriteUInt16(this, value, offset, true);
-    }
-    return offset + 2;
-  };
-
-  Buffer.prototype.writeInt16BE = function writeInt16BE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset] = value >>> 8;
-      this[offset + 1] = value & 0xff;
-    } else {
-      objectWriteUInt16(this, value, offset, false);
-    }
-    return offset + 2;
-  };
-
-  Buffer.prototype.writeInt32LE = function writeInt32LE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset] = value & 0xff;
-      this[offset + 1] = value >>> 8;
-      this[offset + 2] = value >>> 16;
-      this[offset + 3] = value >>> 24;
-    } else {
-      objectWriteUInt32(this, value, offset, true);
-    }
-    return offset + 4;
-  };
-
-  Buffer.prototype.writeInt32BE = function writeInt32BE(value, offset, noAssert) {
-    value = +value;
-    offset = offset | 0;
-    if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
-    if (value < 0) value = 0xffffffff + value + 1;
-    if (Buffer.TYPED_ARRAY_SUPPORT) {
-      this[offset] = value >>> 24;
-      this[offset + 1] = value >>> 16;
-      this[offset + 2] = value >>> 8;
-      this[offset + 3] = value & 0xff;
-    } else {
-      objectWriteUInt32(this, value, offset, false);
-    }
-    return offset + 4;
-  };
-
-  function checkIEEE754(buf, value, offset, ext, max, min) {
-    if (offset + ext > buf.length) throw new RangeError('Index out of range');
-    if (offset < 0) throw new RangeError('Index out of range');
-  }
-
-  function writeFloat(buf, value, offset, littleEndian, noAssert) {
-    if (!noAssert) {
-      checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38);
-    }
-    ieee754.write(buf, value, offset, littleEndian, 23, 4);
-    return offset + 4;
-  }
-
-  Buffer.prototype.writeFloatLE = function writeFloatLE(value, offset, noAssert) {
-    return writeFloat(this, value, offset, true, noAssert);
-  };
-
-  Buffer.prototype.writeFloatBE = function writeFloatBE(value, offset, noAssert) {
-    return writeFloat(this, value, offset, false, noAssert);
-  };
-
-  function writeDouble(buf, value, offset, littleEndian, noAssert) {
-    if (!noAssert) {
-      checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308);
-    }
-    ieee754.write(buf, value, offset, littleEndian, 52, 8);
-    return offset + 8;
-  }
-
-  Buffer.prototype.writeDoubleLE = function writeDoubleLE(value, offset, noAssert) {
-    return writeDouble(this, value, offset, true, noAssert);
-  };
-
-  Buffer.prototype.writeDoubleBE = function writeDoubleBE(value, offset, noAssert) {
-    return writeDouble(this, value, offset, false, noAssert);
-  };
-
-  // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
-  Buffer.prototype.copy = function copy(target, targetStart, start, end) {
-    if (!start) start = 0;
-    if (!end && end !== 0) end = this.length;
-    if (targetStart >= target.length) targetStart = target.length;
-    if (!targetStart) targetStart = 0;
-    if (end > 0 && end < start) end = start;
-
-    // Copy 0 bytes; we're done
-    if (end === start) return 0;
-    if (target.length === 0 || this.length === 0) return 0;
-
-    // Fatal error conditions
-    if (targetStart < 0) {
-      throw new RangeError('targetStart out of bounds');
-    }
-    if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds');
-    if (end < 0) throw new RangeError('sourceEnd out of bounds');
-
-    // Are we oob?
-    if (end > this.length) end = this.length;
-    if (target.length - targetStart < end - start) {
-      end = target.length - targetStart + start;
-    }
-
-    var len = end - start;
-    var i;
-
-    if (this === target && start < targetStart && targetStart < end) {
-      // descending copy from end
-      for (i = len - 1; i >= 0; --i) {
-        target[i + targetStart] = this[i + start];
-      }
-    } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-      // ascending copy from start
-      for (i = 0; i < len; ++i) {
-        target[i + targetStart] = this[i + start];
-      }
-    } else {
-      Uint8Array.prototype.set.call(target, this.subarray(start, start + len), targetStart);
-    }
-
-    return len;
-  };
-
-  // Usage:
-  //    buffer.fill(number[, offset[, end]])
-  //    buffer.fill(buffer[, offset[, end]])
-  //    buffer.fill(string[, offset[, end]][, encoding])
-  Buffer.prototype.fill = function fill(val, start, end, encoding) {
-    // Handle string cases:
-    if (typeof val === 'string') {
-      if (typeof start === 'string') {
-        encoding = start;
-        start = 0;
-        end = this.length;
-      } else if (typeof end === 'string') {
-        encoding = end;
-        end = this.length;
-      }
-      if (val.length === 1) {
-        var code = val.charCodeAt(0);
-        if (code < 256) {
-          val = code;
-        }
-      }
-      if (encoding !== undefined && typeof encoding !== 'string') {
-        throw new TypeError('encoding must be a string');
-      }
-      if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
-        throw new TypeError('Unknown encoding: ' + encoding);
-      }
-    } else if (typeof val === 'number') {
-      val = val & 255;
-    }
-
-    // Invalid ranges are not set to a default, so can range check early.
-    if (start < 0 || this.length < start || this.length < end) {
-      throw new RangeError('Out of range index');
-    }
-
-    if (end <= start) {
-      return this;
-    }
-
-    start = start >>> 0;
-    end = end === undefined ? this.length : end >>> 0;
-
-    if (!val) val = 0;
-
-    var i;
-    if (typeof val === 'number') {
-      for (i = start; i < end; ++i) {
-        this[i] = val;
-      }
-    } else {
-      var bytes = Buffer.isBuffer(val) ? val : utf8ToBytes(new Buffer(val, encoding).toString());
-      var len = bytes.length;
-      for (i = 0; i < end - start; ++i) {
-        this[i + start] = bytes[i % len];
-      }
-    }
-
-    return this;
-  };
-
-  // HELPER FUNCTIONS
-  // ================
-
-  var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g;
-
-  function base64clean(str) {
-    // Node strips out invalid characters like \n and \t from the string, base64-js does not
-    str = stringtrim(str).replace(INVALID_BASE64_RE, '');
-    // Node converts strings with length < 2 to ''
-    if (str.length < 2) return '';
-    // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
-    while (str.length % 4 !== 0) {
-      str = str + '=';
-    }
-    return str;
-  }
-
-  function stringtrim(str) {
-    if (str.trim) return str.trim();
-    return str.replace(/^\s+|\s+$/g, '');
-  }
-
-  function toHex(n) {
-    if (n < 16) return '0' + n.toString(16);
-    return n.toString(16);
-  }
-
-  function utf8ToBytes(string, units) {
-    units = units || Infinity;
-    var codePoint;
-    var length = string.length;
-    var leadSurrogate = null;
-    var bytes = [];
-
-    for (var i = 0; i < length; ++i) {
-      codePoint = string.charCodeAt(i);
-
-      // is surrogate component
-      if (codePoint > 0xD7FF && codePoint < 0xE000) {
-        // last char was a lead
-        if (!leadSurrogate) {
-          // no lead yet
-          if (codePoint > 0xDBFF) {
-            // unexpected trail
-            if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-            continue;
-          } else if (i + 1 === length) {
-            // unpaired lead
-            if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-            continue;
-          }
-
-          // valid lead
-          leadSurrogate = codePoint;
-
-          continue;
-        }
-
-        // 2 leads in a row
-        if (codePoint < 0xDC00) {
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-          leadSurrogate = codePoint;
-          continue;
-        }
-
-        // valid surrogate pair
-        codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000;
-      } else if (leadSurrogate) {
-        // valid bmp char, but last char was a lead
-        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
-      }
-
-      leadSurrogate = null;
-
-      // encode utf8
-      if (codePoint < 0x80) {
-        if ((units -= 1) < 0) break;
-        bytes.push(codePoint);
-      } else if (codePoint < 0x800) {
-        if ((units -= 2) < 0) break;
-        bytes.push(codePoint >> 0x6 | 0xC0, codePoint & 0x3F | 0x80);
-      } else if (codePoint < 0x10000) {
-        if ((units -= 3) < 0) break;
-        bytes.push(codePoint >> 0xC | 0xE0, codePoint >> 0x6 & 0x3F | 0x80, codePoint & 0x3F | 0x80);
-      } else if (codePoint < 0x110000) {
-        if ((units -= 4) < 0) break;
-        bytes.push(codePoint >> 0x12 | 0xF0, codePoint >> 0xC & 0x3F | 0x80, codePoint >> 0x6 & 0x3F | 0x80, codePoint & 0x3F | 0x80);
-      } else {
-        throw new Error('Invalid code point');
-      }
-    }
-
-    return bytes;
-  }
-
-  function asciiToBytes(str) {
-    var byteArray = [];
-    for (var i = 0; i < str.length; ++i) {
-      // Node's code seems to be doing this and not & 0x7F..
-      byteArray.push(str.charCodeAt(i) & 0xFF);
-    }
-    return byteArray;
-  }
-
-  function utf16leToBytes(str, units) {
-    var c, hi, lo;
-    var byteArray = [];
-    for (var i = 0; i < str.length; ++i) {
-      if ((units -= 2) < 0) break;
-
-      c = str.charCodeAt(i);
-      hi = c >> 8;
-      lo = c % 256;
-      byteArray.push(lo);
-      byteArray.push(hi);
-    }
-
-    return byteArray;
-  }
-
-  function base64ToBytes(str) {
-    return base64.toByteArray(base64clean(str));
-  }
-
-  function blitBuffer(src, dst, offset, length) {
-    for (var i = 0; i < length; ++i) {
-      if (i + offset >= dst.length || i >= src.length) break;
-      dst[i + offset] = src[i];
-    }
-    return i;
-  }
-
-  function isnan(val) {
-    return val !== val; // eslint-disable-line no-self-compare
-  }
-});
-$__System.registerDynamic('11', [], true, function ($__require, exports, module) {
   var global = this || self,
       GLOBAL = global;
   // Copyright Joyent, Inc. and other Node contributors.
@@ -12126,7 +10059,7 @@ $__System.registerDynamic('11', [], true, function ($__require, exports, module)
     return arg === void 0;
   }
 });
-$__System.registerDynamic("12", [], true, function ($__require, exports, module) {
+$__System.registerDynamic("d", [], true, function ($__require, exports, module) {
     var global = this || self,
         GLOBAL = global;
     module.exports = Date.now || now;
@@ -12135,7 +10068,7 @@ $__System.registerDynamic("12", [], true, function ($__require, exports, module)
         return new Date().getTime();
     }
 });
-$__System.registerDynamic('13', ['12'], true, function ($__require, exports, module) {
+$__System.registerDynamic('e', ['d'], true, function ($__require, exports, module) {
   var global = this || self,
       GLOBAL = global;
 
@@ -12143,7 +10076,7 @@ $__System.registerDynamic('13', ['12'], true, function ($__require, exports, mod
    * Module dependencies.
    */
 
-  var now = $__require('12');
+  var now = $__require('d');
 
   /**
    * Returns a function, that, as long as it continues to be invoked, will not
@@ -12192,10 +10125,10 @@ $__System.registerDynamic('13', ['12'], true, function ($__require, exports, mod
     };
   };
 });
-$__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
+$__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
   "use strict";
 
-  var $, EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, util, LCD, TickTable, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, Actions, GameBoy$1, _this, keyMap, $lcd, gameboy;
+  var EventEmitter, debounce, $, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, LCD, TickTable, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, LocalStorage, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1, _this, keyMap, $lcd, canvas, gameboy;
 
   function toTypedArray(baseArray, memtype) {
     try {
@@ -12287,40 +10220,6 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
     return array;
   }
 
-  function downloadFile(filename, arrayBuffer) {
-    var blob = new Blob([new Uint8Array(arrayBuffer)], { type: "application/octet-binary" });
-    var $a = $("<a />");
-    var a = $a.get(0);
-    var url = URL.createObjectURL(blob);
-    a.href = url;
-    a.download = filename;
-    $a.appendTo("body");
-    a.click();
-    $a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function uploadFile(extensions) {
-    return new Promise(function (resolve) {
-      var $input = $("<input type='file' accept='" + extensions.map(function (extension) {
-        return "." + extension;
-      }).join(", ") + "' />");
-      $input.one("change", function () {
-        if (this.files.length > 0) {
-          var file = this.files[0];
-          var binaryHandle = new FileReader();
-          binaryHandle.addEventListener("load", function () {
-            if (this.readyState === 2) {
-              resolve(this.result);
-            }
-          });
-          binaryHandle.readAsBinaryString(file);
-        }
-      });
-      $input.click();
-    });
-  }
-
   function concatArrayBuffers() {
     var totalLength = 0;
 
@@ -12346,15 +10245,58 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
     return array.buffer;
   }
 
-  function GameBoyCore(api, canvas, options) {
-    options = options || {};
+  function downloadFile(filename, arrayBuffer) {
+    var a = document.createElement("a");
+    var blob = new Blob([new Uint8Array(arrayBuffer)], { type: "application/octet-binary" });
+    var url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.parentNode.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function uploadFile(extensions) {
+    return new Promise(function (resolve) {
+      var input = document.createElement("input");
+      input.type = "file";
+      input.accept = extensions.map(function (extension) {
+        return "." + extension;
+      }).join(", ");
+
+      function inputChange() {
+        if (this.files.length > 0) {
+          var file = this.files[0];
+          var binaryHandle = new FileReader();
+          binaryHandle.addEventListener("load", function () {
+            if (this.readyState === 2) {
+              resolve(this.result);
+            }
+          });
+          binaryHandle.readAsBinaryString(file);
+        }
+        input.removeEventListener("change", inputChange);
+      }
+
+      input.addEventListener("change", inputChange);
+      input.click();
+    });
+  }
+
+  function GameBoyCore(_ref) {
+    var api = _ref.api,
+        _ref$lcd = _ref.lcd,
+        lcdOptions = _ref$lcd === undefined ? {} : _ref$lcd;
 
     this.api = api;
     this.events = new EventEmitter(); // TODO: use as super
 
+    lcdOptions.gameboy = this;
+
     this.joypad = new Joypad(this);
     this.cartridgeSlot = new CartridgeSlot(this);
-    this.lcd = new LCD(canvas, options, this);
+    this.lcd = new LCD(lcdOptions);
     this.stateManager = new StateManager(this);
     this.stateManager.init();
 
@@ -12480,12 +10422,12 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
   }
 
   return {
-    setters: [function (_) {}, function (_b) {
+    setters: [function (_c) {
+      EventEmitter = _c.default;
+    }, function (_e) {
+      debounce = _e.default;
+    }, function (_b) {
       $ = _b.default;
-    }, function (_2) {
-      EventEmitter = _2.default;
-    }, function (_3) {
-      debounce = _3.default;
     }],
     execute: function () {
       _regeneratorRuntime = function (module) {
@@ -13262,63 +11204,74 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         };
       }();
 
-      util = {
-        getTypedArray: getTypedArray,
-        fromTypedArray: fromTypedArray,
-        toTypedArray: toTypedArray,
-        uploadFile: uploadFile,
-        downloadFile: downloadFile
-      };
-
       LCD = function () {
-        function LCD(canvas, options, gameboy) {
+        function LCD(_ref) {
+          var canvas = _ref.canvas,
+              context = _ref.context,
+              offscreenCanvas = _ref.offscreenCanvas,
+              offscreenContext = _ref.offscreenContext,
+              gameboy = _ref.gameboy,
+              width = _ref.width,
+              height = _ref.height;
+
           _classCallCheck(this, LCD);
 
-          options = options || {};
-
           this.canvas = canvas;
+          this.context = context;
+          this.offscreenCanvas = offscreenCanvas;
+          this.offscreenContext = offscreenContext;
           this.gameboy = gameboy;
-
-          this.width = options.width || 160;
-          this.height = options.height || 144;
-
-          this.drawContext = null; // LCD Context
-          this.swizzledFrame = null; //The secondary gfx buffer that holds the converted RGBA values.
-          this.canvasBuffer = null; //imageData handle
-          this.onscreenWidth = this.width;
-          this.onscreenHeight = this.height;
           this.offscreenWidth = 160;
           this.offscreenHeight = 144;
           this.offscreenRGBCount = this.offscreenWidth * this.offscreenHeight * 3;
           this.offscreenRGBACount = this.offscreenWidth * this.offscreenHeight * 4;
+          this.width = width || this.offscreenWidth;
+          this.height = height || this.offscreenHeight;
+          this.swizzledFrame = null; // The secondary gfx buffer that holds the converted RGBA values.
+          this.canvasBuffer = null; // imageData handle
 
           this.resizePathClear = true;
 
-          this.canvas.height = this.height;
-          this.canvas.width = this.width;
-          this.onscreenContext = this.canvas.getContext("2d");
+          if (typeof document !== "undefined") {
+            if (!this.canvas) this.canvas = document.createElement("canvas");
+            if (!this.offscreenCanvas) this.offscreenCanvas = document.createElement("canvas");
+          }
 
-          this.offscreenCanvas = document.createElement("canvas");
-          this.offscreenContext = this.offscreenCanvas.getContext("2d");
+          if (this.canvas) {
+            this.canvas.height = this.height;
+            this.canvas.width = this.width;
+
+            if (!this.context) this.context = this.canvas.getContext("2d");
+          }
+
+          if (this.offscreenCanvas) {
+            this.offscreenCanvas.height = this.offscreenHeight;
+            this.offscreenCanvas.width = this.offscreenWidth;
+
+            if (!this.offscreenContext) this.offscreenContext = this.offscreenCanvas.getContext("2d");
+          }
+
+          if (!this.context) {
+            throw new Error("please provide a canvas context in the lcd options");
+          }
+
+          if (!this.offscreenContext) {
+            throw new Error("please provide a canvas offscreen context in the lcd options");
+          }
         }
 
         _createClass(LCD, [{
           key: "init",
           value: function init() {
-            this.recomputeDimension();
-
-            this.offscreenCanvas.width = this.offscreenWidth;
-            this.offscreenCanvas.height = this.offscreenHeight;
-
             this.offscreenContext.msImageSmoothingEnabled = false;
             this.offscreenContext.mozImageSmoothingEnabled = false;
             this.offscreenContext.webkitImageSmoothingEnabled = false;
             this.offscreenContext.imageSmoothingEnabled = false;
 
-            this.onscreenContext.msImageSmoothingEnabled = false;
-            this.onscreenContext.mozImageSmoothingEnabled = false;
-            this.onscreenContext.webkitImageSmoothingEnabled = false;
-            this.onscreenContext.imageSmoothingEnabled = false;
+            this.context.msImageSmoothingEnabled = false;
+            this.context.mozImageSmoothingEnabled = false;
+            this.context.webkitImageSmoothingEnabled = false;
+            this.context.imageSmoothingEnabled = false;
 
             this.canvasBuffer = this.offscreenContext.createImageData(this.offscreenWidth, this.offscreenHeight);
 
@@ -13332,30 +11285,20 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
             }
 
             this.graphicsBlit();
-            if (!this.swizzledFrame) this.swizzledFrame = util.getTypedArray(this.offscreenRGBCount, 0xff, "uint8");
+            if (!this.swizzledFrame) this.swizzledFrame = getTypedArray(this.offscreenRGBCount, 0xff, "uint8");
 
             //Test the draw system and browser vblank latching:
             this.drewFrame = true; //Copy the latest graphics to buffer.
             this.requestDraw();
           }
         }, {
-          key: "recomputeDimension",
-          value: function recomputeDimension() {
-            // Cache some dimension info:
-            this.onscreenWidth = this.width;
-            this.onscreenHeight = this.height;
-            this.offscreenWidth = 160;
-            this.offscreenHeight = 144;
-            this.offscreenRGBACount = this.offscreenWidth * this.offscreenHeight * 4;
-          }
-        }, {
           key: "graphicsBlit",
           value: function graphicsBlit() {
-            if (this.offscreenWidth === this.onscreenWidth && this.offscreenHeight === this.onscreenHeight) {
-              this.onscreenContext.putImageData(this.canvasBuffer, 0, 0);
+            if (this.offscreenWidth === this.width && this.offscreenHeight === this.height) {
+              this.context.putImageData(this.canvasBuffer, 0, 0);
             } else {
               this.offscreenContext.putImageData(this.canvasBuffer, 0, 0);
-              this.onscreenContext.drawImage(this.offscreenCanvas, 0, 0, this.onscreenWidth, this.onscreenHeight);
+              this.context.drawImage(this.offscreenCanvas, 0, 0, this.width, this.height);
             }
           }
         }, {
@@ -13429,7 +11372,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
           key: "DisplayShowOff",
           value: function DisplayShowOff() {
             if (this.drewBlank === 0) {
-              //Output a blank screen to the output framebuffer:
+              // Output a blank screen to the output framebuffer:
               this.clearFrameBuffer();
               this.drewFrame = true;
             }
@@ -13479,989 +11422,6 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
       12, 12, 8, 4, 4, 16, 8, 16, 16, 4, 16, 4, 4, 4, 8, 16, //E
       12, 12, 8, 4, 4, 16, 8, 16, 12, 8, 16, 4, 0, 4, 8, 16 //F
       ];
-
-      ROM = function () {
-        function ROM(data) {
-          _classCallCheck(this, ROM);
-
-          this.data = data;
-          this.dataType = typeof data;
-        }
-
-        _createClass(ROM, [{
-          key: "getByte",
-          value: function getByte(index) {
-            if (this.dataType === "string") {
-              return this.data.charCodeAt(index);
-            } else {
-              return this.data[index];
-            }
-          }
-        }, {
-          key: "getChar",
-          value: function getChar(index) {
-            if (this.dataType === "string") {
-              return this.data[index] || "";
-            } else {
-              return String.fromCharCode(this.data[index]);
-            }
-          }
-        }, {
-          key: "getString",
-          value: function getString(from, to) {
-            var text = "";
-            for (var index = from; index <= to; index++) {
-              if (this.getByte(index) > 0) {
-                text += this.getChar(index);
-              }
-            }
-
-            return text;
-          }
-        }, {
-          key: "length",
-          get: function get() {
-            return this.data.length;
-          }
-        }]);
-
-        return ROM;
-      }();
-
-      MBC = function (_EventEmitter) {
-        _inherits(MBC, _EventEmitter);
-
-        function MBC(cartridge) {
-          _classCallCheck(this, MBC);
-
-          var _this = _possibleConstructorReturn(this, (MBC.__proto__ || Object.getPrototypeOf(MBC)).call(this));
-
-          _this.romSizes = [0x00008000, // 32K
-          0x00010000, // 64K
-          0x00020000, // 128K
-          0x00040000, // 256K
-          0x00080000, // 512K
-          0x00100000, // 1024K
-          0x00200000, // 2048K
-          0x00400000, // 4096K
-          0x00800000 // 8192K
-          ];
-          _this.ramSizes = [0x00000000, // 0K
-          0x00002000, // 2K  // Changed to 2000 to avoid problems
-          0x00002000, // 8K
-          0x00008000, // 32K
-          0x00020000, // 128K
-          0x00010000 // 64K
-          ];
-
-          _this.cartridge = cartridge;
-          _this.MBCRAMBanksEnabled = false; // MBC RAM Access Control.
-          _this.currentRAMBankPosition = -0xa000; // MBC Position Adder;
-          _this.currentMBCRAMBank = 0; // MBC Currently Indexed RAM Bank
-          _this.ROMBankEdge = Math.floor(cartridge.rom.length / 0x4000);
-          return _this;
-        }
-
-        _createClass(MBC, [{
-          key: "setupROM",
-          value: function setupROM() {
-            this.romSize = this.romSizes[this.cartridge.romSizeType];
-            console.log("ROM size 0x" + this.romSize.toString(16));
-          }
-        }, {
-          key: "setupRAM",
-          value: function setupRAM() {
-            this.ramSize = this.ramSizes[this.cartridge.ramSizeType];
-            console.log("RAM size 0x" + this.ramSize.toString(16));
-            this.RAM = util.getTypedArray(this.ramSize, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
-          }
-        }, {
-          key: "loadSRAM",
-          value: function loadSRAM(data) {
-            if (data.length !== this.ramSize) return;
-            this.RAM = data.slice(0);
-          }
-        }, {
-          key: "getSRAM",
-          value: function getSRAM() {
-            return new Uint8Array(this.RAM.buffer.slice(0, this.ramSize));
-          }
-        }, {
-          key: "cutSRAMFromBatteryFileArray",
-          value: function cutSRAMFromBatteryFileArray(data) {
-            return new Uint8Array(data.buffer.slice(0, this.ramSize));
-          }
-        }, {
-          key: "saveState",
-          value: function saveState() {
-            // TODO: remove after state refactor
-            if (!this.cartridge.hasBattery || this.RAM.length === 0) return; // No battery backup...
-
-            // return the MBC RAM for backup...
-            return util.fromTypedArray(this.RAM);
-          }
-        }, {
-          key: "readRAM",
-          value: function readRAM(address) {
-            // Switchable RAM
-            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-              return this.RAM[address + this.currentRAMBankPosition];
-            }
-            //console.log("Reading from disabled RAM.");
-            return 0xff;
-          }
-        }, {
-          key: "writeRAM",
-          value: function writeRAM(address, data) {
-            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-              this.emit("ramWrite");
-              this.RAM[address + this.currentRAMBankPosition] = data;
-            }
-          }
-
-          // TODO: for MBC2 & MBC3, compare with other MBCx
-
-        }, {
-          key: "setCurrentROMBank",
-          value: function setCurrentROMBank() {
-            //Read the cartridge ROM data from RAM memory:
-            //Only map bank 0 to bank 1 here (MBC2 is like MBC1, but can only do 16 banks, so only the bank 0 quirk appears for MBC2):
-            this.currentROMBank = Math.max(this.ROMBank1Offset % this.ROMBankEdge - 1, 0) << 14;
-          }
-        }, {
-          key: "writeEnable",
-          value: function writeEnable(address, data) {
-            // MBC RAM Bank Enable/Disable:
-            this.MBCRAMBanksEnabled = (data & 0x0f) === 0x0a; // If lower nibble is 0x0A, then enable, otherwise disable.
-          }
-        }]);
-
-        return MBC;
-      }(EventEmitter);
-
-      MBC1 = function (_MBC) {
-        _inherits(MBC1, _MBC);
-
-        function MBC1(cartridge) {
-          _classCallCheck(this, MBC1);
-
-          var _this = _possibleConstructorReturn(this, (MBC1.__proto__ || Object.getPrototypeOf(MBC1)).call(this, cartridge));
-
-          _this.MBC1Mode = false; // MBC1 Type (4/32, 16/8)
-          return _this;
-        }
-
-        _createClass(MBC1, [{
-          key: "writeType",
-          value: function writeType(address, data) {
-            // MBC1 mode setting:
-            this.MBC1Mode = (data & 0x1) === 0x1;
-            if (this.MBC1Mode) {
-              this.ROMBank1Offset &= 0x1f;
-              this.setCurrentROMBank();
-            } else {
-              this.currentMBCRAMBank = 0;
-              this.currentRAMBankPosition = -0xa000;
-            }
-          }
-        }, {
-          key: "writeROMBank",
-          value: function writeROMBank(address, data) {
-            // MBC1 ROM bank switching:
-            this.ROMBank1Offset = this.ROMBank1Offset & 0x60 | data & 0x1f;
-            this.setCurrentROMBank();
-          }
-        }, {
-          key: "writeRAMBank",
-          value: function writeRAMBank(address, data) {
-            // MBC1 RAM bank switching
-            if (this.MBC1Mode) {
-              // 4/32 Mode
-              this.currentMBCRAMBank = data & 0x03;
-              this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
-            } else {
-              // 16/8 Mode
-              this.ROMBank1Offset = (data & 0x03) << 5 | this.ROMBank1Offset & 0x1f;
-              this.setCurrentROMBank();
-            }
-          }
-        }, {
-          key: "setCurrentROMBank",
-          value: function setCurrentROMBank() {
-            // Read the cartridge ROM data from RAM memory:
-            switch (this.ROMBank1Offset) {
-              case 0x00:
-              case 0x20:
-              case 0x40:
-              case 0x60:
-                // Bank calls for 0x00, 0x20, 0x40, and 0x60 are really for 0x01, 0x21, 0x41, and 0x61.
-                this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge << 14;
-                break;
-              default:
-                this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
-            }
-          }
-        }]);
-
-        return MBC1;
-      }(MBC);
-
-      MBC2 = function (_MBC) {
-        _inherits(MBC2, _MBC);
-
-        function MBC2() {
-          _classCallCheck(this, MBC2);
-
-          return _possibleConstructorReturn(this, (MBC2.__proto__ || Object.getPrototypeOf(MBC2)).apply(this, arguments));
-        }
-
-        _createClass(MBC2, [{
-          key: "writeROMBank",
-          value: function writeROMBank(address, data) {
-            // MBC2 ROM bank switching:
-            this.ROMBank1Offset = data & 0x0f;
-            this.setCurrentROMBank();
-          }
-        }]);
-
-        return MBC2;
-      }(MBC);
-
-      RTC = function () {
-        function RTC(mbc) {
-          _classCallCheck(this, RTC);
-
-          this.mbc = mbc;
-        }
-
-        // TODO: rename RTC vars
-
-        _createClass(RTC, [{
-          key: "writeSeconds",
-          value: function writeSeconds(data) {
-            if (data < 60) {
-              this.RTCSeconds = data;
-            } else {
-              console.log("(Bank #" + this.mbc.currentMBCRAMBank + ") RTC write out of range: " + data);
-            }
-          }
-        }, {
-          key: "writeMinutes",
-          value: function writeMinutes(data) {
-            if (data < 60) {
-              this.RTCMinutes = data;
-            } else {
-              console.log("(Bank #" + this.mbc.currentMBCRAMBank + ") RTC write out of range: " + data);
-            }
-          }
-        }, {
-          key: "writeDaysLow",
-          value: function writeDaysLow(data) {
-            this.RTCDays = data & 0xff | this.RTCDays & 0x100;
-          }
-        }, {
-          key: "writeDaysHigh",
-          value: function writeDaysHigh(data) {
-            this.RTCDayOverFlow = data > 0x7f;
-            this.RTCHalt = (data & 0x40) === 0x40;
-            this.RTCDays = (data & 0x1) << 8 | this.RTCDays & 0xff;
-          }
-        }, {
-          key: "writeHours",
-          value: function writeHours(data) {
-            if (data < 24) {
-              this.RTCHours = data;
-            } else {
-              console.log("(Bank #" + this.mbc.currentMBCRAMBank + ") RTC write out of range: " + data);
-            }
-          }
-        }, {
-          key: "readSeconds",
-          value: function readSeconds() {
-            return this.latchedSeconds;
-          }
-        }, {
-          key: "readMinutes",
-          value: function readMinutes() {
-            return this.latchedMinutes;
-          }
-        }, {
-          key: "readHours",
-          value: function readHours() {
-            return this.latchedHours;
-          }
-        }, {
-          key: "readDaysLow",
-          value: function readDaysLow() {
-            return this.latchedLDays;
-          }
-        }, {
-          key: "readDaysHigh",
-          value: function readDaysHigh() {
-            return (this.RTCDayOverFlow ? 0x80 : 0) + (this.RTCHALT ? 0x40 : 0) + this.latchedHDays;
-          }
-        }, {
-          key: "writeLatch",
-          value: function writeLatch(address, data) {
-            if (data === 0) {
-              this.RTCisLatched = false;
-            } else if (!this.RTCisLatched) {
-              // Copy over the current RTC time for reading.
-              this.RTCisLatched = true;
-              this.latchedSeconds = this.RTCSeconds | 0;
-              this.latchedMinutes = this.RTCMinutes;
-              this.latchedHours = this.RTCHours;
-              this.latchedLDays = this.RTCDays & 0xff;
-              this.latchedHDays = this.RTCDays >> 8;
-            }
-          }
-        }, {
-          key: "get",
-          value: function get() {
-            var lastTimeSeconds = Math.round(this.lastTime / 1000);
-            var lastTimeLow = lastTimeSeconds >> 0 & 0xffff;
-            var lastTimeHigh = lastTimeSeconds >> 16 & 0xffff;
-
-            var data = new Uint32Array([this.RTCSeconds, this.RTCMinutes, this.RTCHours, this.RTCDays, this.RTCDayOverFlow, this.latchedSeconds, this.latchedMinutes, this.latchedHours, this.latchedLDays, this.latchedHDays, lastTimeLow, lastTimeHigh]);
-
-            return data;
-          }
-        }, {
-          key: "load",
-          value: function load(array) {
-            var options = this.extract(array);
-
-            this.RTCSeconds = options.seconds;
-            this.RTCMinutes = options.minutes;
-            this.RTCHours = options.hours;
-            this.RTCDays = options.daysLow;
-            this.RTCDayOverFlow = options.daysHigh;
-
-            this.latchedSeconds = options.latchedSeconds;
-            this.latchedMinutes = options.latchedMinutes;
-            this.latchedHours = options.latchedHours;
-            this.latchedLDays = options.latchedDaysLow;
-            this.latchedHDays = options.latchedDaysHigh;
-
-            this.lastTime = options.lastTime;
-          }
-        }, {
-          key: "cutBatteryFileArray",
-          value: function cutBatteryFileArray(data) {
-            return new Uint32Array(data.buffer.slice(this.mbc.ramSize, this.mbc.ramSize + 4 * 12));
-          }
-        }, {
-          key: "extract",
-          value: function extract(array) {
-            var seconds = array[0];
-            var minutes = array[1];
-            var hours = array[2];
-            var daysLow = array[3];
-            var daysHigh = array[4];
-            var latchedSeconds = array[5];
-            var latchedMinutes = array[6];
-            var latchedHours = array[7];
-            var latchedDaysLow = array[8];
-            var latchedDaysHigh = array[9];
-            var lastTimeLow = array[10];
-            var lastTimeHigh = array[11];
-
-            var lastTimeSeconds = lastTimeLow;
-            if (lastTimeLow && lastTimeHigh) {
-              lastTimeSeconds = lastTimeHigh << 16 | lastTimeLow;
-            }
-
-            return {
-              seconds: seconds,
-              minutes: minutes,
-              hours: hours,
-              daysLow: daysLow,
-              daysHigh: daysHigh,
-              latchedSeconds: latchedSeconds,
-              latchedMinutes: latchedMinutes,
-              latchedHours: latchedHours,
-              latchedDaysLow: latchedDaysLow,
-              latchedDaysHigh: latchedDaysHigh,
-              lastTime: lastTimeSeconds * 1000
-            };
-          }
-        }, {
-          key: "saveState",
-          value: function saveState() {
-            // TODO: remove after state refactor
-            // return the MBC RAM for backup...
-            return [this.lastTime, this.RTCisLatched, this.latchedSeconds, this.latchedMinutes, this.latchedHours, this.latchedLDays, this.latchedHDays, this.RTCSeconds, this.RTCMinutes, this.RTCHours, this.RTCDays, this.RTCDayOverFlow, this.RTCHALT];
-          }
-        }, {
-          key: "loadState",
-          value: function loadState(data) {
-            var index = 0;
-            this.lastTime = data[index++];
-            this.RTCisLatched = data[index++];
-            this.latchedSeconds = data[index++];
-            this.latchedMinutes = data[index++];
-            this.latchedHours = data[index++];
-            this.latchedLDays = data[index++];
-            this.latchedHDays = data[index++];
-            this.RTCSeconds = data[index++];
-            this.RTCMinutes = data[index++];
-            this.RTCHours = data[index++];
-            this.RTCDays = data[index++];
-            this.RTCDayOverFlow = data[index++];
-            this.RTCHALT = data[index];
-          }
-        }, {
-          key: "updateClock",
-          value: function updateClock() {
-            var currentTime = new Date().getTime();
-            var elapsedTime = currentTime - this.lastTime;
-            this.lastTime = currentTime;
-
-            if (!this.RTCHALT) {
-              //Update the MBC3 RTC:
-              this.RTCSeconds += elapsedTime / 1000;
-              while (this.RTCSeconds >= 60) {
-                // System can stutter, so the seconds difference can get large, thus the "while".
-                this.RTCSeconds -= 60;
-                ++this.RTCMinutes;
-                if (this.RTCMinutes >= 60) {
-                  this.RTCMinutes -= 60;
-                  ++this.RTCHours;
-                  if (this.RTCHours >= 24) {
-                    this.RTCHours -= 24;
-                    ++this.RTCDays;
-                    if (this.RTCDays >= 512) {
-                      this.RTCDays -= 512;
-                      this.RTCDayOverFlow = true;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }]);
-
-        return RTC;
-      }();
-
-      MBC3 = function (_MBC) {
-        _inherits(MBC3, _MBC);
-
-        function MBC3(cartridge) {
-          _classCallCheck(this, MBC3);
-
-          var _this = _possibleConstructorReturn(this, (MBC3.__proto__ || Object.getPrototypeOf(MBC3)).call(this, cartridge));
-
-          _this.rtc = new RTC(_this);
-          return _this;
-        }
-
-        _createClass(MBC3, [{
-          key: "writeROMBank",
-          value: function writeROMBank(address, data) {
-            // MBC3 ROM bank switching:
-            this.ROMBank1Offset = data & 0x7f;
-            this.setCurrentROMBank();
-          }
-        }, {
-          key: "writeRAMBank",
-          value: function writeRAMBank(address, data) {
-            this.currentMBCRAMBank = data;
-            if (data < 4) {
-              // MBC3 RAM bank switching
-              this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
-            }
-          }
-        }, {
-          key: "writeRAM",
-          value: function writeRAM(address, data) {
-            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-              switch (this.currentMBCRAMBank) {
-                case 0x00:
-                case 0x01:
-                case 0x02:
-                case 0x03:
-                  this.emit("ramWrite");
-                  this.RAM[address + this.currentRAMBankPosition] = data;
-                  break;
-                case 0x08:
-                  this.rtc && this.rtc.writeSeconds(data);
-                  break;
-                case 0x09:
-                  this.rtc && this.rtc.writeMinutes(data);
-                  break;
-                case 0x0a:
-                  this.rtc && this.rtc.writeHours(data);
-                  break;
-                case 0x0b:
-                  this.rtc && this.rtc.writeDaysLow(data);
-                  break;
-                case 0x0c:
-                  this.rtc && this.rtc.writeDaysHigh(data);
-                  break;
-                default:
-                  console.log("Invalid MBC3 bank address selected: " + this.currentMBCRAMBank);
-              }
-            }
-          }
-        }, {
-          key: "readRAM",
-          value: function readRAM(address) {
-            // Switchable RAM
-            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-              switch (this.currentMBCRAMBank) {
-                case 0x00:
-                case 0x01:
-                case 0x02:
-                case 0x03:
-                  return this.RAM[address + this.currentRAMBankPosition];
-                  break;
-                case 0x08:
-                  return this.rtc && this.rtc.readSeconds();
-                  break;
-                case 0x09:
-                  return this.rtc && this.rtc.readMinutes();
-                  break;
-                case 0x0a:
-                  return this.rtc && this.rtc.readHours();
-                  break;
-                case 0x0b:
-                  return this.rtc && this.rtc.readDaysLow();
-                  break;
-                case 0x0c:
-                  return this.rtc && this.rtc.readDaysHigh();
-              }
-            }
-            //console.log("Reading from invalid or disabled RAM.");
-            return 0xff;
-          }
-        }]);
-
-        return MBC3;
-      }(MBC);
-
-      MBC5 = function (_MBC) {
-        _inherits(MBC5, _MBC);
-
-        function MBC5() {
-          _classCallCheck(this, MBC5);
-
-          return _possibleConstructorReturn(this, (MBC5.__proto__ || Object.getPrototypeOf(MBC5)).apply(this, arguments));
-        }
-
-        _createClass(MBC5, [{
-          key: "setCurrentROMBank",
-          value: function setCurrentROMBank() {
-            // Read the cartridge ROM data from RAM memory:
-            this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
-          }
-        }, {
-          key: "writeROMBankLow",
-          value: function writeROMBankLow(address, data) {
-            // MBC5 ROM bank switching:
-            this.ROMBank1Offset = this.ROMBank1Offset & 0x100 | data;
-            this.setCurrentROMBank();
-          }
-        }, {
-          key: "writeROMBankHigh",
-          value: function writeROMBankHigh(address, data) {
-            // MBC5 ROM bank switching (by least significant bit):
-            this.ROMBank1Offset = (data & 0x01) << 8 | this.ROMBank1Offset & 0xff;
-            this.setCurrentROMBank();
-          }
-        }, {
-          key: "writeRAMBank",
-          value: function writeRAMBank(address, data) {
-            // MBC5 RAM bank switching
-            this.currentMBCRAMBank = data & 0xf;
-            this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
-          }
-        }]);
-
-        return MBC5;
-      }(MBC);
-
-      MBC7 = function (_MBC) {
-        _inherits(MBC7, _MBC);
-
-        function MBC7(cartridge) {
-          _classCallCheck(this, MBC7);
-
-          // Gyro
-          var _this = _possibleConstructorReturn(this, (MBC7.__proto__ || Object.getPrototypeOf(MBC7)).call(this, cartridge));
-
-          _this.highX = 127;
-          _this.lowX = 127;
-          _this.highY = 127;
-          _this.lowY = 127;
-          return _this;
-        }
-
-        _createClass(MBC7, [{
-          key: "applyGyroEvent",
-          value: function applyGyroEvent(x, y) {
-            x *= -100;
-            x += 2047;
-            this.highX = x >> 8;
-            this.lowX = x & 0xff;
-            y *= -100;
-            y += 2047;
-            this.highY = y >> 8;
-            this.lowY = y & 0xff;
-          }
-        }, {
-          key: "read",
-          value: function read(address) {
-            // Switchable RAM
-            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-              switch (address) {
-                case 0xa000:
-                case 0xa060:
-                case 0xa070:
-                  return 0;
-                case 0xa080:
-                  // TODO: Gyro Control Register
-                  return 0;
-                case 0xa050:
-                  //Y High Byte
-                  return this.highY;
-                case 0xa040:
-                  //Y Low Byte
-                  return this.lowY;
-                case 0xa030:
-                  //X High Byte
-                  return this.highX;
-                case 0xa020:
-                  //X Low Byte:
-                  return this.lowX;
-                default:
-                  return this.RAM[address + this.currentRAMBankPosition];
-              }
-            }
-            //console.log("Reading from disabled RAM.", 1);
-            return 0xff;
-          }
-        }]);
-
-        return MBC7;
-      }(MBC);
-
-      Cartridge = function () {
-        function Cartridge(rom) {
-          _classCallCheck(this, Cartridge);
-
-          this.rom = new ROM(rom);
-
-          this.hasMBC1 = false; // Does the cartridge use MBC1?
-          this.hasMBC2 = false; // Does the cartridge use MBC2?
-          this.hasMBC3 = false; // Does the cartridge use MBC3?
-          this.hasMBC5 = false; // Does the cartridge use MBC5?
-          this.hasMBC7 = false; // Does the cartridge use MBC7?
-          this.hasSRAM = false; // Does the cartridge use save RAM?
-          this.cMMMO1 = false; // ...
-          this.hasBattery = false;
-          this.cRUMBLE = false; // Does the cartridge use the RUMBLE addressing (modified MBC5)?
-          this.cCamera = false; // Is the cartridge actually a GameBoy Camera?
-          this.cTAMA5 = false; // Does the cartridge use TAMA5? (Tamagotchi Cartridge)
-          this.cHuC3 = false; // Does the cartridge use HuC3 (Hudson Soft / modified MBC3)?
-          this.cHuC1 = false; // Does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
-          this.hasRTC = false; // Does the cartridge have an RTC?
-        }
-
-        _createClass(Cartridge, [{
-          key: "connect",
-          value: function connect(gameboy) {
-            this.gameboy = gameboy;
-            this.parseROM();
-          }
-        }, {
-          key: "parseROM",
-          value: function parseROM() {
-            // TODO: move to gameboy core
-            // Load the first two ROM banks (0x0000 - 0x7FFF) into regular gameboy memory:
-            this.gameboy.usedBootROM = settings.bootBootRomFirst && (!settings.forceGBBootRom && this.gameboy.GBCBOOTROM.length === 0x800 || settings.forceGBBootRom && this.gameboy.GBBOOTROM.length === 0x100);
-
-            // http://www.enliten.force9.co.uk/gameboy/carthead.htm
-            if (this.rom.length < 0x4000) throw new Error("ROM size too small.");
-
-            var romIndex = 0;
-            if (this.gameboy.usedBootROM) {
-              if (!settings.forceGBBootRom) {
-                // Patch in the GBC boot ROM into the memory map:
-                while (romIndex < 0x100) {
-                  this.memory[romIndex] = this.GBCBOOTROM[romIndex]; // Load in the GameBoy Color BOOT ROM.
-                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
-                  ++romIndex;
-                }
-
-                while (romIndex < 0x200) {
-                  this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
-                  ++romIndex;
-                }
-
-                while (romIndex < 0x900) {
-                  this.memory[romIndex] = this.GBCBOOTROM[romIndex - 0x100]; // Load in the GameBoy Color BOOT ROM.
-                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
-                  ++romIndex;
-                }
-
-                this.usedGBCBootROM = true;
-              } else {
-                // Patch in the GB boot ROM into the memory map:
-                while (romIndex < 0x100) {
-                  this.memory[romIndex] = this.GBBOOTROM[romIndex]; // Load in the GameBoy BOOT ROM.
-                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
-                  ++romIndex;
-                }
-              }
-
-              while (romIndex < 0x4000) {
-                this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
-                ++romIndex;
-              }
-            } else {
-              // Don't load in the boot ROM:
-              while (romIndex < 0x4000) {
-                this.gameboy.memory[romIndex] = this.rom.getByte(romIndex) & 0xff;
-                ++romIndex;
-              }
-            }
-          }
-        }, {
-          key: "interpret",
-          value: function interpret() {
-            this.name = this.rom.getString(0x134, 0x13e);
-            this.gameCode = this.rom.getString(0x13f, 0x142);
-            this.colorCompatibilityByte = this.rom.getByte(0x143);
-            this.type = this.rom.getByte(0x147);
-            this.setTypeName();
-
-            if (this.name) {
-              console.log("Game Title: " + this.name);
-            }
-            if (this.gameCode) {
-              console.log("Game Code: " + this.gameCode);
-            }
-            if (this.colorCompatibilityByte) {
-              console.log("Color Compatibility Byte: " + this.colorCompatibilityByte);
-            }
-            if (this.type) {
-              console.log("Cartridge Type: " + this.type);
-            }
-            if (this.typeName) {
-              console.log("Cartridge Type Name: " + this.typeName);
-            }
-
-            this.romSizeType = this.rom.getByte(0x148);
-            this.ramSizeType = this.rom.getByte(0x149);
-
-            // Check the GB/GBC mode byte:
-            if (!this.gameboy.usedBootROM) {
-              switch (this.colorCompatibilityByte) {
-                case 0x00:
-                  // GB only
-                  this.useGBCMode = false;
-                  break;
-                case 0x32:
-                  // Exception to the GBC identifying code:
-                  if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === "Game and Watch 50") {
-                    this.useGBCMode = true;
-                    console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
-                  } else {
-                    this.useGBCMode = false;
-                  }
-                  break;
-                case 0x80:
-                  //Both GB + GBC modes
-                  this.useGBCMode = !settings.gbHasPriority;
-                  break;
-                case 0xc0:
-                  //Only GBC mode
-                  this.useGBCMode = true;
-                  break;
-                default:
-                  this.useGBCMode = false;
-                  console.warn("Unknown GameBoy game type code #" + this.colorCompatibilityByte + ", defaulting to GB mode (Old games don't have a type code).");
-              }
-            } else {
-              console.log("used boot rom");
-              this.useGBCMode = this.gameboy.usedGBCBootROM; // Allow the GBC boot ROM to run in GBC mode...
-            }
-
-            var oldLicenseCode = this.rom.getByte(0x14b);
-            var newLicenseCode = this.rom.getByte(0x144) & 0xff00 | this.rom.getByte(0x145) & 0xff;
-            if (oldLicenseCode !== 0x33) {
-              this.isNewLicenseCode = false;
-              this.licenseCode = oldLicenseCode;
-            } else {
-              this.isNewLicenseCode = true;
-              this.licenseCode = newLicenseCode;
-            }
-          }
-        }, {
-          key: "setTypeName",
-          value: function setTypeName() {
-            switch (this.type) {
-              case 0x00:
-                //ROM w/o bank switching
-                if (!settings.enableMBC1Override) {
-                  this.typeName = "ROM";
-                }
-              case 0x01:
-                this.hasMBC1 = true;
-                this.typeName = "MBC1";
-                break;
-              case 0x02:
-                this.hasMBC1 = true;
-                this.hasSRAM = true;
-                this.typeName = "MBC1 + SRAM";
-                break;
-              case 0x03:
-                this.hasMBC1 = true;
-                this.hasSRAM = true;
-                this.hasBattery = true;
-                this.typeName = "MBC1 + SRAM + Battery";
-                break;
-              case 0x05:
-                this.hasMBC2 = true;
-                this.typeName = "MBC2";
-                break;
-              case 0x06:
-                this.hasMBC2 = true;
-                this.hasBattery = true;
-                this.typeName = "MBC2 + Battery";
-                break;
-              case 0x08:
-                this.hasSRAM = true;
-                this.typeName = "ROM + SRAM";
-                break;
-              case 0x09:
-                this.hasSRAM = true;
-                this.hasBattery = true;
-                this.typeName = "ROM + SRAM + Battery";
-                break;
-              case 0x0b:
-                this.cMMMO1 = true;
-                this.typeName = "MMMO1";
-                break;
-              case 0x0c:
-                this.cMMMO1 = true;
-                this.hasSRAM = true;
-                this.typeName = "MMMO1 + SRAM";
-                break;
-              case 0x0d:
-                this.cMMMO1 = true;
-                this.hasSRAM = true;
-                this.hasBattery = true;
-                this.typeName = "MMMO1 + SRAM + Battery";
-                break;
-              case 0x0f:
-                this.hasMBC3 = true;
-                this.hasRTC = true;
-                this.hasBattery = true;
-                this.typeName = "MBC3 + RTC + Battery";
-                break;
-              case 0x10:
-                this.hasMBC3 = true;
-                this.hasRTC = true;
-                this.hasBattery = true;
-                this.hasSRAM = true;
-                this.typeName = "MBC3 + RTC + Battery + SRAM";
-                break;
-              case 0x11:
-                this.hasMBC3 = true;
-                this.typeName = "MBC3";
-                break;
-              case 0x12:
-                this.hasMBC3 = true;
-                this.hasSRAM = true;
-                this.typeName = "MBC3 + SRAM";
-                break;
-              case 0x13:
-                this.hasMBC3 = true;
-                this.hasSRAM = true;
-                this.hasBattery = true;
-                this.typeName = "MBC3 + SRAM + Battery";
-                break;
-              case 0x19:
-                this.hasMBC5 = true;
-                this.typeName = "MBC5";
-                break;
-              case 0x1a:
-                this.hasMBC5 = true;
-                this.hasSRAM = true;
-                this.typeName = "MBC5 + SRAM";
-                break;
-              case 0x1b:
-                this.hasMBC5 = true;
-                this.hasSRAM = true;
-                this.hasBattery = true;
-                this.typeName = "MBC5 + SRAM + Battery";
-                break;
-              case 0x1c:
-                this.cRUMBLE = true;
-                this.typeName = "RUMBLE";
-                break;
-              case 0x1d:
-                this.cRUMBLE = true;
-                this.hasSRAM = true;
-                this.typeName = "RUMBLE + SRAM";
-                break;
-              case 0x1e:
-                this.cRUMBLE = true;
-                this.hasSRAM = true;
-                this.hasBattery = true;
-                this.typeName = "RUMBLE + SRAM + Battery";
-                break;
-              case 0x1f:
-                this.cCamera = true;
-                this.typeName = "GameBoy Camera";
-                break;
-              case 0x22:
-                this.hasMBC7 = true;
-                this.hasSRAM = true;
-                this.hasBattery = true;
-                this.typeName = "MBC7 + SRAM + Battery";
-                break;
-              case 0xfd:
-                this.cTAMA5 = true;
-                this.typeName = "TAMA5";
-                break;
-              case 0xfe:
-                this.cHuC3 = true;
-                this.typeName = "HuC3";
-                break;
-              case 0xff:
-                this.cHuC1 = true;
-                this.typeName = "HuC1";
-                break;
-              default:
-                this.typeName = "Unknown";
-                console.log("Cartridge type is unknown.");
-                // TODO error
-                break;
-            }
-
-            if (this.hasMBC1) this.mbc1 = new MBC1(this);
-            if (this.hasMBC2) this.mbc2 = new MBC2(this);
-            if (this.hasMBC3) this.mbc3 = new MBC3(this);
-            if (this.hasMBC5) this.mbc5 = new MBC5(this);
-            if (this.hasMBC7) this.mbc7 = new MBC7(this);
-
-            this.mbc = this.mbc1 || this.mbc2 || this.mbc3 || this.mbc5 || this.mbc7 || null;
-          }
-        }, {
-          key: "setupRAM",
-          value: function setupRAM() {
-            this.mbc.setupRAM();
-
-            this.gameboy.api.loadSRAM();
-            this.gameboy.api.loadRTC();
-          }
-        }]);
-
-        return Cartridge;
-      }();
 
       CartridgeSlot = function () {
         function CartridgeSlot(gameboy) {
@@ -14687,7 +11647,13 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
       }();
 
       AudioServer = function () {
-        function AudioServer(channels, sampleRate, minBufferSize, maxBufferSize, volume) {
+        function AudioServer(_ref) {
+          var channels = _ref.channels,
+              sampleRate = _ref.sampleRate,
+              minBufferSize = _ref.minBufferSize,
+              maxBufferSize = _ref.maxBufferSize,
+              volume = _ref.volume;
+
           _classCallCheck(this, AudioServer);
 
           this.samplesPerCallback = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
@@ -14716,12 +11682,16 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "initializeAudio",
           value: function initializeAudio() {
+            var _this = this;
+
             this.audioContext = this.audioContext || new AudioContext();
 
             if (!this.audioNode) {
               this.audioNode = this.audioContext.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
 
-              this.audioNode.addEventListener("audioprocess", this.processAudio.bind(this));
+              this.audioNode.addEventListener("audioprocess", function (e) {
+                return _this.processAudio(e);
+              });
               this.audioNode.connect(this.audioContext.destination);
               this.resetCallbackAPIAudioBuffer(this.audioContext.sampleRate);
             }
@@ -19131,8 +16101,8 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
 
         // Setup the RAM for GBC mode.
         if (this.cartridgeSlot.cartridge.useGBCMode) {
-          this.VRAM = util.getTypedArray(0x2000, 0, "uint8");
-          this.GBCMemory = util.getTypedArray(0x7000, 0, "uint8");
+          this.VRAM = getTypedArray(0x2000, 0, "uint8");
+          this.GBCMemory = getTypedArray(0x7000, 0, "uint8");
         }
 
         this.memoryReadJumpCompile();
@@ -19142,16 +16112,16 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
       };
       GameBoyCore.prototype.initMemory = function () {
         // Initialize the RAM:
-        this.memory = util.getTypedArray(0x10000, 0, "uint8");
-        this.frameBuffer = util.getTypedArray(23040, 0xf8f8f8, "int32");
-        this.BGCHRBank1 = util.getTypedArray(0x800, 0, "uint8");
-        this.channel3PCM = util.getTypedArray(0x20, 0, "int8");
+        this.memory = getTypedArray(0x10000, 0, "uint8");
+        this.frameBuffer = getTypedArray(23040, 0xf8f8f8, "int32");
+        this.BGCHRBank1 = getTypedArray(0x800, 0, "uint8");
+        this.channel3PCM = getTypedArray(0x20, 0, "int8");
       };
       GameBoyCore.prototype.generateCacheArray = function (tileAmount) {
         var tileArray = [];
         var tileNumber = 0;
         while (tileNumber < tileAmount) {
-          tileArray[tileNumber++] = util.getTypedArray(64, 0, "uint8");
+          tileArray[tileNumber++] = getTypedArray(64, 0, "uint8");
         }
         return tileArray;
       };
@@ -19379,7 +16349,23 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
           if (this.audioServer) this.audioServer.changeVolume(0);
         } else {
           if (!this.audioServer) {
-            this.audioServer = new AudioServer(2, this.clocksPerSecond / this.audioResamplerFirstPassFactor, 0, Math.max(this.baseCPUCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 8192) << 1, settings.soundVolume);
+            var sampleRate = this.clocksPerSecond / this.audioResamplerFirstPassFactor;
+            var maxBufferSize = Math.max(this.baseCPUCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 8192) << 1;
+
+            console.log({
+              channels: 2,
+              sampleRate: sampleRate,
+              minBufferSize: 0,
+              maxBufferSize: maxBufferSize,
+              volume: settings.soundVolume
+            });
+            this.audioServer = new AudioServer({
+              channels: 2,
+              sampleRate: sampleRate,
+              minBufferSize: 0,
+              maxBufferSize: maxBufferSize,
+              volume: settings.soundVolume
+            });
             this.initAudioBuffer();
           }
         }
@@ -19395,13 +16381,13 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         this.downsampleInput = 0;
         this.bufferContainAmount = Math.max(this.baseCPUCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 4096) << 1;
         this.numSamplesTotal = this.baseCPUCyclesPerIteration / this.audioResamplerFirstPassFactor << 1;
-        this.audioBuffer = util.getTypedArray(this.numSamplesTotal, 0, "float32");
+        this.audioBuffer = getTypedArray(this.numSamplesTotal, 0, "float32");
       };
       GameBoyCore.prototype.intializeWhiteNoise = function () {
         //Noise Sample Tables:
         var randomFactor = 1;
         //15-bit LSFR Cache Generation:
-        this.LSFR15Table = util.getTypedArray(0x80000, 0, "int8");
+        this.LSFR15Table = getTypedArray(0x80000, 0, "int8");
         var LSFR = 0x7fff; //Seed value has all its bits set.
         var LSFRShifted = 0x3fff;
         for (var index = 0; index < 0x8000; ++index) {
@@ -19428,7 +16414,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
           LSFR = LSFRShifted | ((LSFRShifted ^ LSFR) & 0x1) << 14;
         }
         //7-bit LSFR Cache Generation:
-        this.LSFR7Table = util.getTypedArray(0x800, 0, "int8");
+        this.LSFR7Table = getTypedArray(0x800, 0, "int8");
         LSFR = 0x7f; //Seed value has all its bits set.
         for (index = 0; index < 0x80; ++index) {
           //Normalize the last LSFR value for usage:
@@ -19457,13 +16443,12 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         this.noiseSampleTable = this.LSFR15Table;
       };
       GameBoyCore.prototype.audioUnderrunAdjustment = function () {
-        if (settings.soundOn) {
-          var underrunAmount = this.audioServer.remainingBuffer();
-          if (typeof underrunAmount === "number") {
-            underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
-            if (underrunAmount > 0) {
-              this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.audioResamplerFirstPassFactor);
-            }
+        if (!this.audioServer) return;
+        var underrunAmount = this.audioServer.remainingBuffer();
+        if (typeof underrunAmount === "number") {
+          underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
+          if (underrunAmount > 0) {
+            this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.audioResamplerFirstPassFactor);
           }
         }
       };
@@ -20501,21 +17486,21 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
       GameBoyCore.prototype.initializeModeSpecificArrays = function () {
         this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
         if (this.cartridgeSlot.cartridge.useGBCMode) {
-          this.gbcOBJRawPalette = util.getTypedArray(0x40, 0, "uint8");
-          this.gbcBGRawPalette = util.getTypedArray(0x40, 0, "uint8");
-          this.gbcOBJPalette = util.getTypedArray(0x20, 0x1000000, "int32");
-          this.gbcBGPalette = util.getTypedArray(0x40, 0, "int32");
-          this.BGCHRBank2 = util.getTypedArray(0x800, 0, "uint8");
+          this.gbcOBJRawPalette = getTypedArray(0x40, 0, "uint8");
+          this.gbcBGRawPalette = getTypedArray(0x40, 0, "uint8");
+          this.gbcOBJPalette = getTypedArray(0x20, 0x1000000, "int32");
+          this.gbcBGPalette = getTypedArray(0x40, 0, "int32");
+          this.BGCHRBank2 = getTypedArray(0x800, 0, "uint8");
           this.BGCHRCurrentBank = this.currVRAMBank > 0 ? this.BGCHRBank2 : this.BGCHRBank1;
           this.tileCache = this.generateCacheArray(0xf80);
         } else {
-          this.gbOBJPalette = util.getTypedArray(8, 0, "int32");
-          this.gbBGPalette = util.getTypedArray(4, 0, "int32");
+          this.gbOBJPalette = getTypedArray(8, 0, "int32");
+          this.gbBGPalette = getTypedArray(4, 0, "int32");
           this.BGPalette = this.gbBGPalette;
           this.OBJPalette = this.gbOBJPalette;
           this.tileCache = this.generateCacheArray(0x700);
-          this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
-          this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
+          this.sortBuffer = getTypedArray(0x100, 0, "uint8");
+          this.OAMAddressCache = getTypedArray(10, 0, "int32");
         }
         this.renderPathBuild();
       };
@@ -20524,22 +17509,22 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         this.VRAM = this.GBCMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = null;
         this.tileCache.length = 0x700;
         if (settings.colorizeGBMode) {
-          this.gbBGColorizedPalette = util.getTypedArray(4, 0, "int32");
-          this.gbOBJColorizedPalette = util.getTypedArray(8, 0, "int32");
-          this.cachedBGPaletteConversion = util.getTypedArray(4, 0, "int32");
-          this.cachedOBJPaletteConversion = util.getTypedArray(8, 0, "int32");
+          this.gbBGColorizedPalette = getTypedArray(4, 0, "int32");
+          this.gbOBJColorizedPalette = getTypedArray(8, 0, "int32");
+          this.cachedBGPaletteConversion = getTypedArray(4, 0, "int32");
+          this.cachedOBJPaletteConversion = getTypedArray(8, 0, "int32");
           this.BGPalette = this.gbBGColorizedPalette;
           this.OBJPalette = this.gbOBJColorizedPalette;
           this.gbOBJPalette = this.gbBGPalette = null;
           this.getGBCColor();
         } else {
-          this.gbOBJPalette = util.getTypedArray(8, 0, "int32");
-          this.gbBGPalette = util.getTypedArray(4, 0, "int32");
+          this.gbOBJPalette = getTypedArray(8, 0, "int32");
+          this.gbBGPalette = getTypedArray(4, 0, "int32");
           this.BGPalette = this.gbBGPalette;
           this.OBJPalette = this.gbOBJPalette;
         }
-        this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
-        this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
+        this.sortBuffer = getTypedArray(0x100, 0, "uint8");
+        this.OAMAddressCache = getTypedArray(10, 0, "int32");
         this.renderPathBuild();
         this.memoryReadJumpCompile();
         this.memoryWriteJumpCompile();
@@ -20583,8 +17568,8 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
           for (tileIndex = 0x9000; tileIndex < 0x9800; tileIndex += 2) {
             this.generateGBTileLine(tileIndex);
           }
-          this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
-          this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
+          this.sortBuffer = getTypedArray(0x100, 0, "uint8");
+          this.OAMAddressCache = getTypedArray(10, 0, "int32");
         } else {
           this.BGCHRCurrentBank = this.currVRAMBank > 0 ? this.BGCHRBank2 : this.BGCHRBank1;
           this.tileCache = this.generateCacheArray(0xf80);
@@ -23472,6 +20457,989 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         return LocalStorage;
       }();
 
+      ROM = function () {
+        function ROM(data) {
+          _classCallCheck(this, ROM);
+
+          this.data = data;
+          this.dataType = typeof data;
+        }
+
+        _createClass(ROM, [{
+          key: "getByte",
+          value: function getByte(index) {
+            if (this.dataType === "string") {
+              return this.data.charCodeAt(index);
+            } else {
+              return this.data[index];
+            }
+          }
+        }, {
+          key: "getChar",
+          value: function getChar(index) {
+            if (this.dataType === "string") {
+              return this.data[index] || "";
+            } else {
+              return String.fromCharCode(this.data[index]);
+            }
+          }
+        }, {
+          key: "getString",
+          value: function getString(from, to) {
+            var text = "";
+            for (var index = from; index <= to; index++) {
+              if (this.getByte(index) > 0) {
+                text += this.getChar(index);
+              }
+            }
+
+            return text;
+          }
+        }, {
+          key: "length",
+          get: function get() {
+            return this.data.length;
+          }
+        }]);
+
+        return ROM;
+      }();
+
+      MBC = function (_EventEmitter) {
+        _inherits(MBC, _EventEmitter);
+
+        function MBC(cartridge) {
+          _classCallCheck(this, MBC);
+
+          var _this = _possibleConstructorReturn(this, (MBC.__proto__ || Object.getPrototypeOf(MBC)).call(this));
+
+          _this.romSizes = [0x00008000, // 32K
+          0x00010000, // 64K
+          0x00020000, // 128K
+          0x00040000, // 256K
+          0x00080000, // 512K
+          0x00100000, // 1024K
+          0x00200000, // 2048K
+          0x00400000, // 4096K
+          0x00800000 // 8192K
+          ];
+          _this.ramSizes = [0x00000000, // 0K
+          0x00002000, // 2K  // Changed to 2000 to avoid problems
+          0x00002000, // 8K
+          0x00008000, // 32K
+          0x00020000, // 128K
+          0x00010000 // 64K
+          ];
+
+          _this.cartridge = cartridge;
+          _this.MBCRAMBanksEnabled = false; // MBC RAM Access Control.
+          _this.currentRAMBankPosition = -0xa000; // MBC Position Adder;
+          _this.currentMBCRAMBank = 0; // MBC Currently Indexed RAM Bank
+          _this.ROMBankEdge = Math.floor(cartridge.rom.length / 0x4000);
+          return _this;
+        }
+
+        _createClass(MBC, [{
+          key: "setupROM",
+          value: function setupROM() {
+            this.romSize = this.romSizes[this.cartridge.romSizeType];
+            console.log("ROM size 0x" + this.romSize.toString(16));
+          }
+        }, {
+          key: "setupRAM",
+          value: function setupRAM() {
+            this.ramSize = this.ramSizes[this.cartridge.ramSizeType];
+            console.log("RAM size 0x" + this.ramSize.toString(16));
+            this.RAM = getTypedArray(this.ramSize, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
+          }
+        }, {
+          key: "loadSRAM",
+          value: function loadSRAM(data) {
+            if (data.length !== this.ramSize) return;
+            this.RAM = data.slice(0);
+          }
+        }, {
+          key: "getSRAM",
+          value: function getSRAM() {
+            return new Uint8Array(this.RAM.buffer.slice(0, this.ramSize));
+          }
+        }, {
+          key: "cutSRAMFromBatteryFileArray",
+          value: function cutSRAMFromBatteryFileArray(data) {
+            return new Uint8Array(data.buffer.slice(0, this.ramSize));
+          }
+        }, {
+          key: "saveState",
+          value: function saveState() {
+            // TODO: remove after state refactor
+            if (!this.cartridge.hasBattery || this.RAM.length === 0) return; // No battery backup...
+
+            // return the MBC RAM for backup...
+            return fromTypedArray(this.RAM);
+          }
+        }, {
+          key: "readRAM",
+          value: function readRAM(address) {
+            // Switchable RAM
+            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+              return this.RAM[address + this.currentRAMBankPosition];
+            }
+            //console.log("Reading from disabled RAM.");
+            return 0xff;
+          }
+        }, {
+          key: "writeRAM",
+          value: function writeRAM(address, data) {
+            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+              this.emit("ramWrite");
+              this.RAM[address + this.currentRAMBankPosition] = data;
+            }
+          }
+
+          // TODO: for MBC2 & MBC3, compare with other MBCx
+
+        }, {
+          key: "setCurrentROMBank",
+          value: function setCurrentROMBank() {
+            //Read the cartridge ROM data from RAM memory:
+            //Only map bank 0 to bank 1 here (MBC2 is like MBC1, but can only do 16 banks, so only the bank 0 quirk appears for MBC2):
+            this.currentROMBank = Math.max(this.ROMBank1Offset % this.ROMBankEdge - 1, 0) << 14;
+          }
+        }, {
+          key: "writeEnable",
+          value: function writeEnable(address, data) {
+            // MBC RAM Bank Enable/Disable:
+            this.MBCRAMBanksEnabled = (data & 0x0f) === 0x0a; // If lower nibble is 0x0A, then enable, otherwise disable.
+          }
+        }]);
+
+        return MBC;
+      }(EventEmitter);
+
+      MBC1 = function (_MBC) {
+        _inherits(MBC1, _MBC);
+
+        function MBC1(cartridge) {
+          _classCallCheck(this, MBC1);
+
+          var _this = _possibleConstructorReturn(this, (MBC1.__proto__ || Object.getPrototypeOf(MBC1)).call(this, cartridge));
+
+          _this.MBC1Mode = false; // MBC1 Type (4/32, 16/8)
+          return _this;
+        }
+
+        _createClass(MBC1, [{
+          key: "writeType",
+          value: function writeType(address, data) {
+            // MBC1 mode setting:
+            this.MBC1Mode = (data & 0x1) === 0x1;
+            if (this.MBC1Mode) {
+              this.ROMBank1Offset &= 0x1f;
+              this.setCurrentROMBank();
+            } else {
+              this.currentMBCRAMBank = 0;
+              this.currentRAMBankPosition = -0xa000;
+            }
+          }
+        }, {
+          key: "writeROMBank",
+          value: function writeROMBank(address, data) {
+            // MBC1 ROM bank switching:
+            this.ROMBank1Offset = this.ROMBank1Offset & 0x60 | data & 0x1f;
+            this.setCurrentROMBank();
+          }
+        }, {
+          key: "writeRAMBank",
+          value: function writeRAMBank(address, data) {
+            // MBC1 RAM bank switching
+            if (this.MBC1Mode) {
+              // 4/32 Mode
+              this.currentMBCRAMBank = data & 0x03;
+              this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
+            } else {
+              // 16/8 Mode
+              this.ROMBank1Offset = (data & 0x03) << 5 | this.ROMBank1Offset & 0x1f;
+              this.setCurrentROMBank();
+            }
+          }
+        }, {
+          key: "setCurrentROMBank",
+          value: function setCurrentROMBank() {
+            // Read the cartridge ROM data from RAM memory:
+            switch (this.ROMBank1Offset) {
+              case 0x00:
+              case 0x20:
+              case 0x40:
+              case 0x60:
+                // Bank calls for 0x00, 0x20, 0x40, and 0x60 are really for 0x01, 0x21, 0x41, and 0x61.
+                this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge << 14;
+                break;
+              default:
+                this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
+            }
+          }
+        }]);
+
+        return MBC1;
+      }(MBC);
+
+      MBC2 = function (_MBC) {
+        _inherits(MBC2, _MBC);
+
+        function MBC2() {
+          _classCallCheck(this, MBC2);
+
+          return _possibleConstructorReturn(this, (MBC2.__proto__ || Object.getPrototypeOf(MBC2)).apply(this, arguments));
+        }
+
+        _createClass(MBC2, [{
+          key: "writeROMBank",
+          value: function writeROMBank(address, data) {
+            // MBC2 ROM bank switching:
+            this.ROMBank1Offset = data & 0x0f;
+            this.setCurrentROMBank();
+          }
+        }]);
+
+        return MBC2;
+      }(MBC);
+
+      RTC = function () {
+        function RTC(mbc) {
+          _classCallCheck(this, RTC);
+
+          this.mbc = mbc;
+        }
+
+        // TODO: rename RTC vars
+
+        _createClass(RTC, [{
+          key: "writeSeconds",
+          value: function writeSeconds(data) {
+            if (data < 60) {
+              this.RTCSeconds = data;
+            } else {
+              console.log("(Bank #" + this.mbc.currentMBCRAMBank + ") RTC write out of range: " + data);
+            }
+          }
+        }, {
+          key: "writeMinutes",
+          value: function writeMinutes(data) {
+            if (data < 60) {
+              this.RTCMinutes = data;
+            } else {
+              console.log("(Bank #" + this.mbc.currentMBCRAMBank + ") RTC write out of range: " + data);
+            }
+          }
+        }, {
+          key: "writeDaysLow",
+          value: function writeDaysLow(data) {
+            this.RTCDays = data & 0xff | this.RTCDays & 0x100;
+          }
+        }, {
+          key: "writeDaysHigh",
+          value: function writeDaysHigh(data) {
+            this.RTCDayOverFlow = data > 0x7f;
+            this.RTCHalt = (data & 0x40) === 0x40;
+            this.RTCDays = (data & 0x1) << 8 | this.RTCDays & 0xff;
+          }
+        }, {
+          key: "writeHours",
+          value: function writeHours(data) {
+            if (data < 24) {
+              this.RTCHours = data;
+            } else {
+              console.log("(Bank #" + this.mbc.currentMBCRAMBank + ") RTC write out of range: " + data);
+            }
+          }
+        }, {
+          key: "readSeconds",
+          value: function readSeconds() {
+            return this.latchedSeconds;
+          }
+        }, {
+          key: "readMinutes",
+          value: function readMinutes() {
+            return this.latchedMinutes;
+          }
+        }, {
+          key: "readHours",
+          value: function readHours() {
+            return this.latchedHours;
+          }
+        }, {
+          key: "readDaysLow",
+          value: function readDaysLow() {
+            return this.latchedLDays;
+          }
+        }, {
+          key: "readDaysHigh",
+          value: function readDaysHigh() {
+            return (this.RTCDayOverFlow ? 0x80 : 0) + (this.RTCHALT ? 0x40 : 0) + this.latchedHDays;
+          }
+        }, {
+          key: "writeLatch",
+          value: function writeLatch(address, data) {
+            if (data === 0) {
+              this.RTCisLatched = false;
+            } else if (!this.RTCisLatched) {
+              // Copy over the current RTC time for reading.
+              this.RTCisLatched = true;
+              this.latchedSeconds = this.RTCSeconds | 0;
+              this.latchedMinutes = this.RTCMinutes;
+              this.latchedHours = this.RTCHours;
+              this.latchedLDays = this.RTCDays & 0xff;
+              this.latchedHDays = this.RTCDays >> 8;
+            }
+          }
+        }, {
+          key: "get",
+          value: function get() {
+            var lastTimeSeconds = Math.round(this.lastTime / 1000);
+            var lastTimeLow = lastTimeSeconds >> 0 & 0xffff;
+            var lastTimeHigh = lastTimeSeconds >> 16 & 0xffff;
+
+            var data = new Uint32Array([this.RTCSeconds, this.RTCMinutes, this.RTCHours, this.RTCDays, this.RTCDayOverFlow, this.latchedSeconds, this.latchedMinutes, this.latchedHours, this.latchedLDays, this.latchedHDays, lastTimeLow, lastTimeHigh]);
+
+            return data;
+          }
+        }, {
+          key: "load",
+          value: function load(array) {
+            var options = this.extract(array);
+
+            this.RTCSeconds = options.seconds;
+            this.RTCMinutes = options.minutes;
+            this.RTCHours = options.hours;
+            this.RTCDays = options.daysLow;
+            this.RTCDayOverFlow = options.daysHigh;
+
+            this.latchedSeconds = options.latchedSeconds;
+            this.latchedMinutes = options.latchedMinutes;
+            this.latchedHours = options.latchedHours;
+            this.latchedLDays = options.latchedDaysLow;
+            this.latchedHDays = options.latchedDaysHigh;
+
+            this.lastTime = options.lastTime;
+          }
+        }, {
+          key: "cutBatteryFileArray",
+          value: function cutBatteryFileArray(data) {
+            return new Uint32Array(data.buffer.slice(this.mbc.ramSize, this.mbc.ramSize + 4 * 12));
+          }
+        }, {
+          key: "extract",
+          value: function extract(array) {
+            var seconds = array[0];
+            var minutes = array[1];
+            var hours = array[2];
+            var daysLow = array[3];
+            var daysHigh = array[4];
+            var latchedSeconds = array[5];
+            var latchedMinutes = array[6];
+            var latchedHours = array[7];
+            var latchedDaysLow = array[8];
+            var latchedDaysHigh = array[9];
+            var lastTimeLow = array[10];
+            var lastTimeHigh = array[11];
+
+            var lastTimeSeconds = lastTimeLow;
+            if (lastTimeLow && lastTimeHigh) {
+              lastTimeSeconds = lastTimeHigh << 16 | lastTimeLow;
+            }
+
+            return {
+              seconds: seconds,
+              minutes: minutes,
+              hours: hours,
+              daysLow: daysLow,
+              daysHigh: daysHigh,
+              latchedSeconds: latchedSeconds,
+              latchedMinutes: latchedMinutes,
+              latchedHours: latchedHours,
+              latchedDaysLow: latchedDaysLow,
+              latchedDaysHigh: latchedDaysHigh,
+              lastTime: lastTimeSeconds * 1000
+            };
+          }
+        }, {
+          key: "saveState",
+          value: function saveState() {
+            // TODO: remove after state refactor
+            // return the MBC RAM for backup...
+            return [this.lastTime, this.RTCisLatched, this.latchedSeconds, this.latchedMinutes, this.latchedHours, this.latchedLDays, this.latchedHDays, this.RTCSeconds, this.RTCMinutes, this.RTCHours, this.RTCDays, this.RTCDayOverFlow, this.RTCHALT];
+          }
+        }, {
+          key: "loadState",
+          value: function loadState(data) {
+            var index = 0;
+            this.lastTime = data[index++];
+            this.RTCisLatched = data[index++];
+            this.latchedSeconds = data[index++];
+            this.latchedMinutes = data[index++];
+            this.latchedHours = data[index++];
+            this.latchedLDays = data[index++];
+            this.latchedHDays = data[index++];
+            this.RTCSeconds = data[index++];
+            this.RTCMinutes = data[index++];
+            this.RTCHours = data[index++];
+            this.RTCDays = data[index++];
+            this.RTCDayOverFlow = data[index++];
+            this.RTCHALT = data[index];
+          }
+        }, {
+          key: "updateClock",
+          value: function updateClock() {
+            var currentTime = new Date().getTime();
+            var elapsedTime = currentTime - this.lastTime;
+            this.lastTime = currentTime;
+
+            if (!this.RTCHALT) {
+              //Update the MBC3 RTC:
+              this.RTCSeconds += elapsedTime / 1000;
+              while (this.RTCSeconds >= 60) {
+                // System can stutter, so the seconds difference can get large, thus the "while".
+                this.RTCSeconds -= 60;
+                ++this.RTCMinutes;
+                if (this.RTCMinutes >= 60) {
+                  this.RTCMinutes -= 60;
+                  ++this.RTCHours;
+                  if (this.RTCHours >= 24) {
+                    this.RTCHours -= 24;
+                    ++this.RTCDays;
+                    if (this.RTCDays >= 512) {
+                      this.RTCDays -= 512;
+                      this.RTCDayOverFlow = true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }]);
+
+        return RTC;
+      }();
+
+      MBC3 = function (_MBC) {
+        _inherits(MBC3, _MBC);
+
+        function MBC3(cartridge) {
+          _classCallCheck(this, MBC3);
+
+          var _this = _possibleConstructorReturn(this, (MBC3.__proto__ || Object.getPrototypeOf(MBC3)).call(this, cartridge));
+
+          _this.rtc = new RTC(_this);
+          return _this;
+        }
+
+        _createClass(MBC3, [{
+          key: "writeROMBank",
+          value: function writeROMBank(address, data) {
+            // MBC3 ROM bank switching:
+            this.ROMBank1Offset = data & 0x7f;
+            this.setCurrentROMBank();
+          }
+        }, {
+          key: "writeRAMBank",
+          value: function writeRAMBank(address, data) {
+            this.currentMBCRAMBank = data;
+            if (data < 4) {
+              // MBC3 RAM bank switching
+              this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
+            }
+          }
+        }, {
+          key: "writeRAM",
+          value: function writeRAM(address, data) {
+            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+              switch (this.currentMBCRAMBank) {
+                case 0x00:
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                  this.emit("ramWrite");
+                  this.RAM[address + this.currentRAMBankPosition] = data;
+                  break;
+                case 0x08:
+                  this.rtc && this.rtc.writeSeconds(data);
+                  break;
+                case 0x09:
+                  this.rtc && this.rtc.writeMinutes(data);
+                  break;
+                case 0x0a:
+                  this.rtc && this.rtc.writeHours(data);
+                  break;
+                case 0x0b:
+                  this.rtc && this.rtc.writeDaysLow(data);
+                  break;
+                case 0x0c:
+                  this.rtc && this.rtc.writeDaysHigh(data);
+                  break;
+                default:
+                  console.log("Invalid MBC3 bank address selected: " + this.currentMBCRAMBank);
+              }
+            }
+          }
+        }, {
+          key: "readRAM",
+          value: function readRAM(address) {
+            // Switchable RAM
+            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+              switch (this.currentMBCRAMBank) {
+                case 0x00:
+                case 0x01:
+                case 0x02:
+                case 0x03:
+                  return this.RAM[address + this.currentRAMBankPosition];
+                  break;
+                case 0x08:
+                  return this.rtc && this.rtc.readSeconds();
+                  break;
+                case 0x09:
+                  return this.rtc && this.rtc.readMinutes();
+                  break;
+                case 0x0a:
+                  return this.rtc && this.rtc.readHours();
+                  break;
+                case 0x0b:
+                  return this.rtc && this.rtc.readDaysLow();
+                  break;
+                case 0x0c:
+                  return this.rtc && this.rtc.readDaysHigh();
+              }
+            }
+            //console.log("Reading from invalid or disabled RAM.");
+            return 0xff;
+          }
+        }]);
+
+        return MBC3;
+      }(MBC);
+
+      MBC5 = function (_MBC) {
+        _inherits(MBC5, _MBC);
+
+        function MBC5() {
+          _classCallCheck(this, MBC5);
+
+          return _possibleConstructorReturn(this, (MBC5.__proto__ || Object.getPrototypeOf(MBC5)).apply(this, arguments));
+        }
+
+        _createClass(MBC5, [{
+          key: "setCurrentROMBank",
+          value: function setCurrentROMBank() {
+            // Read the cartridge ROM data from RAM memory:
+            this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
+          }
+        }, {
+          key: "writeROMBankLow",
+          value: function writeROMBankLow(address, data) {
+            // MBC5 ROM bank switching:
+            this.ROMBank1Offset = this.ROMBank1Offset & 0x100 | data;
+            this.setCurrentROMBank();
+          }
+        }, {
+          key: "writeROMBankHigh",
+          value: function writeROMBankHigh(address, data) {
+            // MBC5 ROM bank switching (by least significant bit):
+            this.ROMBank1Offset = (data & 0x01) << 8 | this.ROMBank1Offset & 0xff;
+            this.setCurrentROMBank();
+          }
+        }, {
+          key: "writeRAMBank",
+          value: function writeRAMBank(address, data) {
+            // MBC5 RAM bank switching
+            this.currentMBCRAMBank = data & 0xf;
+            this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
+          }
+        }]);
+
+        return MBC5;
+      }(MBC);
+
+      MBC7 = function (_MBC) {
+        _inherits(MBC7, _MBC);
+
+        function MBC7(cartridge) {
+          _classCallCheck(this, MBC7);
+
+          // Gyro
+          var _this = _possibleConstructorReturn(this, (MBC7.__proto__ || Object.getPrototypeOf(MBC7)).call(this, cartridge));
+
+          _this.highX = 127;
+          _this.lowX = 127;
+          _this.highY = 127;
+          _this.lowY = 127;
+          return _this;
+        }
+
+        _createClass(MBC7, [{
+          key: "applyGyroEvent",
+          value: function applyGyroEvent(x, y) {
+            x *= -100;
+            x += 2047;
+            this.highX = x >> 8;
+            this.lowX = x & 0xff;
+            y *= -100;
+            y += 2047;
+            this.highY = y >> 8;
+            this.lowY = y & 0xff;
+          }
+        }, {
+          key: "read",
+          value: function read(address) {
+            // Switchable RAM
+            if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+              switch (address) {
+                case 0xa000:
+                case 0xa060:
+                case 0xa070:
+                  return 0;
+                case 0xa080:
+                  // TODO: Gyro Control Register
+                  return 0;
+                case 0xa050:
+                  //Y High Byte
+                  return this.highY;
+                case 0xa040:
+                  //Y Low Byte
+                  return this.lowY;
+                case 0xa030:
+                  //X High Byte
+                  return this.highX;
+                case 0xa020:
+                  //X Low Byte:
+                  return this.lowX;
+                default:
+                  return this.RAM[address + this.currentRAMBankPosition];
+              }
+            }
+            //console.log("Reading from disabled RAM.", 1);
+            return 0xff;
+          }
+        }]);
+
+        return MBC7;
+      }(MBC);
+
+      Cartridge = function () {
+        function Cartridge(rom) {
+          _classCallCheck(this, Cartridge);
+
+          this.rom = new ROM(rom);
+
+          this.hasMBC1 = false; // Does the cartridge use MBC1?
+          this.hasMBC2 = false; // Does the cartridge use MBC2?
+          this.hasMBC3 = false; // Does the cartridge use MBC3?
+          this.hasMBC5 = false; // Does the cartridge use MBC5?
+          this.hasMBC7 = false; // Does the cartridge use MBC7?
+          this.hasSRAM = false; // Does the cartridge use save RAM?
+          this.cMMMO1 = false; // ...
+          this.hasBattery = false;
+          this.cRUMBLE = false; // Does the cartridge use the RUMBLE addressing (modified MBC5)?
+          this.cCamera = false; // Is the cartridge actually a GameBoy Camera?
+          this.cTAMA5 = false; // Does the cartridge use TAMA5? (Tamagotchi Cartridge)
+          this.cHuC3 = false; // Does the cartridge use HuC3 (Hudson Soft / modified MBC3)?
+          this.cHuC1 = false; // Does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
+          this.hasRTC = false; // Does the cartridge have an RTC?
+        }
+
+        _createClass(Cartridge, [{
+          key: "connect",
+          value: function connect(gameboy) {
+            this.gameboy = gameboy;
+            this.parseROM();
+          }
+        }, {
+          key: "parseROM",
+          value: function parseROM() {
+            // TODO: move to gameboy core
+            // Load the first two ROM banks (0x0000 - 0x7FFF) into regular gameboy memory:
+            this.gameboy.usedBootROM = settings.bootBootRomFirst && (!settings.forceGBBootRom && this.gameboy.GBCBOOTROM.length === 0x800 || settings.forceGBBootRom && this.gameboy.GBBOOTROM.length === 0x100);
+
+            // http://www.enliten.force9.co.uk/gameboy/carthead.htm
+            if (this.rom.length < 0x4000) throw new Error("ROM size too small.");
+
+            var romIndex = 0;
+            if (this.gameboy.usedBootROM) {
+              if (!settings.forceGBBootRom) {
+                // Patch in the GBC boot ROM into the memory map:
+                while (romIndex < 0x100) {
+                  this.memory[romIndex] = this.GBCBOOTROM[romIndex]; // Load in the GameBoy Color BOOT ROM.
+                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+                  ++romIndex;
+                }
+
+                while (romIndex < 0x200) {
+                  this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
+                  ++romIndex;
+                }
+
+                while (romIndex < 0x900) {
+                  this.memory[romIndex] = this.GBCBOOTROM[romIndex - 0x100]; // Load in the GameBoy Color BOOT ROM.
+                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+                  ++romIndex;
+                }
+
+                this.usedGBCBootROM = true;
+              } else {
+                // Patch in the GB boot ROM into the memory map:
+                while (romIndex < 0x100) {
+                  this.memory[romIndex] = this.GBBOOTROM[romIndex]; // Load in the GameBoy BOOT ROM.
+                  this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
+                  ++romIndex;
+                }
+              }
+
+              while (romIndex < 0x4000) {
+                this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
+                ++romIndex;
+              }
+            } else {
+              // Don't load in the boot ROM:
+              while (romIndex < 0x4000) {
+                this.gameboy.memory[romIndex] = this.rom.getByte(romIndex) & 0xff;
+                ++romIndex;
+              }
+            }
+          }
+        }, {
+          key: "interpret",
+          value: function interpret() {
+            this.name = this.rom.getString(0x134, 0x13e);
+            this.gameCode = this.rom.getString(0x13f, 0x142);
+            this.colorCompatibilityByte = this.rom.getByte(0x143);
+            this.type = this.rom.getByte(0x147);
+            this.setTypeName();
+
+            if (this.name) {
+              console.log("Game Title: " + this.name);
+            }
+            if (this.gameCode) {
+              console.log("Game Code: " + this.gameCode);
+            }
+            if (this.colorCompatibilityByte) {
+              console.log("Color Compatibility Byte: " + this.colorCompatibilityByte);
+            }
+            if (this.type) {
+              console.log("Cartridge Type: " + this.type);
+            }
+            if (this.typeName) {
+              console.log("Cartridge Type Name: " + this.typeName);
+            }
+
+            this.romSizeType = this.rom.getByte(0x148);
+            this.ramSizeType = this.rom.getByte(0x149);
+
+            // Check the GB/GBC mode byte:
+            if (!this.gameboy.usedBootROM) {
+              switch (this.colorCompatibilityByte) {
+                case 0x00:
+                  // GB only
+                  this.useGBCMode = false;
+                  break;
+                case 0x32:
+                  // Exception to the GBC identifying code:
+                  if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === "Game and Watch 50") {
+                    this.useGBCMode = true;
+                    console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
+                  } else {
+                    this.useGBCMode = false;
+                  }
+                  break;
+                case 0x80:
+                  //Both GB + GBC modes
+                  this.useGBCMode = !settings.gbHasPriority;
+                  break;
+                case 0xc0:
+                  //Only GBC mode
+                  this.useGBCMode = true;
+                  break;
+                default:
+                  this.useGBCMode = false;
+                  console.warn("Unknown GameBoy game type code #" + this.colorCompatibilityByte + ", defaulting to GB mode (Old games don't have a type code).");
+              }
+            } else {
+              console.log("used boot rom");
+              this.useGBCMode = this.gameboy.usedGBCBootROM; // Allow the GBC boot ROM to run in GBC mode...
+            }
+
+            var oldLicenseCode = this.rom.getByte(0x14b);
+            var newLicenseCode = this.rom.getByte(0x144) & 0xff00 | this.rom.getByte(0x145) & 0xff;
+            if (oldLicenseCode !== 0x33) {
+              this.isNewLicenseCode = false;
+              this.licenseCode = oldLicenseCode;
+            } else {
+              this.isNewLicenseCode = true;
+              this.licenseCode = newLicenseCode;
+            }
+          }
+        }, {
+          key: "setTypeName",
+          value: function setTypeName() {
+            switch (this.type) {
+              case 0x00:
+                //ROM w/o bank switching
+                if (!settings.enableMBC1Override) {
+                  this.typeName = "ROM";
+                }
+              case 0x01:
+                this.hasMBC1 = true;
+                this.typeName = "MBC1";
+                break;
+              case 0x02:
+                this.hasMBC1 = true;
+                this.hasSRAM = true;
+                this.typeName = "MBC1 + SRAM";
+                break;
+              case 0x03:
+                this.hasMBC1 = true;
+                this.hasSRAM = true;
+                this.hasBattery = true;
+                this.typeName = "MBC1 + SRAM + Battery";
+                break;
+              case 0x05:
+                this.hasMBC2 = true;
+                this.typeName = "MBC2";
+                break;
+              case 0x06:
+                this.hasMBC2 = true;
+                this.hasBattery = true;
+                this.typeName = "MBC2 + Battery";
+                break;
+              case 0x08:
+                this.hasSRAM = true;
+                this.typeName = "ROM + SRAM";
+                break;
+              case 0x09:
+                this.hasSRAM = true;
+                this.hasBattery = true;
+                this.typeName = "ROM + SRAM + Battery";
+                break;
+              case 0x0b:
+                this.cMMMO1 = true;
+                this.typeName = "MMMO1";
+                break;
+              case 0x0c:
+                this.cMMMO1 = true;
+                this.hasSRAM = true;
+                this.typeName = "MMMO1 + SRAM";
+                break;
+              case 0x0d:
+                this.cMMMO1 = true;
+                this.hasSRAM = true;
+                this.hasBattery = true;
+                this.typeName = "MMMO1 + SRAM + Battery";
+                break;
+              case 0x0f:
+                this.hasMBC3 = true;
+                this.hasRTC = true;
+                this.hasBattery = true;
+                this.typeName = "MBC3 + RTC + Battery";
+                break;
+              case 0x10:
+                this.hasMBC3 = true;
+                this.hasRTC = true;
+                this.hasBattery = true;
+                this.hasSRAM = true;
+                this.typeName = "MBC3 + RTC + Battery + SRAM";
+                break;
+              case 0x11:
+                this.hasMBC3 = true;
+                this.typeName = "MBC3";
+                break;
+              case 0x12:
+                this.hasMBC3 = true;
+                this.hasSRAM = true;
+                this.typeName = "MBC3 + SRAM";
+                break;
+              case 0x13:
+                this.hasMBC3 = true;
+                this.hasSRAM = true;
+                this.hasBattery = true;
+                this.typeName = "MBC3 + SRAM + Battery";
+                break;
+              case 0x19:
+                this.hasMBC5 = true;
+                this.typeName = "MBC5";
+                break;
+              case 0x1a:
+                this.hasMBC5 = true;
+                this.hasSRAM = true;
+                this.typeName = "MBC5 + SRAM";
+                break;
+              case 0x1b:
+                this.hasMBC5 = true;
+                this.hasSRAM = true;
+                this.hasBattery = true;
+                this.typeName = "MBC5 + SRAM + Battery";
+                break;
+              case 0x1c:
+                this.cRUMBLE = true;
+                this.typeName = "RUMBLE";
+                break;
+              case 0x1d:
+                this.cRUMBLE = true;
+                this.hasSRAM = true;
+                this.typeName = "RUMBLE + SRAM";
+                break;
+              case 0x1e:
+                this.cRUMBLE = true;
+                this.hasSRAM = true;
+                this.hasBattery = true;
+                this.typeName = "RUMBLE + SRAM + Battery";
+                break;
+              case 0x1f:
+                this.cCamera = true;
+                this.typeName = "GameBoy Camera";
+                break;
+              case 0x22:
+                this.hasMBC7 = true;
+                this.hasSRAM = true;
+                this.hasBattery = true;
+                this.typeName = "MBC7 + SRAM + Battery";
+                break;
+              case 0xfd:
+                this.cTAMA5 = true;
+                this.typeName = "TAMA5";
+                break;
+              case 0xfe:
+                this.cHuC3 = true;
+                this.typeName = "HuC3";
+                break;
+              case 0xff:
+                this.cHuC1 = true;
+                this.typeName = "HuC1";
+                break;
+              default:
+                this.typeName = "Unknown";
+                console.log("Cartridge type is unknown.");
+                // TODO error
+                break;
+            }
+
+            if (this.hasMBC1) this.mbc1 = new MBC1(this);
+            if (this.hasMBC2) this.mbc2 = new MBC2(this);
+            if (this.hasMBC3) this.mbc3 = new MBC3(this);
+            if (this.hasMBC5) this.mbc5 = new MBC5(this);
+            if (this.hasMBC7) this.mbc7 = new MBC7(this);
+
+            this.mbc = this.mbc1 || this.mbc2 || this.mbc3 || this.mbc5 || this.mbc7 || null;
+          }
+        }, {
+          key: "setupRAM",
+          value: function setupRAM() {
+            this.mbc.setupRAM();
+
+            this.gameboy.api.loadSRAM();
+            this.gameboy.api.loadRTC();
+          }
+        }]);
+
+        return Cartridge;
+      }();
+
       Actions = function (_EventEmitter) {
         _inherits(Actions, _EventEmitter);
 
@@ -23528,15 +21496,27 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
       GameBoy$1 = function (_EventEmitter) {
         _inherits(GameBoy, _EventEmitter);
 
-        function GameBoy(canvas) {
+        function GameBoy() {
+          var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+              isPaused = _ref.isPaused,
+              lcd = _ref.lcd,
+              isSoundEnabled = _ref.isSoundEnabled;
+
           _classCallCheck(this, GameBoy);
 
           var _this = _possibleConstructorReturn(this, (GameBoy.__proto__ || Object.getPrototypeOf(GameBoy)).call(this));
 
           _this.buttons = ["right", "left", "up", "down", "a", "b", "select", "start"];
 
+          if (typeof isSoundEnabled === "boolean") settings.soundOn = isSoundEnabled;
+          if (isPaused) _this.isPaused = isPaused;
+
+          _this.core = new GameBoyCore({
+            api: _this,
+            lcd: lcd
+          });
+
           _this.debouncedAutoSave = debounce(_this.autoSave.bind(_this), 100);
-          _this.core = new GameBoyCore(_this, canvas);
           _this.core.events.on("sramWrite", function () {
             if (!_this.core.cartridgeSlot.cartridge) return;
             _this.debouncedAutoSave();
@@ -23545,11 +21525,18 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
           _this.isOn = false;
           _this.actions = new Actions();
           _this.registerActions();
-          _this.storage = new LocalStorage();
+          if (typeof document !== "undefined") {
+            _this.storage = new LocalStorage();
+          }
           return _this;
         }
 
         _createClass(GameBoy, [{
+          key: "isPaused",
+          value: function isPaused() {
+            return typeof document !== "undefined" && document.hidden;
+          }
+        }, {
           key: "setStorage",
           value: function setStorage(storage) {
             this.storage = storage;
@@ -23596,9 +21583,9 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
             this.core.start(this.cartridge);
             this.core.stopEmulator &= 1;
             this.interval = setInterval(function () {
-              if (!document.hidden && !document.msHidden && !document.mozHidden && !document.webkitHidden) {
-                _this3.core.run();
-              }
+              // TODO: request animation frame & performance.now()
+              if (_this3.isPaused()) return;
+              _this3.core.run();
             }, settings.runInterval);
           }
         }, {
@@ -23669,13 +21656,13 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "saveState",
           value: function () {
-            var _ref = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(state) {
+            var _ref2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(state) {
               var name;
               return _regeneratorRuntime.wrap(function _callee$(_context) {
                 while (1) {
                   switch (_context.prev = _context.next) {
                     case 0:
-                      if (this.core.cartridgeSlot.cartridge) {
+                      if (this.storage) {
                         _context.next = 2;
                         break;
                       }
@@ -23683,30 +21670,38 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
                       return _context.abrupt("return");
 
                     case 2:
+                      if (this.core.cartridgeSlot.cartridge) {
+                        _context.next = 4;
+                        break;
+                      }
+
+                      return _context.abrupt("return");
+
+                    case 4:
                       name = this.core.cartridgeSlot.cartridge.name;
 
                       if (state) {
-                        _context.next = 7;
+                        _context.next = 9;
                         break;
                       }
 
                       state = this.core.stateManager.get();
 
                       if (state) {
-                        _context.next = 7;
+                        _context.next = 9;
                         break;
                       }
 
                       return _context.abrupt("return", false);
 
-                    case 7:
-                      _context.next = 9;
+                    case 9:
+                      _context.next = 11;
                       return this.storage.setState(name, state);
 
-                    case 9:
+                    case 11:
                       this.emit("stateSaved", { name: name, state: state });
 
-                    case 10:
+                    case 12:
                     case "end":
                       return _context.stop();
                   }
@@ -23714,8 +21709,8 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
               }, _callee, this);
             }));
 
-            function saveState(_x) {
-              return _ref.apply(this, arguments);
+            function saveState(_x2) {
+              return _ref2.apply(this, arguments);
             }
 
             return saveState;
@@ -23723,13 +21718,13 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "saveSRAM",
           value: function () {
-            var _ref2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee2(sram) {
+            var _ref3 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee2(sram) {
               var name;
               return _regeneratorRuntime.wrap(function _callee2$(_context2) {
                 while (1) {
                   switch (_context2.prev = _context2.next) {
                     case 0:
-                      if (this.core.cartridgeSlot.cartridge) {
+                      if (this.storage) {
                         _context2.next = 2;
                         break;
                       }
@@ -23737,30 +21732,38 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
                       return _context2.abrupt("return");
 
                     case 2:
+                      if (this.core.cartridgeSlot.cartridge) {
+                        _context2.next = 4;
+                        break;
+                      }
+
+                      return _context2.abrupt("return");
+
+                    case 4:
                       name = this.core.cartridgeSlot.cartridge.name;
 
                       if (sram) {
-                        _context2.next = 7;
+                        _context2.next = 9;
                         break;
                       }
 
                       sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
 
                       if (sram) {
-                        _context2.next = 7;
+                        _context2.next = 9;
                         break;
                       }
 
                       return _context2.abrupt("return", false);
 
-                    case 7:
-                      _context2.next = 9;
+                    case 9:
+                      _context2.next = 11;
                       return this.storage.setSRAM(name, sram.buffer);
 
-                    case 9:
+                    case 11:
                       this.emit("sramSaved", { name: name, sram: sram });
 
-                    case 10:
+                    case 12:
                     case "end":
                       return _context2.stop();
                   }
@@ -23768,8 +21771,8 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
               }, _callee2, this);
             }));
 
-            function saveSRAM(_x2) {
-              return _ref2.apply(this, arguments);
+            function saveSRAM(_x3) {
+              return _ref3.apply(this, arguments);
             }
 
             return saveSRAM;
@@ -23777,13 +21780,13 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "saveRTC",
           value: function () {
-            var _ref3 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee3(rtc) {
+            var _ref4 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee3(rtc) {
               var name;
               return _regeneratorRuntime.wrap(function _callee3$(_context3) {
                 while (1) {
                   switch (_context3.prev = _context3.next) {
                     case 0:
-                      if (this.core.cartridgeSlot.cartridge) {
+                      if (this.storage) {
                         _context3.next = 2;
                         break;
                       }
@@ -23791,7 +21794,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
                       return _context3.abrupt("return");
 
                     case 2:
-                      if (this.core.cartridgeSlot.cartridge.hasRTC) {
+                      if (this.core.cartridgeSlot.cartridge) {
                         _context3.next = 4;
                         break;
                       }
@@ -23799,30 +21802,38 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
                       return _context3.abrupt("return");
 
                     case 4:
+                      if (this.core.cartridgeSlot.cartridge.hasRTC) {
+                        _context3.next = 6;
+                        break;
+                      }
+
+                      return _context3.abrupt("return");
+
+                    case 6:
                       name = this.core.cartridgeSlot.cartridge.name;
 
                       if (rtc) {
-                        _context3.next = 9;
+                        _context3.next = 11;
                         break;
                       }
 
                       rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
 
                       if (rtc) {
-                        _context3.next = 9;
+                        _context3.next = 11;
                         break;
                       }
 
                       return _context3.abrupt("return", false);
 
-                    case 9:
-                      _context3.next = 11;
+                    case 11:
+                      _context3.next = 13;
                       return this.storage.setRTC(name, rtc.buffer);
 
-                    case 11:
+                    case 13:
                       this.emit("rtcSaved", { name: name, rtc: rtc });
 
-                    case 12:
+                    case 14:
                     case "end":
                       return _context3.stop();
                   }
@@ -23830,8 +21841,8 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
               }, _callee3, this);
             }));
 
-            function saveRTC(_x3) {
-              return _ref3.apply(this, arguments);
+            function saveRTC(_x4) {
+              return _ref4.apply(this, arguments);
             }
 
             return saveRTC;
@@ -23839,6 +21850,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "loadState",
           value: function loadState(state) {
+            if (!this.storage) return;
             if (!this.core.cartridgeSlot.cartridge) return;
             var name = this.core.cartridgeSlot.cartridge.name;
 
@@ -23853,6 +21865,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "loadSRAM",
           value: function loadSRAM(sram) {
+            if (!this.storage) return;
             if (!this.core.cartridgeSlot.cartridge) return;
             var name = this.core.cartridgeSlot.cartridge.name;
 
@@ -23868,6 +21881,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "loadRTC",
           value: function loadRTC(rtc) {
+            if (!this.storage) return;
             if (!this.core.cartridgeSlot.cartridge) return;
             if (!this.core.cartridgeSlot.cartridge.hasRTC) return;
             var name = this.core.cartridgeSlot.cartridge.name;
@@ -23895,7 +21909,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         }, {
           key: "loadBatteryFileArrayBuffer",
           value: function () {
-            var _ref4 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(data) {
+            var _ref5 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(data) {
               var sram, rtc;
               return _regeneratorRuntime.wrap(function _callee4$(_context4) {
                 while (1) {
@@ -23908,7 +21922,9 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
                       sram = this.core.cartridgeSlot.cartridge.mbc.cutSRAMFromBatteryFileArray(data);
                       rtc = null;
 
-                      if (this.core.cartridgeSlot.cartridge.hasRTC) rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
+                      if (this.core.cartridgeSlot.cartridge.hasRTC) {
+                        rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
+                      }
 
                       this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
                       if (rtc) this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
@@ -23937,8 +21953,8 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
               }, _callee4, this);
             }));
 
-            function loadBatteryFileArrayBuffer(_x4) {
-              return _ref4.apply(this, arguments);
+            function loadBatteryFileArrayBuffer(_x5) {
+              return _ref5.apply(this, arguments);
             }
 
             return loadBatteryFileArrayBuffer;
@@ -23976,7 +21992,11 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
         80: "speed"
       };
       $lcd = $(".lcd");
-      gameboy = new GameBoy$1($lcd.get(0));
+      canvas = $lcd.get(0);
+      gameboy = new GameBoy$1({
+        lcd: { canvas: canvas },
+        isSoundEnabled: true
+      });
 
 
       window.gameboy = gameboy;
@@ -24002,7 +22022,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
             switch (_context.prev = _context.next) {
               case 0:
                 _context.next = 2;
-                return util.uploadFile(["gb", "gbc"]);
+                return uploadFile(["gb", "gbc"]);
 
               case 2:
                 result = _context.sent;
@@ -24018,7 +22038,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
       })));
 
       $(".download-battery-file").on("click", function () {
-        util.downloadFile(gameboy.core.cartridgeSlot.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
+        downloadFile(gameboy.core.cartridgeSlot.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
       });
 
       $(".upload-battery-file").on("click", _asyncToGenerator(_regeneratorRuntime.mark(function _callee2() {
@@ -24028,7 +22048,7 @@ $__System.register('a', ['10', 'b', '11', '13'], function (_export, _context5) {
             switch (_context2.prev = _context2.next) {
               case 0:
                 _context2.next = 2;
-                return util.uploadFile(["sav"]);
+                return uploadFile(["sav"]);
 
               case 2:
                 result = _context2.sent;
