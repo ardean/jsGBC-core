@@ -25,8 +25,7 @@ const $lcd = $(".lcd");
 const canvas = $lcd.get(0);
 
 const gameboy = new GameBoy({
-  lcd: { canvas },
-  isSoundEnabled: true
+  lcd: { canvas }
 });
 
 window.gameboy = gameboy;

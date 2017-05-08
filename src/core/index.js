@@ -430,13 +430,6 @@ GameBoyCore.prototype.initSound = function () {
       const sampleRate = this.clocksPerSecond / this.audioResamplerFirstPassFactor;
       const maxBufferSize = Math.max(this.baseCPUCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 8192) << 1;
 
-      console.log({
-        channels: 2,
-        sampleRate,
-        minBufferSize: 0,
-        maxBufferSize,
-        volume: settings.soundVolume
-      });
       this.audioServer = new AudioServer({
         channels: 2,
         sampleRate,
@@ -528,7 +521,7 @@ GameBoyCore.prototype.intializeWhiteNoise = function () {
   this.noiseSampleTable = this.LSFR15Table;
 };
 GameBoyCore.prototype.audioUnderrunAdjustment = function () {
-  if (!this.audioServer) return;
+  if (!settings.soundOn) return;
   let underrunAmount = this.audioServer.remainingBuffer();
   if (typeof underrunAmount === "number") {
     underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
