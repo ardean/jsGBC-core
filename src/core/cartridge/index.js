@@ -158,6 +158,16 @@ export default class Cartridge {
     }
   }
 
+  setGBCMode(data) {
+    this.useGBCMode = (data & 0x1) === 0;
+    // Exception to the GBC identifying code:
+    if (this.name + this.gameCode + this.colorCompatibilityByte === "Game and Watch 50") {
+      this.useGBCMode = true;
+      console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
+    }
+    console.log("Booted to GBC Mode: " + this.useGBCMode);
+  }
+
   setTypeName() {
     switch (this.type) {
     case 0x00:

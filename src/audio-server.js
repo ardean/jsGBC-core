@@ -26,13 +26,7 @@ export default class AudioServer {
   }
 
   remainingBuffer() {
-    return Math.floor(
-        this.resampledSamplesLeft() *
-        this.resampleControl.ratioWeight /
-        this.channelsAllocated
-      ) *
-      this.channelsAllocated +
-      this.audioBufferSize;
+    return Math.floor(this.resampledSamplesLeft() * this.resampleControl.ratioWeight / this.channelsAllocated) * this.channelsAllocated + this.audioBufferSize;
   }
 
   initializeAudio() {

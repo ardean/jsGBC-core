@@ -1,6 +1,6 @@
 import settings from "../settings";
 
-export function toTypedArray(baseArray, memtype) {
+export function toTypedArray(baseArray, memtype) { // TODO: remove
   try {
     if (!baseArray || !baseArray.length < 1) return [];
 
@@ -32,7 +32,7 @@ export function toTypedArray(baseArray, memtype) {
   }
 }
 
-export function fromTypedArray(baseArray) {
+export function fromTypedArray(baseArray) { // TODO: remove
   try {
     if (!baseArray || !baseArray.length) {
       return [];
@@ -48,36 +48,32 @@ export function fromTypedArray(baseArray) {
   }
 }
 
-export function getTypedArray(length, defaultValue, numberType) {
+export function getTypedArray(length, defaultValue, numberType) { // TODO: remove and use fillTypedArray
   let arrayHandle;
-  try {
-    switch (numberType) {
-    case "int8":
-      arrayHandle = new Int8Array(length);
-      break;
-    case "uint8":
-      arrayHandle = new Uint8Array(length);
-      break;
-    case "int32":
-      arrayHandle = new Int32Array(length);
-      break;
-    case "float32":
-      arrayHandle = new Float32Array(length);
-    }
-    if (defaultValue !== 0) {
-      let index = 0;
-      while (index < length) {
-        arrayHandle[index++] = defaultValue;
-      }
-    }
-  } catch (error) {
-    console.log("Could not convert an array to a typed array: " + error.message, 1);
-    arrayHandle = [];
+  switch (numberType) {
+  case "int8":
+    arrayHandle = new Int8Array(length);
+    break;
+  case "uint8":
+    arrayHandle = new Uint8Array(length);
+    break;
+  case "int32":
+    arrayHandle = new Int32Array(length);
+    break;
+  case "float32":
+    arrayHandle = new Float32Array(length);
+    break;
+  default:
+    break;
+  }
+
+  if (defaultValue !== 0) {
     let index = 0;
     while (index < length) {
       arrayHandle[index++] = defaultValue;
     }
   }
+
   return arrayHandle;
 }
 

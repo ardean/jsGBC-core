@@ -20,7 +20,6 @@
     "jsgbc"
   ],
   "scripts": {
-    "node-demo": "node node.js",
     "start": "node dev-server/index.js",
     "build": "npm run cleanup && npm run build-src && npm run build-src-min && npm run build-docs",
     "build-src": "jspm build src/index.js dist/jsgbc-core.js --global-name jsGBC --format umd --externals events --global-deps \"{'events':'EventEmitter'}\"",
@@ -31,7 +30,6 @@
   },
   "devDependencies": {
     "babel-eslint": "^7.2.3",
-    "canvas": "^1.6.5",
     "cpy-cli": "^1.0.1",
     "del-cli": "^0.2.1",
     "eslint": "^3.19.0",
