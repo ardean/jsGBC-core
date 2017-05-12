@@ -356,14 +356,7 @@ export default [
   //#0x28:
   function () {
     if (this.FZero) {
-      this.programCounter = this.programCounter +
-        (this.memoryReader[this.programCounter].apply(this, [
-            this.programCounter
-          ]) <<
-          24 >>
-          24) +
-        1 &
-        0xffff;
+      this.programCounter = this.programCounter + (this.memoryReader[this.programCounter].apply(this, [this.programCounter]) << 24 >> 24) + 1 & 0xffff;
       this.CPUTicks += 4;
     } else {
       this.programCounter = this.programCounter + 1 & 0xffff;

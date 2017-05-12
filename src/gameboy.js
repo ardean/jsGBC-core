@@ -11,6 +11,7 @@ export default class GameBoy extends EventEmitter {
   buttons = ["right", "left", "up", "down", "a", "b", "select", "start"];
 
   constructor({
+    audioContext,
     isPaused,
     lcd,
     isSoundEnabled
@@ -21,6 +22,7 @@ export default class GameBoy extends EventEmitter {
     if (isPaused) this.isPaused = isPaused;
 
     this.core = new GameBoyCore({
+      audioContext,
       api: this,
       lcd
     });

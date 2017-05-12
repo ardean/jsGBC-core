@@ -1,7 +1,8 @@
 import Resampler from "./resampler";
 
 export default class AudioServer {
-  constructor({ channels, sampleRate, minBufferSize, maxBufferSize, volume }) {
+  constructor({ audioContext, channels, sampleRate, minBufferSize, maxBufferSize, volume }) {
+    this.audioContext = audioContext || new AudioContext();
     this.samplesPerCallback = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
     this.channelsAllocated = Math.max(channels, 1);
     this.sampleRate = Math.abs(sampleRate);
@@ -30,12 +31,10 @@ export default class AudioServer {
   }
 
   initializeAudio() {
-    this.audioContext = this.audioContext || new AudioContext();
-
     if (!this.audioNode) {
       this.audioNode = this.audioContext.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
 
-      this.audioNode.addEventListener("audioprocess", e => this.processAudio(e));
+      this.audioNode.onaudioprocess = e => this.processAudio(e);
       this.audioNode.connect(this.audioContext.destination);
       this.resetCallbackAPIAudioBuffer(this.audioContext.sampleRate);
     }

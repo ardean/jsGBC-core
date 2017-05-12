@@ -10128,7 +10128,7 @@ $__System.registerDynamic('e', ['d'], true, function ($__require, exports, modul
 $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
   "use strict";
 
-  var EventEmitter, debounce, $, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, LCD, TickTable, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, LocalStorage, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1, _this, keyMap, $lcd, canvas, gameboy;
+  var EventEmitter, debounce, $, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, LCD, TickTable, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, CPU, LocalStorage, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1, _this, keyMap, $lcd, canvas, gameboy;
 
   function toTypedArray(baseArray, memtype) {
     // TODO: remove
@@ -10284,10 +10284,12 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
   }
 
   function GameBoyCore(_ref) {
-    var api = _ref.api,
+    var audioContext = _ref.audioContext,
+        api = _ref.api,
         _ref$lcd = _ref.lcd,
         lcdOptions = _ref$lcd === undefined ? {} : _ref$lcd;
 
+    this.audioContext = audioContext;
     this.api = api;
     this.events = new EventEmitter(); // TODO: use as super
 
@@ -10295,6 +10297,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
     this.memoryNew = new Memory({ gameboy: this });
 
+    this.cpu = new CPU();
     this.joypad = new Joypad(this);
     this.cartridgeSlot = new CartridgeSlot(this);
     this.lcd = new LCD(lcdOptions);
@@ -10329,11 +10332,6 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
     this.SpriteGBLayerRender = this.SpriteGBLayerRender.bind(this);
     this.SpriteGBCLayerRender = this.SpriteGBCLayerRender.bind(this);
 
-    this.CPUCyclesTotal = 0; // Relative CPU clocking to speed set, rounded appropriately.
-    this.CPUCyclesTotalBase = 0; // Relative CPU clocking to speed set base.
-    this.CPUCyclesTotalCurrent = 0; // Relative CPU clocking to speed set, the directly used value.
-    this.CPUCyclesTotalRoundoff = 0; // Clocking per iteration rounding catch.
-    this.baseCPUCyclesPerIteration = 0; // CPU clocks per iteration at 1x speed.
     this.usedGBCBootROM = false; // Did we boot to the GBC boot ROM?
     this.stopEmulator = 3; // Has the emulation been paused or a frame has ended?
     this.IRQLineMatched = 0; // CPU IRQ assertion.
@@ -10346,9 +10344,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
     this.savedStateFileName = ""; // When loaded in as a save state, this will not be empty.
     this.spriteCount = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
     this.LINECONTROL = []; // Array of functions to handle each scan line we do (onscreen + offscreen)
-    this.DISPLAYOFFCONTROL = [function () {
-      // Array of line 0 function to handle the LCD controller when it's off (Do nothing!).
-    }];
+    this.DISPLAYOFFCONTROL = [function () {}]; // Array of line 0 function to handle the LCD controller when it's off (Do nothing!).
+
     this.LCDCONTROL = null; //Pointer to either LINECONTROL or DISPLAYOFFCONTROL.
     this.initializeLCDController(); //Compile the LCD controller functions.
 
@@ -10360,29 +10357,26 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
     this.LSFR7Table = null;
     this.noiseSampleTable = null;
     this.initializeAudioStartState();
-    //Pre-multipliers to cache some calculations:
-    this.emulatorSpeed = 1;
-    this.initializeTiming();
+
     //Audio generation counters:
     this.audioTicks = 0; //Used to sample the audio system every x CPU instructions.
     this.audioIndex = 0; //Used to keep alignment on audio generation.
     this.downsampleInput = 0;
     this.audioDestinationPosition = 0; //Used to keep alignment on audio generation.
     this.rollover = 0; //Used to keep alignment on the number of samples to output (Realign from counter alias).
-    //Timing Variables
-    this.emulatorTicks = 0; //Times for how many instructions to execute before ending the loop.
-    this.firstIteration = new Date().getTime();
-    this.iterations = 0;
-    this.totalLinesPassed = 0;
-    ////Graphics Variables
+
+    //Graphics Variables
     this.drewFrame = false; //Throttle how many draws we can do to once per iteration.
     this.midScanlineOffset = -1; //mid-scanline rendering offset.
     this.pixelEnd = 0; //track the x-coord limit for line rendering (mid-scanline usage).
     this.currentX = 0; //The x-coord we left off at for mid-scanline rendering.
+
     //BG Tile Pointer Caches:
     this.BGCHRCurrentBank = null;
+
     //Tile Data Cache:
     this.tileCache = null;
+
     //Palettes:
     this.colors = [0xefffde, 0xadd794, 0x529273, 0x183442]; // "Classic" GameBoy palette colors.
     this.OBJPalette = null;
@@ -11649,7 +11643,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
       AudioServer = function () {
         function AudioServer(_ref) {
-          var channels = _ref.channels,
+          var audioContext = _ref.audioContext,
+              channels = _ref.channels,
               sampleRate = _ref.sampleRate,
               minBufferSize = _ref.minBufferSize,
               maxBufferSize = _ref.maxBufferSize,
@@ -11657,6 +11652,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
           _classCallCheck(this, AudioServer);
 
+          this.audioContext = audioContext || new AudioContext();
           this.samplesPerCallback = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
           this.channelsAllocated = Math.max(channels, 1);
           this.sampleRate = Math.abs(sampleRate);
@@ -11685,14 +11681,12 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           value: function initializeAudio() {
             var _this = this;
 
-            this.audioContext = this.audioContext || new AudioContext();
-
             if (!this.audioNode) {
               this.audioNode = this.audioContext.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
 
-              this.audioNode.addEventListener("audioprocess", function (e) {
+              this.audioNode.onaudioprocess = function (e) {
                 return _this.processAudio(e);
-              });
+              };
               this.audioNode.connect(this.audioContext.destination);
               this.resetCallbackAPIAudioBuffer(this.audioContext.sampleRate);
             }
@@ -16128,6 +16122,48 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         return Memory;
       }();
 
+      CPU = function () {
+        // Clocking per iteration rounding catch.
+        // Relative CPU clocking to speed set base.
+        // Times for how many instructions to execute before ending the loop.
+        function CPU() {
+          _classCallCheck(this, CPU);
+
+          this.speedMultiplier = 1;
+          this.ticks = 0;
+          this.cyclesTotal = 0;
+          this.cyclesTotalBase = 0;
+          this.cyclesTotalCurrent = 0;
+          this.cyclesTotalRoundoff = 0;
+          this.baseCyclesPerIteration = 0;
+          this.totalLinesPassed = 0;
+
+          this.calculateTimings();
+        } // CPU clocks per iteration at 1x speed.
+        // Relative CPU clocking to speed set, the directly used value.
+        // Relative CPU clocking to speed set, rounded appropriately.
+
+
+        _createClass(CPU, [{
+          key: "calculateTimings",
+          value: function calculateTimings() {
+            this.clocksPerSecond = this.speedMultiplier * 0x400000;
+            this.baseCyclesPerIteration = this.clocksPerSecond / 1000 * settings.runInterval;
+            this.cyclesTotalRoundoff = this.baseCyclesPerIteration % 4;
+            this.cyclesTotalBase = this.cyclesTotal = this.baseCyclesPerIteration - this.cyclesTotalRoundoff | 0;
+            this.cyclesTotalCurrent = 0;
+          }
+        }, {
+          key: "setSpeedMultiplier",
+          value: function setSpeedMultiplier(value) {
+            this.speedMultiplier = value;
+            this.calculateTimings();
+          }
+        }]);
+
+        return CPU;
+      }();
+
       GameBoyCore.prototype.loadState = function (state) {
         this.stateManager.load(state);
 
@@ -16400,23 +16436,14 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           this.recompileBootIOWriteHandling();
         }
       };
-      GameBoyCore.prototype.initializeTiming = function () {
-        //Emulator Timing:
-        this.clocksPerSecond = this.emulatorSpeed * 0x400000;
-        this.baseCPUCyclesPerIteration = this.clocksPerSecond / 1000 * settings.runInterval;
-        this.CPUCyclesTotalRoundoff = this.baseCPUCyclesPerIteration % 4;
-        this.CPUCyclesTotalBase = this.CPUCyclesTotal = this.baseCPUCyclesPerIteration - this.CPUCyclesTotalRoundoff | 0;
-        this.CPUCyclesTotalCurrent = 0;
-      };
       GameBoyCore.prototype.setSpeed = function (speed) {
-        this.emulatorSpeed = speed;
-        this.initializeTiming();
+        this.cpu.setSpeedMultiplier(speed);
         if (this.audioServer) {
           this.initSound();
         }
       };
       GameBoyCore.prototype.initSound = function () {
-        this.audioResamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
+        this.audioResamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
         this.downSampleInputDivider = 1 / (this.audioResamplerFirstPassFactor * 0xf0);
 
         // TODO: create sound controller
@@ -16425,10 +16452,11 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           if (this.audioServer) this.audioServer.changeVolume(0);
         } else {
           if (!this.audioServer) {
-            var sampleRate = this.clocksPerSecond / this.audioResamplerFirstPassFactor;
-            var maxBufferSize = Math.max(this.baseCPUCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 8192) << 1;
+            var sampleRate = this.cpu.clocksPerSecond / this.audioResamplerFirstPassFactor;
+            var maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 8192) << 1;
 
             this.audioServer = new AudioServer({
+              audioContext: this.audioContext,
               channels: 2,
               sampleRate: sampleRate,
               minBufferSize: 0,
@@ -16448,8 +16476,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.audioIndex = 0;
         this.audioDestinationPosition = 0;
         this.downsampleInput = 0;
-        this.bufferContainAmount = Math.max(this.baseCPUCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 4096) << 1;
-        this.numSamplesTotal = this.baseCPUCyclesPerIteration / this.audioResamplerFirstPassFactor << 1;
+        this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 4096) << 1;
+        this.numSamplesTotal = this.cpu.baseCyclesPerIteration / this.audioResamplerFirstPassFactor << 1;
         this.audioBuffer = getTypedArray(this.numSamplesTotal, 0, "float32");
       };
       GameBoyCore.prototype.intializeWhiteNoise = function () {
@@ -17057,7 +17085,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               this.lcd.requestDraw();
             } else {
               this.audioUnderrunAdjustment();
-              this.audioTicks += this.CPUCyclesTotal;
+              this.audioTicks += this.cpu.cyclesTotal;
               this.audioJIT();
               this.stopEmulator |= 1; // End current loop.
             }
@@ -17109,7 +17137,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           //Single-speed relative timing for A/V emulation:
           timedTicks = this.CPUTicks >> this.doubleSpeedShifter; //CPU clocking can be updated from the LCD handling.
           this.audioTicks += timedTicks; //Audio Timing
-          this.emulatorTicks += timedTicks; //Emulator Timing
+          this.cpu.ticks += timedTicks; //Emulator Timing
           //CPU Timers:
           this.DIVTicks += this.CPUTicks; //DIV Timing
           if (this.TIMAEnabled) {
@@ -17140,7 +17168,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             }
           }
           //End of iteration routine:
-          if (this.emulatorTicks >= this.CPUCyclesTotal) {
+          if (this.cpu.ticks >= this.cpu.cyclesTotal) {
             this.iterationEndRoutine();
           }
         }
@@ -17153,26 +17181,26 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           this.DIVTicks &= 0xff;
           //Update emulator flags:
           this.stopEmulator |= 1; //End current loop.
-          this.emulatorTicks -= this.CPUCyclesTotal;
-          this.CPUCyclesTotalCurrent += this.CPUCyclesTotalRoundoff;
+          this.cpu.ticks -= this.cpu.cyclesTotal;
+          this.cpu.cyclesTotalCurrent += this.cpu.cyclesTotalRoundoff;
           this.recalculateIterationClockLimit();
         }
       };
       GameBoyCore.prototype.handleSTOP = function () {
         this.CPUStopped = true; //Stop CPU until joypad input changes.
         this.iterationEndRoutine();
-        if (this.emulatorTicks < 0) {
-          this.audioTicks -= this.emulatorTicks;
+        if (this.cpu.ticks < 0) {
+          this.audioTicks -= this.cpu.ticks;
           this.audioJIT();
         }
       };
       GameBoyCore.prototype.recalculateIterationClockLimit = function () {
-        var endModulus = this.CPUCyclesTotalCurrent % 4;
-        this.CPUCyclesTotal = this.CPUCyclesTotalBase + this.CPUCyclesTotalCurrent - endModulus;
-        this.CPUCyclesTotalCurrent = endModulus;
+        var endModulus = this.cpu.cyclesTotalCurrent % 4;
+        this.cpu.cyclesTotal = this.cpu.cyclesTotalBase + this.cpu.cyclesTotalCurrent - endModulus;
+        this.cpu.cyclesTotalCurrent = endModulus;
       };
       GameBoyCore.prototype.recalculateIterationClockLimitForAudio = function (audioClocking) {
-        this.CPUCyclesTotal += Math.min(audioClocking >> 2 << 2, this.CPUCyclesTotalBase << 1);
+        this.cpu.cyclesTotal += Math.min(audioClocking >> 2 << 2, this.cpu.cyclesTotalBase << 1);
       };
       GameBoyCore.prototype.scanLineMode2 = function () {
         //OAM Search Period
@@ -17280,14 +17308,14 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       };
       GameBoyCore.prototype.updateCore = function () {
         //Update the clocking for the LCD emulation:
-        this.LCDTicks += this.CPUTicks >> this.doubleSpeedShifter; //LCD Timing
+        this.LCDTicks += this.CPUTicks >> this.doubleSpeedShifter; // LCD Timing
         this.LCDCONTROL[this.actualScanLine](this); //Scan Line and STAT Mode Control
         //Single-speed relative timing for A/V emulation:
-        var timedTicks = this.CPUTicks >> this.doubleSpeedShifter; //CPU clocking can be updated from the LCD handling.
-        this.audioTicks += timedTicks; //Audio Timing
-        this.emulatorTicks += timedTicks; //Emulator Timing
+        var timedTicks = this.CPUTicks >> this.doubleSpeedShifter; // CPU clocking can be updated from the LCD handling.
+        this.audioTicks += timedTicks; // Audio Timing
+        this.cpu.ticks += timedTicks; // CPU Timing
         //CPU Timers:
-        this.DIVTicks += this.CPUTicks; //DIV Timing
+        this.DIVTicks += this.CPUTicks; // DIV Timing
         if (this.TIMAEnabled) {
           //TIMA Timing
           this.timerTicks += this.CPUTicks;
@@ -17320,7 +17348,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         //Update the state machine:
         this.updateCore();
         //End of iteration routine:
-        if (this.emulatorTicks >= this.CPUCyclesTotal) {
+        if (this.cpu.ticks >= this.cpu.cyclesTotal) {
           this.iterationEndRoutine();
         }
       };
@@ -17425,7 +17453,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 //Attempt to blit out to our canvas:
                 if (_this2.drewBlank === 0) {
                   //Ensure JIT framing alignment:
-                  if (_this2.totalLinesPassed < 144 || _this2.totalLinesPassed === 144 && _this2.midScanlineOffset > -1) {
+                  if (_this2.cpu.totalLinesPassed < 144 || _this2.cpu.totalLinesPassed === 144 && _this2.midScanlineOffset > -1) {
                     //Make sure our gfx are up-to-date:
                     _this2.graphicsJITVBlank();
                     //Draw the frame:
@@ -17666,11 +17694,13 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           //OBJ 1
           this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(this.gbcOBJRawPalette[adjustedIndex | 1] << 8 | this.gbcOBJRawPalette[adjustedIndex]);
         }
+
         //OBJ 2
-        for (counter = 4; counter < 8; counter++) {
-          adjustedIndex = counter << 1;
-          this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(this.gbcOBJRawPalette[adjustedIndex | 1] << 8 | this.gbcOBJRawPalette[adjustedIndex]);
+        for (var _counter = 4; _counter < 8; _counter++) {
+          var _adjustedIndex = _counter << 1;
+          this.cachedOBJPaletteConversion[_counter] = this.adjustRGBTint(this.gbcOBJRawPalette[_adjustedIndex | 1] << 8 | this.gbcOBJRawPalette[_adjustedIndex]);
         }
+
         //Update the palette entries:
         this.updateGBBGPalette = this.updateGBColorizedBGPalette;
         this.updateGBOBJPalette = this.updateGBColorizedOBJPalette;
@@ -18248,7 +18278,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           }
           if (this.gfxSpriteNormalHeight) {
             //Draw the visible sprites:
-            for (var length = this.findLowestSpriteDrawable(lineAdjusted, 0x7); spriteCount < length; ++spriteCount) {
+            for (var _length = this.findLowestSpriteDrawable(lineAdjusted, 0x7); spriteCount < _length; ++spriteCount) {
               OAMAddress = this.OAMAddressCache[spriteCount];
               yoffset = lineAdjusted - this.memory[OAMAddress] << 3;
               attrCode = this.memory[OAMAddress | 3];
@@ -18277,7 +18307,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             }
           } else {
             //Draw the visible sprites:
-            for (var length = this.findLowestSpriteDrawable(lineAdjusted, 0xf); spriteCount < length; ++spriteCount) {
+            for (var _length2 = this.findLowestSpriteDrawable(lineAdjusted, 0xf); spriteCount < _length2; ++spriteCount) {
               OAMAddress = this.OAMAddressCache[spriteCount];
               yoffset = lineAdjusted - this.memory[OAMAddress] << 3;
               attrCode = this.memory[OAMAddress | 3];
@@ -18526,13 +18556,13 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       };
       GameBoyCore.prototype.graphicsJIT = function () {
         if (this.LCDisOn) {
-          this.totalLinesPassed = 0; //Mark frame for ensuring a JIT pass for the next framebuffer output.
+          this.cpu.totalLinesPassed = 0; //Mark frame for ensuring a JIT pass for the next framebuffer output.
           this.graphicsJITScanlineGroup();
         }
       };
       GameBoyCore.prototype.graphicsJITVBlank = function () {
         //JIT the graphics to v-blank framing:
-        this.totalLinesPassed += this.queuedScanLines;
+        this.cpu.totalLinesPassed += this.queuedScanLines;
         this.graphicsJITScanlineGroup();
       };
       GameBoyCore.prototype.graphicsJITScanlineGroup = function () {
@@ -18660,7 +18690,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         } else {
           var currentClocks = this.remainingClocks;
         }
-        var maxClocks = this.CPUCyclesTotal - this.emulatorTicks << this.doubleSpeedShifter;
+        var maxClocks = this.cpu.cyclesTotal - this.cpu.ticks << this.doubleSpeedShifter;
         if (currentClocks >= 0) {
           if (currentClocks <= maxClocks) {
             //Exit out of HALT normally:
@@ -20022,7 +20052,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             //Gambatte says to do this:
             _this4.modeSTAT = 2;
             _this4.midScanlineOffset = -1;
-            _this4.totalLinesPassed = _this4.currentX = _this4.queuedScanLines = _this4.lastUnrenderedLine = _this4.LCDTicks = _this4.STATTracker = _this4.actualScanLine = _this4.memory[0xff44] = 0;
+            _this4.cpu.totalLinesPassed = _this4.currentX = _this4.queuedScanLines = _this4.lastUnrenderedLine = _this4.LCDTicks = _this4.STATTracker = _this4.actualScanLine = _this4.memory[0xff44] = 0;
           }
         };
         //LYC
@@ -20091,11 +20121,11 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               _this5.midScanLineJIT();
               var temp_var = data > 0x7f;
               if (temp_var != _this5.LCDisOn) {
-                //When the display mode changes...
+                // When the display mode changes...
                 _this5.LCDisOn = temp_var;
                 _this5.memory[0xff41] &= 0x78;
                 _this5.midScanlineOffset = -1;
-                _this5.totalLinesPassed = _this5.currentX = _this5.queuedScanLines = _this5.lastUnrenderedLine = _this5.STATTracker = _this5.LCDTicks = _this5.actualScanLine = _this5.memory[0xff44] = 0;
+                _this5.cpu.totalLinesPassed = _this5.currentX = _this5.queuedScanLines = _this5.lastUnrenderedLine = _this5.STATTracker = _this5.LCDTicks = _this5.actualScanLine = _this5.memory[0xff44] = 0;
                 if (_this5.LCDisOn) {
                   _this5.modeSTAT = 2;
                   _this5.matchLYC(); //Get the compare of the first scan line.
@@ -20275,7 +20305,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 _this5.LCDisOn = temp_var;
                 _this5.memory[0xff41] &= 0x78;
                 _this5.midScanlineOffset = -1;
-                _this5.totalLinesPassed = _this5.currentX = _this5.queuedScanLines = _this5.lastUnrenderedLine = _this5.STATTracker = _this5.LCDTicks = _this5.actualScanLine = _this5.memory[0xff44] = 0;
+                _this5.cpu.totalLinesPassed = _this5.currentX = _this5.queuedScanLines = _this5.lastUnrenderedLine = _this5.STATTracker = _this5.LCDTicks = _this5.actualScanLine = _this5.memory[0xff44] = 0;
                 if (_this5.LCDisOn) {
                   _this5.modeSTAT = 2;
                   _this5.matchLYC(); //Get the compare of the first scan line.
@@ -21572,6 +21602,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
         function GameBoy() {
           var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+              audioContext = _ref.audioContext,
               isPaused = _ref.isPaused,
               lcd = _ref.lcd,
               isSoundEnabled = _ref.isSoundEnabled;
@@ -21586,6 +21617,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           if (isPaused) _this.isPaused = isPaused;
 
           _this.core = new GameBoyCore({
+            audioContext: audioContext,
             api: _this,
             lcd: lcd
           });
