@@ -18,11 +18,16 @@ export default class AudioController {
   }
 
   connectDevice(device) {
+    const sampleRate = this.cpu.clocksPerSecond / this.resamplerFirstPassFactor;
+    const maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 8192) << 1;
+    device.setSampleRate(sampleRate);
+    device.setMaxBufferSize(maxBufferSize);
+    device.initializeAudio();
     this.device = device;
   }
 
-  changeVolume(volume) {
-    this.device && this.device.changeVolume(volume);
+  setVolume(volume) {
+    this.device && this.device.setVolume(volume);
   }
 
   outputAudio() {

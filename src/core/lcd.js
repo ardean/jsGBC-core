@@ -183,7 +183,7 @@ export default class LCD {
   clearFrameBuffer() {
     const frameBuffer = this.swizzledFrame;
     let bufferIndex = 0;
-    if (this.cartridgeSlot.cartridge.useGBCMode || this.colorizedGBPalettes) {
+    if (this.cartridge.useGBCMode || this.colorizedGBPalettes) {
       while (bufferIndex < this.offscreenRGBCount) {
         frameBuffer[bufferIndex++] = 248;
       }

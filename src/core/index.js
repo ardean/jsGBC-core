@@ -2,7 +2,6 @@ import LCD from "./lcd.js";
 import * as util from "./util";
 import settings from "../settings.js";
 import TickTable from "./tick-table.js";
-import CartridgeSlot from "./cartridge-slot.js";
 import AudioDevice from "./audio/device.js";
 import AudioController from "./audio/controller.js";
 import mainInstructions from "./main-instructions.js";
@@ -14,8 +13,8 @@ import EventEmitter from "events";
 import Memory from "./memory/index.js";
 import CPU from "./cpu.js";
 
-function GameBoyCore({ audioContext, api, lcd: lcdOptions = {} }) {
-  this.audioContext = audioContext;
+function GameBoyCore({ audio: audioOptions = {}, api, lcd: lcdOptions = {} }) {
+  this.audioContext = audioOptions.context;
   this.api = api;
   this.events = new EventEmitter(); // TODO: use as super
 
@@ -24,9 +23,13 @@ function GameBoyCore({ audioContext, api, lcd: lcdOptions = {} }) {
   this.memoryNew = new Memory({ gameboy: this });
 
   this.cpu = new CPU();
+  this.audioDevice = new AudioDevice({
+    context: this.audioContext,
+    channels: 2,
+    volume: settings.soundVolume
+  });
   this.audioController = new AudioController({ cpu: this.cpu });
   this.joypad = new Joypad(this);
-  this.cartridgeSlot = new CartridgeSlot(this);
   this.lcd = new LCD(lcdOptions);
   this.stateManager = new StateManager(this);
   this.stateManager.init();
@@ -77,7 +80,6 @@ function GameBoyCore({ audioContext, api, lcd: lcdOptions = {} }) {
   this.initializeLCDController(); //Compile the LCD controller functions.
 
   //Sound variables:
-  this.audioDevice = null; //XAudioJS handle
   this.initializeAudioStartState();
 
   //Graphics Variables
@@ -102,9 +104,6 @@ function GameBoyCore({ audioContext, api, lcd: lcdOptions = {} }) {
   this.WindowLayerRender = null; // Reference to the window rendering function.
   this.SpriteLayerRender = null; // Reference to the OAM rendering function.
   this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
-
-  // generate the white noise cache tables ahead of time
-  this.audioController.generateWhiteNoise();
 }
 GameBoyCore.prototype.loadState = function (state) {
   this.stateManager.load(state);
@@ -117,14 +116,18 @@ GameBoyCore.prototype.loadState = function (state) {
   this.audioController.noiseSampleTable = this.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
   this.channel4VolumeShifter = this.channel4BitRange === 0x7fff ? 15 : 7;
 };
+GameBoyCore.prototype.connectCartridge = function (cartridge) {
+  cartridge.connect(this);
+  this.cartridge = cartridge;
+  this.cartridge.interpret();
+};
 GameBoyCore.prototype.start = function (cartridge) {
   this.init();
-  this.cartridgeSlot.insertCartridge(cartridge);
-  this.cartridgeSlot.readCartridge();
-  this.cartridgeSlot.cartridge.mbc.setupROM();
+  this.connectCartridge(cartridge);
+  this.cartridge.mbc.setupROM();
 
-  if (this.cartridgeSlot.cartridge && this.cartridgeSlot.cartridge.mbc) {
-    this.cartridgeSlot.cartridge.mbc.on("ramWrite", () => {
+  if (this.cartridge && this.cartridge.mbc) {
+    this.cartridge.mbc.on("ramWrite", () => {
       this.events.emit("sramWrite");
     });
   }
@@ -148,10 +151,10 @@ GameBoyCore.prototype.init = function () {
   this.initSound(); // Sound object initialization.
 };
 GameBoyCore.prototype.setupRAM = function () {
-  this.cartridgeSlot.cartridge.setupRAM();
+  this.cartridge.setupRAM();
 
   // Setup the RAM for GBC mode.
-  if (this.cartridgeSlot.cartridge.useGBCMode) {
+  if (this.cartridge.useGBCMode) {
     this.VRAM = util.getTypedArray(0x2000, 0, "uint8");
     this.GBCMemory = util.getTypedArray(0x7000, 0, "uint8");
   }
@@ -202,7 +205,7 @@ GameBoyCore.prototype.initSkipBootstrap = function () {
     --index;
   }
 
-  if (this.cartridgeSlot.cartridge.useGBCMode) {
+  if (this.cartridge.useGBCMode) {
     this.memory[0xff6c] = 0xfe;
     this.memory[0xff74] = 0xfe;
   } else {
@@ -214,7 +217,7 @@ GameBoyCore.prototype.initSkipBootstrap = function () {
 
   // Start as an unset device:
   console.log("Starting without the GBC boot ROM.");
-  this.registerA = this.cartridgeSlot.cartridge.useGBCMode ? 0x11 : 0x1;
+  this.registerA = this.cartridge.useGBCMode ? 0x11 : 0x1;
   this.registerB = 0;
   this.registerC = 0x13;
   this.registerD = 0;
@@ -357,16 +360,16 @@ GameBoyCore.prototype.disableBootROM = function () {
   // Remove any traces of the boot ROM from ROM memory.
   let index = 0;
   while (index < 0x100) {
-    this.memory[index] = this.cartridgeSlot.cartridge.rom.getByte(index); // Replace the GameBoy or GameBoy Color boot ROM with the game ROM.
+    this.memory[index] = this.cartridge.rom.getByte(index); // Replace the GameBoy or GameBoy Color boot ROM with the game ROM.
     ++index;
   }
 
   if (this.usedGBCBootROM) {
     // Remove any traces of the boot ROM from ROM memory.
     for (index = 0x200; index < 0x900; ++index) {
-      this.memory[index] = this.cartridgeSlot.cartridge.rom.getByte(index); // Replace the GameBoy Color boot ROM with the game ROM.
+      this.memory[index] = this.cartridge.rom.getByte(index); // Replace the GameBoy Color boot ROM with the game ROM.
     }
-    if (!this.cartridgeSlot.cartridge.useGBCMode) {
+    if (!this.cartridge.useGBCMode) {
       // Clean up the post-boot (GB mode only) state:
       this.adjustGBCtoGBMode();
     } else {
@@ -378,31 +381,15 @@ GameBoyCore.prototype.disableBootROM = function () {
 };
 GameBoyCore.prototype.setSpeed = function (speed) {
   this.cpu.setSpeedMultiplier(speed);
-  if (this.audioDevice) {
-    this.initSound();
-  }
+  this.initSound();
 };
 GameBoyCore.prototype.initSound = function () {
   this.audioController.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
   this.audioController.downSampleInputDivider = 1 / (this.audioController.resamplerFirstPassFactor * 0xf0);
 
-  this.audioController.changeVolume(settings.soundOn ? settings.soundVolume : 0);
-
-  if (!this.audioDevice) {
-    const sampleRate = this.cpu.clocksPerSecond / this.audioController.resamplerFirstPassFactor;
-    const maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioController.resamplerFirstPassFactor, 8192) << 1;
-
-    this.audioDevice = new AudioDevice({
-      audioContext: this.audioContext,
-      channels: 2,
-      sampleRate,
-      minBufferSize: 0,
-      maxBufferSize,
-      volume: settings.soundVolume
-    });
-    this.audioController.connectDevice(this.audioDevice);
-    this.audioController.initBuffer();
-  }
+  this.audioController.connectDevice(this.audioDevice);
+  this.audioController.setVolume(settings.soundOn ? settings.soundVolume : 0);
+  this.audioController.initBuffer();
 };
 GameBoyCore.prototype.audioUnderrunAdjustment = function () {
   if (!settings.soundOn) return;
@@ -943,8 +930,8 @@ GameBoyCore.prototype.run = function () {
 
         this.audioUnderrunAdjustment();
 
-        if (this.cartridgeSlot.cartridge.hasRTC) {
-          this.cartridgeSlot.cartridge.mbc.rtc.updateClock();
+        if (this.cartridge.hasRTC) {
+          this.cartridge.mbc.rtc.updateClock();
         }
 
         if (!this.halt) {
@@ -1166,7 +1153,7 @@ GameBoyCore.prototype.clocksUntilMode0 = function () {
 };
 GameBoyCore.prototype.updateSpriteCount = function (line) {
   this.spriteCount = 252;
-  if (this.cartridgeSlot.cartridge.useGBCMode && this.gfxSpriteShow) {
+  if (this.cartridge.useGBCMode && this.gfxSpriteShow) {
     //Is the window enabled and are we in CGB mode?
     var lineAdjusted = line + 0x10;
     var yoffset = 0;
@@ -1422,7 +1409,7 @@ GameBoyCore.prototype.executeHDMA = function () {
   }
 };
 GameBoyCore.prototype.updateClock = function () {
-  return this.cartridgeSlot.cartridge.updateClock();
+  return this.cartridge.updateClock();
 };
 GameBoyCore.prototype.renderScanLine = function (scanlineToRender) {
   this.pixelStart = scanlineToRender * 160;
@@ -1431,14 +1418,9 @@ GameBoyCore.prototype.renderScanLine = function (scanlineToRender) {
     this.BGLayerRender(scanlineToRender);
     this.WindowLayerRender(scanlineToRender);
   } else {
-    var pixelLine = (scanlineToRender + 1) * 160;
-    var defaultColor = this.cartridgeSlot.cartridge.useGBCMode ||
-      this.colorizedGBPalettes ?
-      0xf8f8f8 :
-      0xefffde;
-    for (
-      var pixelPosition = scanlineToRender * 160 + this.currentX; pixelPosition < pixelLine; pixelPosition++
-    ) {
+    const pixelLine = (scanlineToRender + 1) * 160;
+    const defaultColor = this.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
+    for (let pixelPosition = scanlineToRender * 160 + this.currentX; pixelPosition < pixelLine; pixelPosition++) {
       this.frameBuffer[pixelPosition] = defaultColor;
     }
   }
@@ -1466,7 +1448,7 @@ GameBoyCore.prototype.renderMidScanLine = function () {
         //TODO: Do midscanline JIT for sprites...
       } else {
         var pixelLine = this.lastUnrenderedLine * 160 + this.pixelEnd;
-        var defaultColor = this.cartridgeSlot.cartridge.useGBCMode ||
+        var defaultColor = this.cartridge.useGBCMode ||
           this.colorizedGBPalettes ?
           0xf8f8f8 :
           0xefffde;
@@ -1482,7 +1464,7 @@ GameBoyCore.prototype.renderMidScanLine = function () {
 };
 GameBoyCore.prototype.initializeModeSpecificArrays = function () {
   this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
-  if (this.cartridgeSlot.cartridge.useGBCMode) {
+  if (this.cartridge.useGBCMode) {
     this.gbcOBJRawPalette = util.getTypedArray(0x40, 0, "uint8");
     this.gbcBGRawPalette = util.getTypedArray(0x40, 0, "uint8");
     this.gbcOBJPalette = util.getTypedArray(0x20, 0x1000000, "int32");
@@ -1529,7 +1511,7 @@ GameBoyCore.prototype.adjustGBCtoGBMode = function () {
   this.memoryWriteJumpCompile();
 };
 GameBoyCore.prototype.renderPathBuild = function () {
-  if (!this.cartridgeSlot.cartridge.useGBCMode) {
+  if (!this.cartridge.useGBCMode) {
     this.BGLayerRender = this.BGGBLayerRender;
     this.WindowLayerRender = this.WindowGBLayerRender;
     this.SpriteLayerRender = this.SpriteGBLayerRender;
@@ -1550,7 +1532,7 @@ GameBoyCore.prototype.priorityFlaggingPathRebuild = function () {
 GameBoyCore.prototype.initializeReferencesFromSaveState = function () {
   this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
   var tileIndex = 0;
-  if (!this.cartridgeSlot.cartridge.useGBCMode) {
+  if (!this.cartridge.useGBCMode) {
     if (this.colorizedGBPalettes) {
       this.BGPalette = this.gbBGColorizedPalette;
       this.OBJPalette = this.gbOBJColorizedPalette;
@@ -2826,14 +2808,14 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
     } else if (index < 0x8000) {
       this.memoryReader[index] = this.memoryReadROM;
     } else if (index < 0x9800) {
-      this.memoryReader[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMDATAReadCGBCPU : this.VRAMDATAReadDMGCPU;
+      this.memoryReader[index] = this.cartridge.useGBCMode ? this.VRAMDATAReadCGBCPU : this.VRAMDATAReadDMGCPU;
     } else if (index < 0xa000) {
-      this.memoryReader[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
+      this.memoryReader[index] = this.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
     } else if (index >= 0xa000 && index < 0xc000) {
-      if (this.cartridgeSlot.cartridge.ramSize !== 0) {
-        if (this.cartridgeSlot.cartridge.hasMBC7) {
+      if (this.cartridge.ramSize !== 0) {
+        if (this.cartridge.hasMBC7) {
           this.memoryReader[index] = this.memoryReadMBC7;
-        } else if (!this.cartridgeSlot.cartridge.hasMBC3) {
+        } else if (!this.cartridge.hasMBC3) {
           this.memoryReader[index] = this.memoryReadMBC;
         } else {
           //MBC3 RTC + RAM:
@@ -2843,20 +2825,20 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         this.memoryReader[index] = this.memoryReadBAD;
       }
     } else if (index >= 0xc000 && index < 0xe000) {
-      if (!this.cartridgeSlot.cartridge.useGBCMode || index < 0xd000) {
+      if (!this.cartridge.useGBCMode || index < 0xd000) {
         this.memoryReader[index] = this.memoryReadNormal;
       } else {
         this.memoryReader[index] = this.memoryReadGBCMemory;
       }
     } else if (index >= 0xe000 && index < 0xfe00) {
-      if (!this.cartridgeSlot.cartridge.useGBCMode || index < 0xf000) {
+      if (!this.cartridge.useGBCMode || index < 0xf000) {
         this.memoryReader[index] = this.memoryReadECHONormal;
       } else {
         this.memoryReader[index] = this.memoryReadECHOGBCMemory;
       }
     } else if (index < 0xfea0) {
       this.memoryReader[index] = this.memoryReadOAM;
-    } else if (this.cartridgeSlot.cartridge.useGBCMode && index >= 0xfea0 && index < 0xff00) {
+    } else if (this.cartridge.useGBCMode && index >= 0xfea0 && index < 0xff00) {
       this.memoryReader[index] = this.memoryReadNormal;
     } else if (index >= 0xff00) {
       switch (index) {
@@ -2874,7 +2856,7 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         break;
       case 0xff02:
         //SC
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.memoryHighReader[0x02] = this.memoryReader[0xff02] = address => {
             return (this.serialTimer <= 0 ? 0x7c : 0xfc) | this.memory[0xff02];
           };
@@ -3109,7 +3091,7 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         this.memoryReader[index] = this.memoryReadNormal;
         break;
       case 0xff55:
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.memoryHighReader[0x55] = this.memoryReader[0xff55] = address => {
             if (!this.LCDisOn && this.hdmaRunning) {
               //Undocumented behavior alert: HDMA becomes GDMA when LCD is off (Worms Armageddon Fix).
@@ -3126,7 +3108,7 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         }
         break;
       case 0xff56:
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.memoryHighReader[0x56] = this.memoryReader[0xff56] = address => {
             //Return IR "not connected" status:
             return 0x3c | (this.memory[0xff56] >= 0xc0 ? 0x2 | this.memory[0xff56] & 0xc1 : this.memory[0xff56] & 0xc3);
@@ -3163,7 +3145,7 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         this.memoryReader[index] = this.memoryReadNormal;
         break;
       case 0xff6c:
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.memoryHighReader[0x6c] = this.memoryReader[0xff6c] = address => {
             return 0xfe | this.memory[0xff6c];
           };
@@ -3177,7 +3159,7 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.memoryReadBAD;
         break;
       case 0xff70:
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           //SVBK
           this.memoryHighReader[0x70] = this.memoryReader[0xff70] = address => {
             return 0x40 | this.memory[0xff70];
@@ -3194,7 +3176,7 @@ GameBoyCore.prototype.memoryReadJumpCompile = function () {
         this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.memoryReadNormal;
         break;
       case 0xff74:
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.memoryHighReader[0x74] = this.memoryReader[0xff74] = this.memoryReadNormal;
         } else {
           this.memoryHighReader[0x74] = this.memoryReader[0xff74] = this.memoryReadBAD;
@@ -3251,18 +3233,18 @@ GameBoyCore.prototype.memoryHighReadNormal = function (address) {
   return this.memory[0xff00 | address];
 };
 GameBoyCore.prototype.memoryReadROM = function (address) {
-  return this.cartridgeSlot.cartridge.rom.getByte(
-    this.cartridgeSlot.cartridge.mbc.currentROMBank + address
+  return this.cartridge.rom.getByte(
+    this.cartridge.mbc.currentROMBank + address
   );
 };
 GameBoyCore.prototype.memoryReadMBC = function (address) {
-  return this.cartridgeSlot.cartridge.mbc.readRAM(address);
+  return this.cartridge.mbc.readRAM(address);
 };
 GameBoyCore.prototype.memoryReadMBC7 = function (address) {
-  return this.cartridgeSlot.cartridge.mbc.readRAM(address);
+  return this.cartridge.mbc.readRAM(address);
 };
 GameBoyCore.prototype.memoryReadMBC3 = function (address) {
-  return this.cartridgeSlot.cartridge.mbc.readRAM(address);
+  return this.cartridge.mbc.readRAM(address);
 };
 GameBoyCore.prototype.memoryReadGBCMemory = function (address) {
   return this.GBCMemory[address + this.gbcRamBankPosition];
@@ -3313,7 +3295,7 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
   //Faster in some browsers, since we are doing less conditionals overall by implementing them in advance.
   for (var index = 0x0000; index <= 0xffff; index++) {
     if (index < 0x8000) {
-      if (this.cartridgeSlot.cartridge.hasMBC1) {
+      if (this.cartridge.hasMBC1) {
         if (index < 0x2000) {
           this.memoryWriter[index] = this.MBCWriteEnable;
         } else if (index < 0x4000) {
@@ -3323,7 +3305,7 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
         } else {
           this.memoryWriter[index] = this.MBC1WriteType;
         }
-      } else if (this.cartridgeSlot.cartridge.hasMBC2) {
+      } else if (this.cartridge.hasMBC2) {
         if (index < 0x1000) {
           this.memoryWriter[index] = this.MBCWriteEnable;
         } else if (index >= 0x2100 && index < 0x2200) {
@@ -3331,7 +3313,7 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
         } else {
           this.memoryWriter[index] = this.cartIgnoreWrite;
         }
-      } else if (this.cartridgeSlot.cartridge.hasMBC3) {
+      } else if (this.cartridge.hasMBC3) {
         if (index < 0x2000) {
           this.memoryWriter[index] = this.MBCWriteEnable;
         } else if (index < 0x4000) {
@@ -3342,9 +3324,9 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
           this.memoryWriter[index] = this.MBC3WriteRTCLatch;
         }
       } else if (
-        this.cartridgeSlot.cartridge.hasMBC5 ||
-        this.cartridgeSlot.cartridge.cRUMBLE ||
-        this.cartridgeSlot.cartridge.hasMBC7
+        this.cartridge.hasMBC5 ||
+        this.cartridge.cRUMBLE ||
+        this.cartridge.hasMBC7
       ) {
         if (index < 0x2000) {
           this.memoryWriter[index] = this.MBCWriteEnable;
@@ -3353,11 +3335,11 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
         } else if (index < 0x4000) {
           this.memoryWriter[index] = this.MBC5WriteROMBankHigh;
         } else if (index < 0x6000) {
-          this.memoryWriter[index] = this.cartridgeSlot.cartridge.cRUMBLE ? this.RUMBLEWriteRAMBank : this.MBC5WriteRAMBank;
+          this.memoryWriter[index] = this.cartridge.cRUMBLE ? this.RUMBLEWriteRAMBank : this.MBC5WriteRAMBank;
         } else {
           this.memoryWriter[index] = this.cartIgnoreWrite;
         }
-      } else if (this.cartridgeSlot.cartridge.cHuC3) {
+      } else if (this.cartridge.cHuC3) {
         if (index < 0x2000) {
           this.memoryWriter[index] = this.MBCWriteEnable;
         } else if (index < 0x4000) {
@@ -3371,14 +3353,14 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
         this.memoryWriter[index] = this.cartIgnoreWrite;
       }
     } else if (index < 0x9000) {
-      this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAWrite;
+      this.memoryWriter[index] = this.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAWrite;
     } else if (index < 0x9800) {
-      this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAUpperWrite;
+      this.memoryWriter[index] = this.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAUpperWrite;
     } else if (index < 0xa000) {
-      this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
+      this.memoryWriter[index] = this.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
     } else if (index < 0xc000) {
-      if (this.cartridgeSlot.cartridge.ramSize !== 0) {
-        if (!this.cartridgeSlot.cartridge.hasMBC3) {
+      if (this.cartridge.ramSize !== 0) {
+        if (!this.cartridge.hasMBC3) {
           this.memoryWriter[index] = this.memoryWriteMBCRAM;
         } else {
           //MBC3 RTC + RAM:
@@ -3388,13 +3370,13 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
         this.memoryWriter[index] = this.cartIgnoreWrite;
       }
     } else if (index < 0xe000) {
-      if (this.cartridgeSlot.cartridge.useGBCMode && index >= 0xd000) {
+      if (this.cartridge.useGBCMode && index >= 0xd000) {
         this.memoryWriter[index] = this.memoryWriteGBCRAM;
       } else {
         this.memoryWriter[index] = this.memoryWriteNormal;
       }
     } else if (index < 0xfe00) {
-      if (this.cartridgeSlot.cartridge.useGBCMode && index >= 0xf000) {
+      if (this.cartridge.useGBCMode && index >= 0xf000) {
         this.memoryWriter[index] = this.memoryWriteECHOGBCRAM;
       } else {
         this.memoryWriter[index] = this.memoryWriteECHONormal;
@@ -3402,7 +3384,7 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
     } else if (index <= 0xfea0) {
       this.memoryWriter[index] = this.memoryWriteOAMRAM;
     } else if (index < 0xff00) {
-      if (this.cartridgeSlot.cartridge.useGBCMode) {
+      if (this.cartridge.useGBCMode) {
         // Only GBC has access to this RAM.
         this.memoryWriter[index] = this.memoryWriteNormal;
       } else {
@@ -3417,48 +3399,48 @@ GameBoyCore.prototype.memoryWriteJumpCompile = function () {
   this.registerWriteJumpCompile(); //Compile the I/O write functions separately...
 };
 GameBoyCore.prototype.MBCWriteEnable = function (address, data) {
-  this.cartridgeSlot.cartridge.mbc.writeEnable(address, data);
+  this.cartridge.mbc.writeEnable(address, data);
 };
 GameBoyCore.prototype.MBC1WriteROMBank = function (address, data) {
-  this.cartridgeSlot.cartridge.mbc.writeROMBank(address, data);
+  this.cartridge.mbc.writeROMBank(address, data);
 };
 GameBoyCore.prototype.MBC1WriteRAMBank = function (address, data) {
-  this.cartridgeSlot.cartridge.mbc.writeRAMBank(address, data);
+  this.cartridge.mbc.writeRAMBank(address, data);
 };
 GameBoyCore.prototype.MBC1WriteType = function (address, data) {
-  this.cartridgeSlot.cartridge.mbc.writeType(address, data);
+  this.cartridge.mbc.writeType(address, data);
 };
 GameBoyCore.prototype.MBC2WriteROMBank = function (address, data) {
-  this.cartridgeSlot.cartridge.mbc.writeROMBank(address, data);
+  this.cartridge.mbc.writeROMBank(address, data);
 };
 GameBoyCore.prototype.MBC3WriteROMBank = function (address, data) {
-  return this.cartridgeSlot.cartridge.mbc.writeROMBank(address, data);
+  return this.cartridge.mbc.writeROMBank(address, data);
 };
 GameBoyCore.prototype.MBC3WriteRAMBank = function (address, data) {
-  return this.cartridgeSlot.cartridge.mbc.writeRAMBank(address, data);
+  return this.cartridge.mbc.writeRAMBank(address, data);
 };
 GameBoyCore.prototype.MBC3WriteRTCLatch = function (address, data) {
-  return this.cartridgeSlot.cartridge.mbc.rtc.writeLatch(address, data);
+  return this.cartridge.mbc.rtc.writeLatch(address, data);
 };
 GameBoyCore.prototype.MBC5WriteROMBankLow = function (address, data) {
-  return this.cartridgeSlot.cartridge.mbc.writeROMBankLow(address, data);
+  return this.cartridge.mbc.writeROMBankLow(address, data);
 };
 GameBoyCore.prototype.MBC5WriteROMBankHigh = function (address, data) {
-  return this.cartridgeSlot.cartridge.mbc.writeROMBankHigh(address, data);
+  return this.cartridge.mbc.writeROMBankHigh(address, data);
 };
 GameBoyCore.prototype.MBC5WriteRAMBank = function (address, data) {
-  return this.cartridgeSlot.cartridge.mbc.writeRAMBank(address, data);
+  return this.cartridge.mbc.writeRAMBank(address, data);
 };
 GameBoyCore.prototype.RUMBLEWriteRAMBank = function (address, data) {
   //MBC5 RAM bank switching
   //Like MBC5, but bit 3 of the lower nibble is used for rumbling and bit 2 is ignored.
-  this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank = data & 0x03;
-  this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
+  this.cartridge.mbc.currentMBCRAMBank = data & 0x03;
+  this.cartridge.mbc.currentRAMBankPosition = (this.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
 };
 GameBoyCore.prototype.HuC3WriteRAMBank = function (address, data) {
   //HuC3 RAM bank switching
-  this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank = data & 0x03;
-  this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
+  this.cartridge.mbc.currentMBCRAMBank = data & 0x03;
+  this.cartridge.mbc.currentRAMBankPosition = (this.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
 };
 GameBoyCore.prototype.cartIgnoreWrite = function (address, data) {
   //We might have encountered illegal RAM writing or such, so just do nothing...
@@ -3470,10 +3452,10 @@ GameBoyCore.prototype.memoryHighWriteNormal = function (address, data) {
   this.memory[0xff00 | address] = data;
 };
 GameBoyCore.prototype.memoryWriteMBCRAM = function (address, data) {
-  this.cartridgeSlot.cartridge.mbc.writeRAM(address, data);
+  this.cartridge.mbc.writeRAM(address, data);
 };
 GameBoyCore.prototype.memoryWriteMBC3RAM = function (address, data) {
-  return this.cartridgeSlot.cartridge.mbc.writeRAM(address, data);
+  return this.cartridge.mbc.writeRAM(address, data);
 };
 GameBoyCore.prototype.memoryWriteGBCRAM = function (address, data) {
   this.GBCMemory[address + this.gbcRamBankPosition] = data;
@@ -3741,7 +3723,7 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
   };
   //NR11:
   this.memoryHighWriter[0x11] = this.memoryWriter[0xff11] = (address, data) => {
-    if (this.soundMasterEnabled || !this.cartridgeSlot.cartridge.useGBCMode) {
+    if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
       if (this.soundMasterEnabled) {
         this.audioJIT();
       } else {
@@ -3832,7 +3814,7 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
   ] = this.cartIgnoreWrite;
   //NR21:
   this.memoryHighWriter[0x16] = this.memoryWriter[0xff16] = (address, data) => {
-    if (this.soundMasterEnabled || !this.cartridgeSlot.cartridge.useGBCMode) {
+    if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
       if (this.soundMasterEnabled) {
         this.audioJIT();
       } else {
@@ -3919,7 +3901,7 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
   };
   //NR31:
   this.memoryHighWriter[0x1b] = this.memoryWriter[0xff1b] = (address, data) => {
-    if (this.soundMasterEnabled || !this.cartridgeSlot.cartridge.useGBCMode) {
+    if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
       if (this.soundMasterEnabled) {
         this.audioJIT();
       }
@@ -3970,7 +3952,7 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
   ] = this.cartIgnoreWrite;
   //NR41:
   this.memoryHighWriter[0x20] = this.memoryWriter[0xff20] = (address, data) => {
-    if (this.soundMasterEnabled || !this.cartridgeSlot.cartridge.useGBCMode) {
+    if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
       if (this.soundMasterEnabled) {
         this.audioJIT();
       }
@@ -4216,7 +4198,7 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
   this.recompileBootIOWriteHandling();
 };
 GameBoyCore.prototype.recompileModelSpecificIOWriteHandling = function () {
-  if (this.cartridgeSlot.cartridge.useGBCMode) {
+  if (this.cartridge.useGBCMode) {
     //GameBoy Color Specific I/O:
     //SC (Serial Transfer Control Register)
     this.memoryHighWriter[0x2] = this.memoryWriter[0xff02] = (address, data) => {
@@ -4532,10 +4514,10 @@ GameBoyCore.prototype.recompileBootIOWriteHandling = function () {
       this.disableBootROM(); //Fill in the boot ROM ranges with ROM  bank 0 ROM ranges
       this.memory[0xff50] = data; //Bits are sustained in memory?
     };
-    if (this.cartridgeSlot.cartridge.useGBCMode) {
+    if (this.cartridge.useGBCMode) {
       this.memoryHighWriter[0x6c] = this.memoryWriter[0xff6c] = (address, data) => {
         if (this.inBootstrap) {
-          this.cartridgeSlot.cartridge.setGBCMode(data);
+          this.cartridge.setGBCMode(data);
         }
         this.memory[0xff6c] = data;
       };

@@ -10128,7 +10128,7 @@ $__System.registerDynamic('e', ['d'], true, function ($__require, exports, modul
 $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
   "use strict";
 
-  var EventEmitter, debounce, $, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, LCD, TickTable, CartridgeSlot, Resampler, AudioDevice, AudioController, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, CPU, LocalStorage, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1, _this, keyMap, $lcd, canvas, gameboy;
+  var EventEmitter, debounce, $, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, LCD, TickTable, Resampler, AudioDevice, AudioController, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, CPU, LocalStorage, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1, _this, keyMap, $lcd, canvas, gameboy;
 
   function toTypedArray(baseArray, memtype) {
     // TODO: remove
@@ -10284,12 +10284,13 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
   }
 
   function GameBoyCore(_ref) {
-    var audioContext = _ref.audioContext,
+    var _ref$audio = _ref.audio,
+        audioOptions = _ref$audio === undefined ? {} : _ref$audio,
         api = _ref.api,
         _ref$lcd = _ref.lcd,
         lcdOptions = _ref$lcd === undefined ? {} : _ref$lcd;
 
-    this.audioContext = audioContext;
+    this.audioContext = audioOptions.context;
     this.api = api;
     this.events = new EventEmitter(); // TODO: use as super
 
@@ -10298,9 +10299,13 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
     this.memoryNew = new Memory({ gameboy: this });
 
     this.cpu = new CPU();
+    this.audioDevice = new AudioDevice({
+      context: this.audioContext,
+      channels: 2,
+      volume: settings.soundVolume
+    });
     this.audioController = new AudioController({ cpu: this.cpu });
     this.joypad = new Joypad(this);
-    this.cartridgeSlot = new CartridgeSlot(this);
     this.lcd = new LCD(lcdOptions);
     this.stateManager = new StateManager(this);
     this.stateManager.init();
@@ -10351,7 +10356,6 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
     this.initializeLCDController(); //Compile the LCD controller functions.
 
     //Sound variables:
-    this.audioDevice = null; //XAudioJS handle
     this.initializeAudioStartState();
 
     //Graphics Variables
@@ -10376,9 +10380,6 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
     this.WindowLayerRender = null; // Reference to the window rendering function.
     this.SpriteLayerRender = null; // Reference to the OAM rendering function.
     this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
-
-    // generate the white noise cache tables ahead of time
-    this.audioController.generateWhiteNoise();
   }
 
 
@@ -11367,7 +11368,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           value: function clearFrameBuffer() {
             var frameBuffer = this.swizzledFrame;
             var bufferIndex = 0;
-            if (this.cartridgeSlot.cartridge.useGBCMode || this.colorizedGBPalettes) {
+            if (this.cartridge.useGBCMode || this.colorizedGBPalettes) {
               while (bufferIndex < this.offscreenRGBCount) {
                 frameBuffer[bufferIndex++] = 248;
               }
@@ -11406,29 +11407,6 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       12, 12, 8, 4, 4, 16, 8, 16, 16, 4, 16, 4, 4, 4, 8, 16, //E
       12, 12, 8, 4, 4, 16, 8, 16, 12, 8, 16, 4, 0, 4, 8, 16 //F
       ];
-
-      CartridgeSlot = function () {
-        function CartridgeSlot(gameboy) {
-          _classCallCheck(this, CartridgeSlot);
-
-          this.gameboy = gameboy;
-        }
-
-        _createClass(CartridgeSlot, [{
-          key: "insertCartridge",
-          value: function insertCartridge(cartridge) {
-            cartridge.connect(this.gameboy);
-            this.cartridge = cartridge;
-          }
-        }, {
-          key: "readCartridge",
-          value: function readCartridge() {
-            this.cartridge.interpret();
-          }
-        }]);
-
-        return CartridgeSlot;
-      }();
 
       Resampler = function () {
         function Resampler(fromSampleRate, toSampleRate, channels, outputBufferSize, noReturn) {
@@ -11632,27 +11610,32 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
       AudioDevice = function () {
         function AudioDevice(_ref) {
-          var audioContext = _ref.audioContext,
+          var context = _ref.context,
               channels = _ref.channels,
-              sampleRate = _ref.sampleRate,
               minBufferSize = _ref.minBufferSize,
-              maxBufferSize = _ref.maxBufferSize,
               volume = _ref.volume;
 
           _classCallCheck(this, AudioDevice);
 
-          this.audioContext = audioContext || new AudioContext();
+          this.context = context || new AudioContext();
           this.samplesPerCallback = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
           this.channelsAllocated = Math.max(channels, 1);
-          this.sampleRate = Math.abs(sampleRate);
           this.bufferSize = this.samplesPerCallback * this.channelsAllocated;
-          this.minBufferSize = minBufferSize >= this.bufferSize && minBufferSize < maxBufferSize ? minBufferSize & -this.channelsAllocated : this.bufferSize;
-          this.maxBufferSize = Math.floor(maxBufferSize) > this.minBufferSize + this.channelsAllocated ? maxBufferSize & -this.channelsAllocated : this.minBufferSize * this.channelsAllocated;
+          this.minBufferSize = this.bufferSize;
           this.setVolume(volume);
-          this.initializeAudio();
         }
 
         _createClass(AudioDevice, [{
+          key: "setSampleRate",
+          value: function setSampleRate(sampleRate) {
+            this.sampleRate = Math.abs(sampleRate);
+          }
+        }, {
+          key: "setMaxBufferSize",
+          value: function setMaxBufferSize(maxBufferSize) {
+            this.maxBufferSize = Math.floor(maxBufferSize) > this.minBufferSize + this.channelsAllocated ? maxBufferSize & -this.channelsAllocated : this.minBufferSize * this.channelsAllocated;
+          }
+        }, {
           key: "writeAudio",
           value: function writeAudio(buffer) {
             var bufferCounter = 0;
@@ -11671,13 +11654,13 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             var _this = this;
 
             if (!this.audioNode) {
-              this.audioNode = this.audioContext.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
+              this.audioNode = this.context.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
 
               this.audioNode.onaudioprocess = function (e) {
                 return _this.processAudio(e);
               };
-              this.audioNode.connect(this.audioContext.destination);
-              this.resetCallbackAPIAudioBuffer(this.audioContext.sampleRate);
+              this.audioNode.connect(this.context.destination);
+              this.resetCallbackAPIAudioBuffer(this.context.sampleRate);
             }
           }
         }, {
@@ -11805,12 +11788,17 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         _createClass(AudioController, [{
           key: "connectDevice",
           value: function connectDevice(device) {
+            var sampleRate = this.cpu.clocksPerSecond / this.resamplerFirstPassFactor;
+            var maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 8192) << 1;
+            device.setSampleRate(sampleRate);
+            device.setMaxBufferSize(maxBufferSize);
+            device.initializeAudio();
             this.device = device;
           }
         }, {
-          key: "changeVolume",
-          value: function changeVolume(volume) {
-            this.device && this.device.changeVolume(volume);
+          key: "setVolume",
+          value: function setVolume(volume) {
+            this.device && this.device.setVolume(volume);
           }
         }, {
           key: "outputAudio",
@@ -13678,7 +13666,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       //STOP
       //#0x10:
       function () {
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           if ((this.memory[0xff4d] & 0x01) === 0x01) {
             //Speed change requested.
             if (this.memory[0xff4d] > 0x7f) {
@@ -14328,7 +14316,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       function () {
         //See if there's already an IRQ match:
         if ((this.interruptsEnabled & this.interruptsRequested & 0x1f) > 0) {
-          if (!this.cartridgeSlot.cartridge.useGBCMode && !this.usedBootROM) {
+          if (!this.cartridge.useGBCMode && !this.usedBootROM) {
             //HALT bug in the DMG CPU model (Program Counter fails to increment for one instruction after HALT):
             this.skipPCIncrement = true;
           } else {
@@ -15715,7 +15703,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           key: "get",
           value: function get() {
             var gameboy = this.gameboy;
-            if (!gameboy.cartridgeSlot.cartridge) return null;
+            if (!gameboy.cartridge) return null;
 
             return concatArrayBuffers(gameboy.memory.buffer.slice(0), gameboy.VRAM.buffer.slice(0));
 
@@ -15746,7 +15734,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             //   gameboy.gbcRamBank,
             //   gameboy.gbcRamBankPosition,
             //   gameboy.ROMBank1Offset,
-            //   gameboy.cartridgeSlot.cartridge.mbc.currentROMBank,
+            //   gameboy.cartridge.mbc.currentROMBank,
             //   gameboy.modeSTAT,
             //   gameboy.LYCMatchTriggerSTAT,
             //   gameboy.mode2TriggerSTAT,
@@ -15768,8 +15756,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             //   gameboy.serialShiftTimer,
             //   gameboy.serialShiftTimerAllocated,
             //   gameboy.IRQEnableDelay,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.lastTime,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.lastTime,
             //   gameboy.drewBlank,
             //   fromTypedArray(gameboy.frameBuffer),
             //   gameboy.bgEnabled,
@@ -15866,30 +15854,30 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             //   gameboy.actualScanLine,
             //   gameboy.lastUnrenderedLine,
             //   gameboy.queuedScanLines,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCisLatched,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedSeconds,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedMinutes,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHours,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedLDays,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHDays,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCSeconds,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCMinutes,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHours,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDays,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDayOverFlow,
-            //   gameboy.cartridgeSlot.cartridge.hasRTC &&
-            //   gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHALT,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.RTCisLatched,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.latchedSeconds,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.latchedMinutes,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.latchedHours,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.latchedLDays,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.latchedHDays,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.RTCSeconds,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.RTCMinutes,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.RTCHours,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.RTCDays,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.RTCDayOverFlow,
+            //   gameboy.cartridge.hasRTC &&
+            //   gameboy.cartridge.mbc3.rtc.RTCHALT,
             //   gameboy.usedBootROM,
             //   gameboy.skipPCIncrement,
             //   gameboy.STATTracker,
@@ -15958,8 +15946,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             gameboy.gbcRamBank = state[index++];
             gameboy.gbcRamBankPosition = state[index++];
             gameboy.ROMBank1Offset = state[index++];
-            if (gameboy.cartridgeSlot.cartridge) {
-              gameboy.cartridgeSlot.cartridge.mbc.currentROMBank = state[index++];
+            if (gameboy.cartridge) {
+              gameboy.cartridge.mbc.currentROMBank = state[index++];
             } else {
               index++;
             }
@@ -15984,8 +15972,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             gameboy.serialShiftTimer = state[index++];
             gameboy.serialShiftTimerAllocated = state[index++];
             gameboy.IRQEnableDelay = state[index++];
-            if (gameboy.cartridgeSlot.cartridge && gameboy.cartridgeSlot.cartridge.hasRTC) {
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.lastTime = state[index++];
+            if (gameboy.cartridge && gameboy.cartridge.hasRTC) {
+              gameboy.cartridge.mbc3.rtc.lastTime = state[index++];
             } else {
               index++;
             }
@@ -16085,19 +16073,19 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             gameboy.actualScanLine = state[index++];
             gameboy.lastUnrenderedLine = state[index++];
             gameboy.queuedScanLines = state[index++];
-            if (gameboy.cartridgeSlot.cartridge && gameboy.cartridgeSlot.cartridge.hasRTC) {
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCisLatched = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedSeconds = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedMinutes = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHours = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedLDays = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.latchedHDays = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCSeconds = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCMinutes = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHours = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDays = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCDayOverFlow = state[index++];
-              gameboy.cartridgeSlot.cartridge.mbc3.rtc.RTCHALT = state[index++];
+            if (gameboy.cartridge && gameboy.cartridge.hasRTC) {
+              gameboy.cartridge.mbc3.rtc.RTCisLatched = state[index++];
+              gameboy.cartridge.mbc3.rtc.latchedSeconds = state[index++];
+              gameboy.cartridge.mbc3.rtc.latchedMinutes = state[index++];
+              gameboy.cartridge.mbc3.rtc.latchedHours = state[index++];
+              gameboy.cartridge.mbc3.rtc.latchedLDays = state[index++];
+              gameboy.cartridge.mbc3.rtc.latchedHDays = state[index++];
+              gameboy.cartridge.mbc3.rtc.RTCSeconds = state[index++];
+              gameboy.cartridge.mbc3.rtc.RTCMinutes = state[index++];
+              gameboy.cartridge.mbc3.rtc.RTCHours = state[index++];
+              gameboy.cartridge.mbc3.rtc.RTCDays = state[index++];
+              gameboy.cartridge.mbc3.rtc.RTCDayOverFlow = state[index++];
+              gameboy.cartridge.mbc3.rtc.RTCHALT = state[index++];
             } else {
               index += 12;
             }
@@ -16153,7 +16141,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           key: "down",
           value: function down(key) {
             this.value &= 0xff ^ 1 << key;
-            if (this.gameboy.cartridgeSlot.cartridge && !this.gameboy.cartridgeSlot.cartridge.useGBCMode && (!this.gameboy.usedBootROM || !this.gameboy.usedGBCBootROM)) {
+            if (this.gameboy.cartridge && !this.gameboy.cartridge.useGBCMode && (!this.gameboy.usedBootROM || !this.gameboy.usedGBCBootROM)) {
               this.gameboy.interruptsRequested |= 0x10; // A real GBC doesn't set this!
               this.gameboy.remainingClocks = 0;
               this.gameboy.checkIRQMatching();
@@ -16305,16 +16293,20 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.audioController.noiseSampleTable = this.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
         this.channel4VolumeShifter = this.channel4BitRange === 0x7fff ? 15 : 7;
       };
+      GameBoyCore.prototype.connectCartridge = function (cartridge) {
+        cartridge.connect(this);
+        this.cartridge = cartridge;
+        this.cartridge.interpret();
+      };
       GameBoyCore.prototype.start = function (cartridge) {
         var _this = this;
 
         this.init();
-        this.cartridgeSlot.insertCartridge(cartridge);
-        this.cartridgeSlot.readCartridge();
-        this.cartridgeSlot.cartridge.mbc.setupROM();
+        this.connectCartridge(cartridge);
+        this.cartridge.mbc.setupROM();
 
-        if (this.cartridgeSlot.cartridge && this.cartridgeSlot.cartridge.mbc) {
-          this.cartridgeSlot.cartridge.mbc.on("ramWrite", function () {
+        if (this.cartridge && this.cartridge.mbc) {
+          this.cartridge.mbc.on("ramWrite", function () {
             _this.events.emit("sramWrite");
           });
         }
@@ -16338,10 +16330,10 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.initSound(); // Sound object initialization.
       };
       GameBoyCore.prototype.setupRAM = function () {
-        this.cartridgeSlot.cartridge.setupRAM();
+        this.cartridge.setupRAM();
 
         // Setup the RAM for GBC mode.
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.VRAM = getTypedArray(0x2000, 0, "uint8");
           this.GBCMemory = getTypedArray(0x7000, 0, "uint8");
         }
@@ -16392,7 +16384,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           --index;
         }
 
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.memory[0xff6c] = 0xfe;
           this.memory[0xff74] = 0xfe;
         } else {
@@ -16404,7 +16396,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
         // Start as an unset device:
         console.log("Starting without the GBC boot ROM.");
-        this.registerA = this.cartridgeSlot.cartridge.useGBCMode ? 0x11 : 0x1;
+        this.registerA = this.cartridge.useGBCMode ? 0x11 : 0x1;
         this.registerB = 0;
         this.registerC = 0x13;
         this.registerD = 0;
@@ -16547,16 +16539,16 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         // Remove any traces of the boot ROM from ROM memory.
         var index = 0;
         while (index < 0x100) {
-          this.memory[index] = this.cartridgeSlot.cartridge.rom.getByte(index); // Replace the GameBoy or GameBoy Color boot ROM with the game ROM.
+          this.memory[index] = this.cartridge.rom.getByte(index); // Replace the GameBoy or GameBoy Color boot ROM with the game ROM.
           ++index;
         }
 
         if (this.usedGBCBootROM) {
           // Remove any traces of the boot ROM from ROM memory.
           for (index = 0x200; index < 0x900; ++index) {
-            this.memory[index] = this.cartridgeSlot.cartridge.rom.getByte(index); // Replace the GameBoy Color boot ROM with the game ROM.
+            this.memory[index] = this.cartridge.rom.getByte(index); // Replace the GameBoy Color boot ROM with the game ROM.
           }
-          if (!this.cartridgeSlot.cartridge.useGBCMode) {
+          if (!this.cartridge.useGBCMode) {
             // Clean up the post-boot (GB mode only) state:
             this.adjustGBCtoGBMode();
           } else {
@@ -16568,31 +16560,15 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       };
       GameBoyCore.prototype.setSpeed = function (speed) {
         this.cpu.setSpeedMultiplier(speed);
-        if (this.audioDevice) {
-          this.initSound();
-        }
+        this.initSound();
       };
       GameBoyCore.prototype.initSound = function () {
         this.audioController.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
         this.audioController.downSampleInputDivider = 1 / (this.audioController.resamplerFirstPassFactor * 0xf0);
 
-        this.audioController.changeVolume(settings.soundOn ? settings.soundVolume : 0);
-
-        if (!this.audioDevice) {
-          var sampleRate = this.cpu.clocksPerSecond / this.audioController.resamplerFirstPassFactor;
-          var maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioController.resamplerFirstPassFactor, 8192) << 1;
-
-          this.audioDevice = new AudioDevice({
-            audioContext: this.audioContext,
-            channels: 2,
-            sampleRate: sampleRate,
-            minBufferSize: 0,
-            maxBufferSize: maxBufferSize,
-            volume: settings.soundVolume
-          });
-          this.audioController.connectDevice(this.audioDevice);
-          this.audioController.initBuffer();
-        }
+        this.audioController.connectDevice(this.audioDevice);
+        this.audioController.setVolume(settings.soundOn ? settings.soundVolume : 0);
+        this.audioController.initBuffer();
       };
       GameBoyCore.prototype.audioUnderrunAdjustment = function () {
         if (!settings.soundOn) return;
@@ -17107,8 +17083,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
               this.audioUnderrunAdjustment();
 
-              if (this.cartridgeSlot.cartridge.hasRTC) {
-                this.cartridgeSlot.cartridge.mbc.rtc.updateClock();
+              if (this.cartridge.hasRTC) {
+                this.cartridge.mbc.rtc.updateClock();
               }
 
               if (!this.halt) {
@@ -17324,7 +17300,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       };
       GameBoyCore.prototype.updateSpriteCount = function (line) {
         this.spriteCount = 252;
-        if (this.cartridgeSlot.cartridge.useGBCMode && this.gfxSpriteShow) {
+        if (this.cartridge.useGBCMode && this.gfxSpriteShow) {
           //Is the window enabled and are we in CGB mode?
           var lineAdjusted = line + 0x10;
           var yoffset = 0;
@@ -17578,7 +17554,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         }
       };
       GameBoyCore.prototype.updateClock = function () {
-        return this.cartridgeSlot.cartridge.updateClock();
+        return this.cartridge.updateClock();
       };
       GameBoyCore.prototype.renderScanLine = function (scanlineToRender) {
         this.pixelStart = scanlineToRender * 160;
@@ -17588,7 +17564,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           this.WindowLayerRender(scanlineToRender);
         } else {
           var pixelLine = (scanlineToRender + 1) * 160;
-          var defaultColor = this.cartridgeSlot.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
+          var defaultColor = this.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
           for (var pixelPosition = scanlineToRender * 160 + this.currentX; pixelPosition < pixelLine; pixelPosition++) {
             this.frameBuffer[pixelPosition] = defaultColor;
           }
@@ -17614,7 +17590,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               //TODO: Do midscanline JIT for sprites...
             } else {
               var pixelLine = this.lastUnrenderedLine * 160 + this.pixelEnd;
-              var defaultColor = this.cartridgeSlot.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
+              var defaultColor = this.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
               for (var pixelPosition = this.lastUnrenderedLine * 160 + this.currentX; pixelPosition < pixelLine; pixelPosition++) {
                 this.frameBuffer[pixelPosition] = defaultColor;
               }
@@ -17625,7 +17601,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       };
       GameBoyCore.prototype.initializeModeSpecificArrays = function () {
         this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           this.gbcOBJRawPalette = getTypedArray(0x40, 0, "uint8");
           this.gbcBGRawPalette = getTypedArray(0x40, 0, "uint8");
           this.gbcOBJPalette = getTypedArray(0x20, 0x1000000, "int32");
@@ -17670,7 +17646,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.memoryWriteJumpCompile();
       };
       GameBoyCore.prototype.renderPathBuild = function () {
-        if (!this.cartridgeSlot.cartridge.useGBCMode) {
+        if (!this.cartridge.useGBCMode) {
           this.BGLayerRender = this.BGGBLayerRender;
           this.WindowLayerRender = this.WindowGBLayerRender;
           this.SpriteLayerRender = this.SpriteGBLayerRender;
@@ -17691,7 +17667,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       GameBoyCore.prototype.initializeReferencesFromSaveState = function () {
         this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
         var tileIndex = 0;
-        if (!this.cartridgeSlot.cartridge.useGBCMode) {
+        if (!this.cartridge.useGBCMode) {
           if (this.colorizedGBPalettes) {
             this.BGPalette = this.gbBGColorizedPalette;
             this.OBJPalette = this.gbOBJColorizedPalette;
@@ -18771,14 +18747,14 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           } else if (index < 0x8000) {
             this.memoryReader[index] = this.memoryReadROM;
           } else if (index < 0x9800) {
-            this.memoryReader[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMDATAReadCGBCPU : this.VRAMDATAReadDMGCPU;
+            this.memoryReader[index] = this.cartridge.useGBCMode ? this.VRAMDATAReadCGBCPU : this.VRAMDATAReadDMGCPU;
           } else if (index < 0xa000) {
-            this.memoryReader[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
+            this.memoryReader[index] = this.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
           } else if (index >= 0xa000 && index < 0xc000) {
-            if (this.cartridgeSlot.cartridge.ramSize !== 0) {
-              if (this.cartridgeSlot.cartridge.hasMBC7) {
+            if (this.cartridge.ramSize !== 0) {
+              if (this.cartridge.hasMBC7) {
                 this.memoryReader[index] = this.memoryReadMBC7;
-              } else if (!this.cartridgeSlot.cartridge.hasMBC3) {
+              } else if (!this.cartridge.hasMBC3) {
                 this.memoryReader[index] = this.memoryReadMBC;
               } else {
                 //MBC3 RTC + RAM:
@@ -18788,20 +18764,20 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               this.memoryReader[index] = this.memoryReadBAD;
             }
           } else if (index >= 0xc000 && index < 0xe000) {
-            if (!this.cartridgeSlot.cartridge.useGBCMode || index < 0xd000) {
+            if (!this.cartridge.useGBCMode || index < 0xd000) {
               this.memoryReader[index] = this.memoryReadNormal;
             } else {
               this.memoryReader[index] = this.memoryReadGBCMemory;
             }
           } else if (index >= 0xe000 && index < 0xfe00) {
-            if (!this.cartridgeSlot.cartridge.useGBCMode || index < 0xf000) {
+            if (!this.cartridge.useGBCMode || index < 0xf000) {
               this.memoryReader[index] = this.memoryReadECHONormal;
             } else {
               this.memoryReader[index] = this.memoryReadECHOGBCMemory;
             }
           } else if (index < 0xfea0) {
             this.memoryReader[index] = this.memoryReadOAM;
-          } else if (this.cartridgeSlot.cartridge.useGBCMode && index >= 0xfea0 && index < 0xff00) {
+          } else if (this.cartridge.useGBCMode && index >= 0xfea0 && index < 0xff00) {
             this.memoryReader[index] = this.memoryReadNormal;
           } else if (index >= 0xff00) {
             switch (index) {
@@ -18819,7 +18795,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 break;
               case 0xff02:
                 //SC
-                if (this.cartridgeSlot.cartridge.useGBCMode) {
+                if (this.cartridge.useGBCMode) {
                   this.memoryHighReader[0x02] = this.memoryReader[0xff02] = function (address) {
                     return (_this3.serialTimer <= 0 ? 0x7c : 0xfc) | _this3.memory[0xff02];
                   };
@@ -19054,7 +19030,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 this.memoryReader[index] = this.memoryReadNormal;
                 break;
               case 0xff55:
-                if (this.cartridgeSlot.cartridge.useGBCMode) {
+                if (this.cartridge.useGBCMode) {
                   this.memoryHighReader[0x55] = this.memoryReader[0xff55] = function (address) {
                     if (!_this3.LCDisOn && _this3.hdmaRunning) {
                       //Undocumented behavior alert: HDMA becomes GDMA when LCD is off (Worms Armageddon Fix).
@@ -19071,7 +19047,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 }
                 break;
               case 0xff56:
-                if (this.cartridgeSlot.cartridge.useGBCMode) {
+                if (this.cartridge.useGBCMode) {
                   this.memoryHighReader[0x56] = this.memoryReader[0xff56] = function (address) {
                     //Return IR "not connected" status:
                     return 0x3c | (_this3.memory[0xff56] >= 0xc0 ? 0x2 | _this3.memory[0xff56] & 0xc1 : _this3.memory[0xff56] & 0xc3);
@@ -19108,7 +19084,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 this.memoryReader[index] = this.memoryReadNormal;
                 break;
               case 0xff6c:
-                if (this.cartridgeSlot.cartridge.useGBCMode) {
+                if (this.cartridge.useGBCMode) {
                   this.memoryHighReader[0x6c] = this.memoryReader[0xff6c] = function (address) {
                     return 0xfe | _this3.memory[0xff6c];
                   };
@@ -19122,7 +19098,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.memoryReadBAD;
                 break;
               case 0xff70:
-                if (this.cartridgeSlot.cartridge.useGBCMode) {
+                if (this.cartridge.useGBCMode) {
                   //SVBK
                   this.memoryHighReader[0x70] = this.memoryReader[0xff70] = function (address) {
                     return 0x40 | _this3.memory[0xff70];
@@ -19139,7 +19115,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.memoryReadNormal;
                 break;
               case 0xff74:
-                if (this.cartridgeSlot.cartridge.useGBCMode) {
+                if (this.cartridge.useGBCMode) {
                   this.memoryHighReader[0x74] = this.memoryReader[0xff74] = this.memoryReadNormal;
                 } else {
                   this.memoryHighReader[0x74] = this.memoryReader[0xff74] = this.memoryReadBAD;
@@ -19196,16 +19172,16 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         return this.memory[0xff00 | address];
       };
       GameBoyCore.prototype.memoryReadROM = function (address) {
-        return this.cartridgeSlot.cartridge.rom.getByte(this.cartridgeSlot.cartridge.mbc.currentROMBank + address);
+        return this.cartridge.rom.getByte(this.cartridge.mbc.currentROMBank + address);
       };
       GameBoyCore.prototype.memoryReadMBC = function (address) {
-        return this.cartridgeSlot.cartridge.mbc.readRAM(address);
+        return this.cartridge.mbc.readRAM(address);
       };
       GameBoyCore.prototype.memoryReadMBC7 = function (address) {
-        return this.cartridgeSlot.cartridge.mbc.readRAM(address);
+        return this.cartridge.mbc.readRAM(address);
       };
       GameBoyCore.prototype.memoryReadMBC3 = function (address) {
-        return this.cartridgeSlot.cartridge.mbc.readRAM(address);
+        return this.cartridge.mbc.readRAM(address);
       };
       GameBoyCore.prototype.memoryReadGBCMemory = function (address) {
         return this.GBCMemory[address + this.gbcRamBankPosition];
@@ -19252,7 +19228,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         //Faster in some browsers, since we are doing less conditionals overall by implementing them in advance.
         for (var index = 0x0000; index <= 0xffff; index++) {
           if (index < 0x8000) {
-            if (this.cartridgeSlot.cartridge.hasMBC1) {
+            if (this.cartridge.hasMBC1) {
               if (index < 0x2000) {
                 this.memoryWriter[index] = this.MBCWriteEnable;
               } else if (index < 0x4000) {
@@ -19262,7 +19238,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               } else {
                 this.memoryWriter[index] = this.MBC1WriteType;
               }
-            } else if (this.cartridgeSlot.cartridge.hasMBC2) {
+            } else if (this.cartridge.hasMBC2) {
               if (index < 0x1000) {
                 this.memoryWriter[index] = this.MBCWriteEnable;
               } else if (index >= 0x2100 && index < 0x2200) {
@@ -19270,7 +19246,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               } else {
                 this.memoryWriter[index] = this.cartIgnoreWrite;
               }
-            } else if (this.cartridgeSlot.cartridge.hasMBC3) {
+            } else if (this.cartridge.hasMBC3) {
               if (index < 0x2000) {
                 this.memoryWriter[index] = this.MBCWriteEnable;
               } else if (index < 0x4000) {
@@ -19280,7 +19256,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               } else {
                 this.memoryWriter[index] = this.MBC3WriteRTCLatch;
               }
-            } else if (this.cartridgeSlot.cartridge.hasMBC5 || this.cartridgeSlot.cartridge.cRUMBLE || this.cartridgeSlot.cartridge.hasMBC7) {
+            } else if (this.cartridge.hasMBC5 || this.cartridge.cRUMBLE || this.cartridge.hasMBC7) {
               if (index < 0x2000) {
                 this.memoryWriter[index] = this.MBCWriteEnable;
               } else if (index < 0x3000) {
@@ -19288,11 +19264,11 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               } else if (index < 0x4000) {
                 this.memoryWriter[index] = this.MBC5WriteROMBankHigh;
               } else if (index < 0x6000) {
-                this.memoryWriter[index] = this.cartridgeSlot.cartridge.cRUMBLE ? this.RUMBLEWriteRAMBank : this.MBC5WriteRAMBank;
+                this.memoryWriter[index] = this.cartridge.cRUMBLE ? this.RUMBLEWriteRAMBank : this.MBC5WriteRAMBank;
               } else {
                 this.memoryWriter[index] = this.cartIgnoreWrite;
               }
-            } else if (this.cartridgeSlot.cartridge.cHuC3) {
+            } else if (this.cartridge.cHuC3) {
               if (index < 0x2000) {
                 this.memoryWriter[index] = this.MBCWriteEnable;
               } else if (index < 0x4000) {
@@ -19306,14 +19282,14 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               this.memoryWriter[index] = this.cartIgnoreWrite;
             }
           } else if (index < 0x9000) {
-            this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAWrite;
+            this.memoryWriter[index] = this.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAWrite;
           } else if (index < 0x9800) {
-            this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAUpperWrite;
+            this.memoryWriter[index] = this.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAUpperWrite;
           } else if (index < 0xa000) {
-            this.memoryWriter[index] = this.cartridgeSlot.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
+            this.memoryWriter[index] = this.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
           } else if (index < 0xc000) {
-            if (this.cartridgeSlot.cartridge.ramSize !== 0) {
-              if (!this.cartridgeSlot.cartridge.hasMBC3) {
+            if (this.cartridge.ramSize !== 0) {
+              if (!this.cartridge.hasMBC3) {
                 this.memoryWriter[index] = this.memoryWriteMBCRAM;
               } else {
                 //MBC3 RTC + RAM:
@@ -19323,13 +19299,13 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               this.memoryWriter[index] = this.cartIgnoreWrite;
             }
           } else if (index < 0xe000) {
-            if (this.cartridgeSlot.cartridge.useGBCMode && index >= 0xd000) {
+            if (this.cartridge.useGBCMode && index >= 0xd000) {
               this.memoryWriter[index] = this.memoryWriteGBCRAM;
             } else {
               this.memoryWriter[index] = this.memoryWriteNormal;
             }
           } else if (index < 0xfe00) {
-            if (this.cartridgeSlot.cartridge.useGBCMode && index >= 0xf000) {
+            if (this.cartridge.useGBCMode && index >= 0xf000) {
               this.memoryWriter[index] = this.memoryWriteECHOGBCRAM;
             } else {
               this.memoryWriter[index] = this.memoryWriteECHONormal;
@@ -19337,7 +19313,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           } else if (index <= 0xfea0) {
             this.memoryWriter[index] = this.memoryWriteOAMRAM;
           } else if (index < 0xff00) {
-            if (this.cartridgeSlot.cartridge.useGBCMode) {
+            if (this.cartridge.useGBCMode) {
               // Only GBC has access to this RAM.
               this.memoryWriter[index] = this.memoryWriteNormal;
             } else {
@@ -19352,48 +19328,48 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.registerWriteJumpCompile(); //Compile the I/O write functions separately...
       };
       GameBoyCore.prototype.MBCWriteEnable = function (address, data) {
-        this.cartridgeSlot.cartridge.mbc.writeEnable(address, data);
+        this.cartridge.mbc.writeEnable(address, data);
       };
       GameBoyCore.prototype.MBC1WriteROMBank = function (address, data) {
-        this.cartridgeSlot.cartridge.mbc.writeROMBank(address, data);
+        this.cartridge.mbc.writeROMBank(address, data);
       };
       GameBoyCore.prototype.MBC1WriteRAMBank = function (address, data) {
-        this.cartridgeSlot.cartridge.mbc.writeRAMBank(address, data);
+        this.cartridge.mbc.writeRAMBank(address, data);
       };
       GameBoyCore.prototype.MBC1WriteType = function (address, data) {
-        this.cartridgeSlot.cartridge.mbc.writeType(address, data);
+        this.cartridge.mbc.writeType(address, data);
       };
       GameBoyCore.prototype.MBC2WriteROMBank = function (address, data) {
-        this.cartridgeSlot.cartridge.mbc.writeROMBank(address, data);
+        this.cartridge.mbc.writeROMBank(address, data);
       };
       GameBoyCore.prototype.MBC3WriteROMBank = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.writeROMBank(address, data);
+        return this.cartridge.mbc.writeROMBank(address, data);
       };
       GameBoyCore.prototype.MBC3WriteRAMBank = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.writeRAMBank(address, data);
+        return this.cartridge.mbc.writeRAMBank(address, data);
       };
       GameBoyCore.prototype.MBC3WriteRTCLatch = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.rtc.writeLatch(address, data);
+        return this.cartridge.mbc.rtc.writeLatch(address, data);
       };
       GameBoyCore.prototype.MBC5WriteROMBankLow = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.writeROMBankLow(address, data);
+        return this.cartridge.mbc.writeROMBankLow(address, data);
       };
       GameBoyCore.prototype.MBC5WriteROMBankHigh = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.writeROMBankHigh(address, data);
+        return this.cartridge.mbc.writeROMBankHigh(address, data);
       };
       GameBoyCore.prototype.MBC5WriteRAMBank = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.writeRAMBank(address, data);
+        return this.cartridge.mbc.writeRAMBank(address, data);
       };
       GameBoyCore.prototype.RUMBLEWriteRAMBank = function (address, data) {
         //MBC5 RAM bank switching
         //Like MBC5, but bit 3 of the lower nibble is used for rumbling and bit 2 is ignored.
-        this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank = data & 0x03;
-        this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
+        this.cartridge.mbc.currentMBCRAMBank = data & 0x03;
+        this.cartridge.mbc.currentRAMBankPosition = (this.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
       };
       GameBoyCore.prototype.HuC3WriteRAMBank = function (address, data) {
         //HuC3 RAM bank switching
-        this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank = data & 0x03;
-        this.cartridgeSlot.cartridge.mbc.currentRAMBankPosition = (this.cartridgeSlot.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
+        this.cartridge.mbc.currentMBCRAMBank = data & 0x03;
+        this.cartridge.mbc.currentRAMBankPosition = (this.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
       };
       GameBoyCore.prototype.cartIgnoreWrite = function (address, data) {
         //We might have encountered illegal RAM writing or such, so just do nothing...
@@ -19405,10 +19381,10 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.memory[0xff00 | address] = data;
       };
       GameBoyCore.prototype.memoryWriteMBCRAM = function (address, data) {
-        this.cartridgeSlot.cartridge.mbc.writeRAM(address, data);
+        this.cartridge.mbc.writeRAM(address, data);
       };
       GameBoyCore.prototype.memoryWriteMBC3RAM = function (address, data) {
-        return this.cartridgeSlot.cartridge.mbc.writeRAM(address, data);
+        return this.cartridge.mbc.writeRAM(address, data);
       };
       GameBoyCore.prototype.memoryWriteGBCRAM = function (address, data) {
         this.GBCMemory[address + this.gbcRamBankPosition] = data;
@@ -19676,7 +19652,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         };
         //NR11:
         this.memoryHighWriter[0x11] = this.memoryWriter[0xff11] = function (address, data) {
-          if (_this4.soundMasterEnabled || !_this4.cartridgeSlot.cartridge.useGBCMode) {
+          if (_this4.soundMasterEnabled || !_this4.cartridge.useGBCMode) {
             if (_this4.soundMasterEnabled) {
               _this4.audioJIT();
             } else {
@@ -19762,7 +19738,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.memoryHighWriter[0x15] = this.memoryWriter[0xff15] = this.cartIgnoreWrite;
         //NR21:
         this.memoryHighWriter[0x16] = this.memoryWriter[0xff16] = function (address, data) {
-          if (_this4.soundMasterEnabled || !_this4.cartridgeSlot.cartridge.useGBCMode) {
+          if (_this4.soundMasterEnabled || !_this4.cartridge.useGBCMode) {
             if (_this4.soundMasterEnabled) {
               _this4.audioJIT();
             } else {
@@ -19849,7 +19825,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         };
         //NR31:
         this.memoryHighWriter[0x1b] = this.memoryWriter[0xff1b] = function (address, data) {
-          if (_this4.soundMasterEnabled || !_this4.cartridgeSlot.cartridge.useGBCMode) {
+          if (_this4.soundMasterEnabled || !_this4.cartridge.useGBCMode) {
             if (_this4.soundMasterEnabled) {
               _this4.audioJIT();
             }
@@ -19898,7 +19874,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         this.memoryHighWriter[0x1f] = this.memoryWriter[0xff1f] = this.cartIgnoreWrite;
         //NR41:
         this.memoryHighWriter[0x20] = this.memoryWriter[0xff20] = function (address, data) {
-          if (_this4.soundMasterEnabled || !_this4.cartridgeSlot.cartridge.useGBCMode) {
+          if (_this4.soundMasterEnabled || !_this4.cartridge.useGBCMode) {
             if (_this4.soundMasterEnabled) {
               _this4.audioJIT();
             }
@@ -20144,7 +20120,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       GameBoyCore.prototype.recompileModelSpecificIOWriteHandling = function () {
         var _this5 = this;
 
-        if (this.cartridgeSlot.cartridge.useGBCMode) {
+        if (this.cartridge.useGBCMode) {
           //GameBoy Color Specific I/O:
           //SC (Serial Transfer Control Register)
           this.memoryHighWriter[0x2] = this.memoryWriter[0xff02] = function (address, data) {
@@ -20458,10 +20434,10 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
             _this6.disableBootROM(); //Fill in the boot ROM ranges with ROM  bank 0 ROM ranges
             _this6.memory[0xff50] = data; //Bits are sustained in memory?
           };
-          if (this.cartridgeSlot.cartridge.useGBCMode) {
+          if (this.cartridge.useGBCMode) {
             this.memoryHighWriter[0x6c] = this.memoryWriter[0xff6c] = function (address, data) {
               if (_this6.inBootstrap) {
-                _this6.cartridgeSlot.cartridge.setGBCMode(data);
+                _this6.cartridge.setGBCMode(data);
               }
               _this6.memory[0xff6c] = data;
             };
@@ -21645,7 +21621,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
         function GameBoy() {
           var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-              audioContext = _ref.audioContext,
+              audio = _ref.audio,
               isPaused = _ref.isPaused,
               lcd = _ref.lcd,
               isSoundEnabled = _ref.isSoundEnabled;
@@ -21660,14 +21636,14 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           if (isPaused) _this.isPaused = isPaused;
 
           _this.core = new GameBoyCore({
-            audioContext: audioContext,
+            audio: audio,
             api: _this,
             lcd: lcd
           });
 
           _this.debouncedAutoSave = debounce(_this.autoSave.bind(_this), 100);
           _this.core.events.on("sramWrite", function () {
-            if (!_this.core.cartridgeSlot.cartridge) return;
+            if (!_this.core.cartridge) return;
             _this.debouncedAutoSave();
           });
 
@@ -21819,7 +21795,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                       return _context.abrupt("return");
 
                     case 2:
-                      if (this.core.cartridgeSlot.cartridge) {
+                      if (this.core.cartridge) {
                         _context.next = 4;
                         break;
                       }
@@ -21827,7 +21803,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                       return _context.abrupt("return");
 
                     case 4:
-                      name = this.core.cartridgeSlot.cartridge.name;
+                      name = this.core.cartridge.name;
 
                       if (state) {
                         _context.next = 9;
@@ -21881,7 +21857,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                       return _context2.abrupt("return");
 
                     case 2:
-                      if (this.core.cartridgeSlot.cartridge) {
+                      if (this.core.cartridge) {
                         _context2.next = 4;
                         break;
                       }
@@ -21889,14 +21865,14 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                       return _context2.abrupt("return");
 
                     case 4:
-                      name = this.core.cartridgeSlot.cartridge.name;
+                      name = this.core.cartridge.name;
 
                       if (sram) {
                         _context2.next = 9;
                         break;
                       }
 
-                      sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+                      sram = this.core.cartridge.mbc.getSRAM();
 
                       if (sram) {
                         _context2.next = 9;
@@ -21943,7 +21919,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                       return _context3.abrupt("return");
 
                     case 2:
-                      if (this.core.cartridgeSlot.cartridge) {
+                      if (this.core.cartridge) {
                         _context3.next = 4;
                         break;
                       }
@@ -21951,7 +21927,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                       return _context3.abrupt("return");
 
                     case 4:
-                      if (this.core.cartridgeSlot.cartridge.hasRTC) {
+                      if (this.core.cartridge.hasRTC) {
                         _context3.next = 6;
                         break;
                       }
@@ -21959,14 +21935,14 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                       return _context3.abrupt("return");
 
                     case 6:
-                      name = this.core.cartridgeSlot.cartridge.name;
+                      name = this.core.cartridge.name;
 
                       if (rtc) {
                         _context3.next = 11;
                         break;
                       }
 
-                      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+                      rtc = this.core.cartridge.mbc.rtc.get();
 
                       if (rtc) {
                         _context3.next = 11;
@@ -22000,8 +21976,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           key: "loadState",
           value: function loadState(state) {
             if (!this.storage) return;
-            if (!this.core.cartridgeSlot.cartridge) return;
-            var name = this.core.cartridgeSlot.cartridge.name;
+            if (!this.core.cartridge) return;
+            var name = this.core.cartridge.name;
 
             if (!state) {
               state = this.storage.findState(name);
@@ -22015,8 +21991,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           key: "loadSRAM",
           value: function loadSRAM(sram) {
             if (!this.storage) return;
-            if (!this.core.cartridgeSlot.cartridge) return;
-            var name = this.core.cartridgeSlot.cartridge.name;
+            if (!this.core.cartridge) return;
+            var name = this.core.cartridge.name;
 
             if (!sram) {
               sram = this.storage.findSRAM(name);
@@ -22024,16 +22000,16 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               sram = new Uint8Array(sram);
             }
 
-            this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
+            this.core.cartridge.mbc.loadSRAM(sram);
             this.emit("sramLoaded", { name: name, sram: sram });
           }
         }, {
           key: "loadRTC",
           value: function loadRTC(rtc) {
             if (!this.storage) return;
-            if (!this.core.cartridgeSlot.cartridge) return;
-            if (!this.core.cartridgeSlot.cartridge.hasRTC) return;
-            var name = this.core.cartridgeSlot.cartridge.name;
+            if (!this.core.cartridge) return;
+            if (!this.core.cartridge.hasRTC) return;
+            var name = this.core.cartridge.name;
 
             if (!rtc) {
               rtc = this.storage.findRTC(name);
@@ -22041,17 +22017,17 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
               rtc = new Uint32Array(rtc);
             }
 
-            this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+            this.core.cartridge.mbc.rtc.load(rtc);
             this.emit("rtcLoaded", { name: name, rtc: rtc });
           }
         }, {
           key: "getBatteryFileArrayBuffer",
           value: function getBatteryFileArrayBuffer() {
-            if (!this.core.cartridgeSlot.cartridge) return;
+            if (!this.core.cartridge) return;
 
-            var sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+            var sram = this.core.cartridge.mbc.getSRAM();
             var rtc = null;
-            if (this.core.cartridgeSlot.cartridge.mbc.rtc) rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+            if (this.core.cartridge.mbc.rtc) rtc = this.core.cartridge.mbc.rtc.get();
 
             return rtc ? concatArrayBuffers(sram.buffer, rtc.buffer) : sram.buffer;
           }
@@ -22068,15 +22044,15 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                         data = stringToArrayBuffer(data);
                       }
 
-                      sram = this.core.cartridgeSlot.cartridge.mbc.cutSRAMFromBatteryFileArray(data);
+                      sram = this.core.cartridge.mbc.cutSRAMFromBatteryFileArray(data);
                       rtc = null;
 
-                      if (this.core.cartridgeSlot.cartridge.hasRTC) {
-                        rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
+                      if (this.core.cartridge.hasRTC) {
+                        rtc = this.core.cartridge.mbc.rtc.cutBatteryFileArray(data);
                       }
 
-                      this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
-                      if (rtc) this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+                      this.core.cartridge.mbc.loadSRAM(sram);
+                      if (rtc) this.core.cartridge.mbc.rtc.load(rtc);
 
                       _context4.next = 8;
                       return this.saveSRAM(sram);
@@ -22186,7 +22162,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
       })));
 
       $(".download-battery-file").on("click", function () {
-        downloadFile(gameboy.core.cartridgeSlot.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
+        downloadFile(gameboy.core.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
       });
 
       $(".upload-battery-file").on("click", _asyncToGenerator(_regeneratorRuntime.mark(function _callee2() {

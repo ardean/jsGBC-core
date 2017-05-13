@@ -1,16 +1,21 @@
 import Resampler from "./resampler";
 
 export default class AudioDevice {
-  constructor({ audioContext, channels, sampleRate, minBufferSize, maxBufferSize, volume }) {
-    this.audioContext = audioContext || new AudioContext();
+  constructor({ context, channels, minBufferSize, volume }) {
+    this.context = context || new AudioContext();
     this.samplesPerCallback = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
     this.channelsAllocated = Math.max(channels, 1);
-    this.sampleRate = Math.abs(sampleRate);
     this.bufferSize = this.samplesPerCallback * this.channelsAllocated;
-    this.minBufferSize = minBufferSize >= this.bufferSize && minBufferSize < maxBufferSize ? minBufferSize & -this.channelsAllocated : this.bufferSize;
-    this.maxBufferSize = Math.floor(maxBufferSize) > this.minBufferSize + this.channelsAllocated ? maxBufferSize & -this.channelsAllocated : this.minBufferSize * this.channelsAllocated;
+    this.minBufferSize = this.bufferSize;
     this.setVolume(volume);
-    this.initializeAudio();
+  }
+
+  setSampleRate(sampleRate) {
+    this.sampleRate = Math.abs(sampleRate);
+  }
+
+  setMaxBufferSize(maxBufferSize) {
+    this.maxBufferSize = Math.floor(maxBufferSize) > this.minBufferSize + this.channelsAllocated ? maxBufferSize & -this.channelsAllocated : this.minBufferSize * this.channelsAllocated;
   }
 
   writeAudio(buffer) {
@@ -26,11 +31,11 @@ export default class AudioDevice {
 
   initializeAudio() {
     if (!this.audioNode) {
-      this.audioNode = this.audioContext.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
+      this.audioNode = this.context.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
 
       this.audioNode.onaudioprocess = e => this.processAudio(e);
-      this.audioNode.connect(this.audioContext.destination);
-      this.resetCallbackAPIAudioBuffer(this.audioContext.sampleRate);
+      this.audioNode.connect(this.context.destination);
+      this.resetCallbackAPIAudioBuffer(this.context.sampleRate);
     }
   }
 

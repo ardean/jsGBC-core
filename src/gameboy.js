@@ -11,7 +11,7 @@ export default class GameBoy extends EventEmitter {
   buttons = ["right", "left", "up", "down", "a", "b", "select", "start"];
 
   constructor({
-    audioContext,
+    audio,
     isPaused,
     lcd,
     isSoundEnabled
@@ -22,14 +22,14 @@ export default class GameBoy extends EventEmitter {
     if (isPaused) this.isPaused = isPaused;
 
     this.core = new GameBoyCore({
-      audioContext,
+      audio,
       api: this,
       lcd
     });
 
     this.debouncedAutoSave = debounce(this.autoSave.bind(this), 100);
     this.core.events.on("sramWrite", () => {
-      if (!this.core.cartridgeSlot.cartridge) return;
+      if (!this.core.cartridge) return;
       this.debouncedAutoSave();
     });
 
@@ -148,8 +148,8 @@ export default class GameBoy extends EventEmitter {
 
   async saveState(state) {
     if (!this.storage) return;
-    if (!this.core.cartridgeSlot.cartridge) return;
-    const name = this.core.cartridgeSlot.cartridge.name;
+    if (!this.core.cartridge) return;
+    const name = this.core.cartridge.name;
 
     if (!state) {
       state = this.core.stateManager.get();
@@ -162,11 +162,11 @@ export default class GameBoy extends EventEmitter {
 
   async saveSRAM(sram) {
     if (!this.storage) return;
-    if (!this.core.cartridgeSlot.cartridge) return;
-    const name = this.core.cartridgeSlot.cartridge.name;
+    if (!this.core.cartridge) return;
+    const name = this.core.cartridge.name;
 
     if (!sram) {
-      sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+      sram = this.core.cartridge.mbc.getSRAM();
       if (!sram) return false;
     }
 
@@ -176,12 +176,12 @@ export default class GameBoy extends EventEmitter {
 
   async saveRTC(rtc) {
     if (!this.storage) return;
-    if (!this.core.cartridgeSlot.cartridge) return;
-    if (!this.core.cartridgeSlot.cartridge.hasRTC) return;
-    const name = this.core.cartridgeSlot.cartridge.name;
+    if (!this.core.cartridge) return;
+    if (!this.core.cartridge.hasRTC) return;
+    const name = this.core.cartridge.name;
 
     if (!rtc) {
-      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+      rtc = this.core.cartridge.mbc.rtc.get();
       if (!rtc) return false;
     }
 
@@ -191,8 +191,8 @@ export default class GameBoy extends EventEmitter {
 
   loadState(state) {
     if (!this.storage) return;
-    if (!this.core.cartridgeSlot.cartridge) return;
-    const name = this.core.cartridgeSlot.cartridge.name;
+    if (!this.core.cartridge) return;
+    const name = this.core.cartridge.name;
 
     if (!state) {
       state = this.storage.findState(name);
@@ -205,8 +205,8 @@ export default class GameBoy extends EventEmitter {
 
   loadSRAM(sram) {
     if (!this.storage) return;
-    if (!this.core.cartridgeSlot.cartridge) return;
-    const name = this.core.cartridgeSlot.cartridge.name;
+    if (!this.core.cartridge) return;
+    const name = this.core.cartridge.name;
 
     if (!sram) {
       sram = this.storage.findSRAM(name);
@@ -214,15 +214,15 @@ export default class GameBoy extends EventEmitter {
       sram = new Uint8Array(sram);
     }
 
-    this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
+    this.core.cartridge.mbc.loadSRAM(sram);
     this.emit("sramLoaded", { name, sram });
   }
 
   loadRTC(rtc) {
     if (!this.storage) return;
-    if (!this.core.cartridgeSlot.cartridge) return;
-    if (!this.core.cartridgeSlot.cartridge.hasRTC) return;
-    const name = this.core.cartridgeSlot.cartridge.name;
+    if (!this.core.cartridge) return;
+    if (!this.core.cartridge.hasRTC) return;
+    const name = this.core.cartridge.name;
 
     if (!rtc) {
       rtc = this.storage.findRTC(name);
@@ -230,16 +230,16 @@ export default class GameBoy extends EventEmitter {
       rtc = new Uint32Array(rtc);
     }
 
-    this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+    this.core.cartridge.mbc.rtc.load(rtc);
     this.emit("rtcLoaded", { name, rtc });
   }
 
   getBatteryFileArrayBuffer() {
-    if (!this.core.cartridgeSlot.cartridge) return;
+    if (!this.core.cartridge) return;
 
-    const sram = this.core.cartridgeSlot.cartridge.mbc.getSRAM();
+    const sram = this.core.cartridge.mbc.getSRAM();
     let rtc = null;
-    if (this.core.cartridgeSlot.cartridge.mbc.rtc) rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.get();
+    if (this.core.cartridge.mbc.rtc) rtc = this.core.cartridge.mbc.rtc.get();
 
     return rtc ? concatArrayBuffers(sram.buffer, rtc.buffer) : sram.buffer;
   }
@@ -249,16 +249,16 @@ export default class GameBoy extends EventEmitter {
       data = stringToArrayBuffer(data);
     }
 
-    const sram = this.core.cartridgeSlot.cartridge.mbc.cutSRAMFromBatteryFileArray(
+    const sram = this.core.cartridge.mbc.cutSRAMFromBatteryFileArray(
       data
     );
     let rtc = null;
-    if (this.core.cartridgeSlot.cartridge.hasRTC) {
-      rtc = this.core.cartridgeSlot.cartridge.mbc.rtc.cutBatteryFileArray(data);
+    if (this.core.cartridge.hasRTC) {
+      rtc = this.core.cartridge.mbc.rtc.cutBatteryFileArray(data);
     }
 
-    this.core.cartridgeSlot.cartridge.mbc.loadSRAM(sram);
-    if (rtc) this.core.cartridgeSlot.cartridge.mbc.rtc.load(rtc);
+    this.core.cartridge.mbc.loadSRAM(sram);
+    if (rtc) this.core.cartridge.mbc.rtc.load(rtc);
 
     await this.saveSRAM(sram);
     if (rtc) await this.saveRTC(rtc);

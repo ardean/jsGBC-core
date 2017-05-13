@@ -9,8 +9,8 @@ export default class Joypad {
   down(key) {
     this.value &= 0xff ^ 1 << key;
     if (
-      this.gameboy.cartridgeSlot.cartridge &&
-      !this.gameboy.cartridgeSlot.cartridge.useGBCMode &&
+      this.gameboy.cartridge &&
+      !this.gameboy.cartridge.useGBCMode &&
       (!this.gameboy.usedBootROM || !this.gameboy.usedGBCBootROM)
     ) {
       this.gameboy.interruptsRequested |= 0x10; // A real GBC doesn't set this!

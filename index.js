@@ -48,7 +48,7 @@ $(".rom-select").on("click", async() => {
 });
 
 $(".download-battery-file").on("click", () => {
-  util.downloadFile(gameboy.core.cartridgeSlot.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
+  util.downloadFile(gameboy.core.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
 });
 
 $(".upload-battery-file").on("click", async() => {

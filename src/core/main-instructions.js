@@ -123,7 +123,7 @@ export default [
   //STOP
   //#0x10:
   function () {
-    if (this.cartridgeSlot.cartridge.useGBCMode) {
+    if (this.cartridge.useGBCMode) {
       if ((this.memory[0xff4d] & 0x01) === 0x01) {
         //Speed change requested.
         if (this.memory[0xff4d] > 0x7f) {
@@ -874,7 +874,7 @@ export default [
   function () {
     //See if there's already an IRQ match:
     if ((this.interruptsEnabled & this.interruptsRequested & 0x1f) > 0) {
-      if (!this.cartridgeSlot.cartridge.useGBCMode && !this.usedBootROM) {
+      if (!this.cartridge.useGBCMode && !this.usedBootROM) {
         //HALT bug in the DMG CPU model (Program Counter fails to increment for one instruction after HALT):
         this.skipPCIncrement = true;
       } else {
