@@ -49,9 +49,7 @@ export default class MBC3 extends MBC {
         this.rtc && this.rtc.writeDaysHigh(data);
         break;
       default:
-        console.log(
-          "Invalid MBC3 bank address selected: " + this.currentMBCRAMBank
-        );
+        console.log("Invalid MBC3 bank address selected: " + this.currentMBCRAMBank);
       }
     }
   }

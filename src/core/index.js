@@ -173,8 +173,8 @@ GameBoyCore.prototype.initMemory = function () {
   this.channel3PCM = util.getTypedArray(0x20, 0, "int8");
 };
 GameBoyCore.prototype.generateCacheArray = function (tileAmount) {
-  var tileArray = [];
-  var tileNumber = 0;
+  const tileArray = [];
+  let tileNumber = 0;
   while (tileNumber < tileAmount) {
     tileArray[tileNumber++] = util.getTypedArray(64, 0, "uint8");
   }
@@ -644,7 +644,7 @@ GameBoyCore.prototype.channel1AudioSweepPerformDummy = function () {
   //Channel 1:
   if (this.channel1frequencySweepDivider > 0) {
     if (!this.channel1decreaseSweep) {
-      var channel1ShadowFrequency = this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider);
+      const channel1ShadowFrequency = this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider);
       if (channel1ShadowFrequency <= 0x7ff) {
         //Run overflow check twice:
         if (channel1ShadowFrequency + (channel1ShadowFrequency >> this.channel1frequencySweepDivider) > 0x7ff) {
@@ -712,16 +712,14 @@ GameBoyCore.prototype.clockAudioEnvelope = function () {
     } else {
       if (!this.channel4envelopeType) {
         if (this.channel4envelopeVolume > 0) {
-          this.channel4currentVolume = --this.channel4envelopeVolume <<
-            this.channel4VolumeShifter;
+          this.channel4currentVolume = --this.channel4envelopeVolume << this.channel4VolumeShifter;
           this.channel4envelopeSweeps = this.channel4envelopeSweepsLast;
           this.channel4UpdateCache();
         } else {
           this.channel4envelopeSweepsLast = -1;
         }
       } else if (this.channel4envelopeVolume < 0xf) {
-        this.channel4currentVolume = ++this.channel4envelopeVolume <<
-          this.channel4VolumeShifter;
+        this.channel4currentVolume = ++this.channel4envelopeVolume << this.channel4VolumeShifter;
         this.channel4envelopeSweeps = this.channel4envelopeSweepsLast;
         this.channel4UpdateCache();
       } else {
@@ -795,10 +793,7 @@ GameBoyCore.prototype.channel1OutputLevelSecondaryCache = function () {
   this.channel1OutputLevelTrimaryCache();
 };
 GameBoyCore.prototype.channel1OutputLevelTrimaryCache = function () {
-  if (
-    this.channel1CachedDuty[this.channel1DutyTracker] &&
-    settings.enabledChannels[0]
-  ) {
+  if (this.channel1CachedDuty[this.channel1DutyTracker] && settings.enabledChannels[0]) {
     this.channel1currentSampleLeftTrimary = this.channel1currentSampleLeftSecondary;
     this.channel1currentSampleRightTrimary = this.channel1currentSampleRightSecondary;
   } else {
@@ -808,9 +803,7 @@ GameBoyCore.prototype.channel1OutputLevelTrimaryCache = function () {
   this.mixerOutputLevelCache();
 };
 GameBoyCore.prototype.channel2EnableCheck = function () {
-  this.channel2Enabled = (this.channel2consecutive ||
-      this.channel2totalLength > 0) &&
-    this.channel2canPlay;
+  this.channel2Enabled = (this.channel2consecutive || this.channel2totalLength > 0) && this.channel2canPlay;
   this.channel2OutputLevelSecondaryCache();
 };
 GameBoyCore.prototype.channel2VolumeEnableCheck = function () {
@@ -819,12 +812,8 @@ GameBoyCore.prototype.channel2VolumeEnableCheck = function () {
   this.channel2OutputLevelSecondaryCache();
 };
 GameBoyCore.prototype.channel2OutputLevelCache = function () {
-  this.channel2currentSampleLeft = this.leftChannel2 ?
-    this.channel2envelopeVolume :
-    0;
-  this.channel2currentSampleRight = this.rightChannel2 ?
-    this.channel2envelopeVolume :
-    0;
+  this.channel2currentSampleLeft = this.leftChannel2 ? this.channel2envelopeVolume : 0;
+  this.channel2currentSampleRight = this.rightChannel2 ? this.channel2envelopeVolume : 0;
   this.channel2OutputLevelSecondaryCache();
 };
 GameBoyCore.prototype.channel2OutputLevelSecondaryCache = function () {
@@ -4430,11 +4419,7 @@ GameBoyCore.prototype.recompileModelSpecificIOWriteHandling = function () {
       this.mode1TriggerSTAT = (data & 0x10) === 0x10;
       this.mode0TriggerSTAT = (data & 0x08) === 0x08;
       this.memory[0xff41] = data & 0x78;
-      if (
-        (!this.usedBootROM || !this.usedGBCBootROM) &&
-        this.LCDisOn &&
-        this.modeSTAT < 2
-      ) {
+      if ((!this.usedBootROM || !this.usedGBCBootROM) && this.LCDisOn && this.modeSTAT < 2) {
         this.interruptsRequested |= 0x2;
         this.checkIRQMatching();
       }

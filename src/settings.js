@@ -7,7 +7,6 @@ export default {
   runInterval: 8, // Interval for the emulator loop.
   minAudioBufferSpanAmountOverXInterpreterIterations: 10, // Audio buffer minimum span amount over x interpreter iterations.
   maxAudioBufferSpanAmountOverXInterpreterIterations: 20, // Audio buffer maximum span amount over x interpreter iterations.
-  enableMBC1Override: false, // Override to allow for MBC1 instead of ROM only (compatibility for broken 3rd-party cartridges).
   alwaysAllowRWtoBanks: false, // Override MBC RAM disabling and always allow reading and writing to the banks.
   forceGBBootRom: false, // Use the GameBoy boot ROM instead of the GameBoy Color boot ROM.
   // User controlled channel enables.

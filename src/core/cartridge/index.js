@@ -120,9 +120,7 @@ export default class Cartridge {
       case 0x32: // Exception to the GBC identifying code:
         if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === "Game and Watch 50") {
           this.useGBCMode = true;
-          console.log(
-            "Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge)."
-          );
+          console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
         } else {
           this.useGBCMode = false;
         }
@@ -135,11 +133,7 @@ export default class Cartridge {
         break;
       default:
         this.useGBCMode = false;
-        console.warn(
-          "Unknown GameBoy game type code #" +
-          this.colorCompatibilityByte +
-          ", defaulting to GB mode (Old games don't have a type code)."
-        );
+        console.warn("Unknown GameBoy game type code #" + this.colorCompatibilityByte + ", defaulting to GB mode (Old games don't have a type code).");
       }
     } else {
       console.log("used boot rom");
@@ -147,8 +141,7 @@ export default class Cartridge {
     }
 
     const oldLicenseCode = this.rom.getByte(0x14b);
-    const newLicenseCode = this.rom.getByte(0x144) & 0xff00 |
-      this.rom.getByte(0x145) & 0xff;
+    const newLicenseCode = this.rom.getByte(0x144) & 0xff00 | this.rom.getByte(0x145) & 0xff;
     if (oldLicenseCode !== 0x33) {
       this.isNewLicenseCode = false;
       this.licenseCode = oldLicenseCode;
@@ -171,10 +164,8 @@ export default class Cartridge {
   setTypeName() {
     switch (this.type) {
     case 0x00:
-      //ROM w/o bank switching
-      if (!settings.enableMBC1Override) {
-        this.typeName = "ROM";
-      }
+      this.typeName = "ROM";
+      break;
     case 0x01:
       this.hasMBC1 = true;
       this.typeName = "MBC1";
@@ -304,10 +295,7 @@ export default class Cartridge {
       this.typeName = "HuC1";
       break;
     default:
-      this.typeName = "Unknown";
-      console.log("Cartridge type is unknown.");
-      // TODO error
-      break;
+      throw new Error("Unknown Cartridge Type");
     }
 
     if (this.hasMBC1) this.mbc1 = new MBC1(this);
