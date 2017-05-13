@@ -127,17 +127,17 @@ export default [
       if ((this.memory[0xff4d] & 0x01) === 0x01) {
         //Speed change requested.
         if (this.memory[0xff4d] > 0x7f) {
-          //Go back to single speed mode.
+          // Go back to single speed mode.
           console.log("Going into single clock speed mode.");
           this.doubleSpeedShifter = 0;
-          this.memory[0xff4d] &= 0x7f; //Clear the double speed mode flag.
+          this.memory[0xff4d] &= 0x7f; // Clear the double speed mode flag.
         } else {
-          //Go to double speed mode.
+          // Go to double speed mode.
           console.log("Going into double clock speed mode.");
           this.doubleSpeedShifter = 1;
-          this.memory[0xff4d] |= 0x80; //Set the double speed mode flag.
+          this.memory[0xff4d] |= 0x80; // Set the double speed mode flag.
         }
-        this.memory[0xff4d] &= 0xfe; //Reset the request bit.
+        this.memory[0xff4d] &= 0xfe; // Reset the request bit.
       } else {
         this.handleSTOP();
       }

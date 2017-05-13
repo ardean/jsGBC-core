@@ -1975,9 +1975,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       }();
 
       AudioController = function () {
-        // Used to keep alignment on audio generation.
-
-        // Used to sample the audio system every x CPU instructions.
+        // Buffer maintenance metric
+        // Used to sample the audio system every x CPU instructions
         function AudioController(_ref) {
           var cpu = _ref.cpu;
 
@@ -1986,28 +1985,32 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           this.LSFR15Table = null;
           this.LSFR7Table = null;
           this.noiseSampleTable = null;
-          this.soundBufferLength = 0;
+          this.bufferLength = 0;
           this.audioTicks = 0;
           this.audioIndex = 0;
-          this.downsampleInput = 0;
           this.bufferContainAmount = 0;
           this.bufferPosition = 0;
+          this.downsampleInput = 0;
 
           this.cpu = cpu;
           this.generateWhiteNoise();
-        } // Buffer maintenance metric.
-        // Used to keep alignment on audio generation.
-        // Length of the sound buffers.
+        } // Used to keep alignment on audio generation
+        // Used to keep alignment on audio generation
+        // Length of the sound buffers
 
 
         _createClass(AudioController, [{
           key: "connectDevice",
           value: function connectDevice(device) {
+            this.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
+            this.downSampleInputDivider = 1 / (this.resamplerFirstPassFactor * 0xf0);
+
             var sampleRate = this.cpu.clocksPerSecond / this.resamplerFirstPassFactor;
             var maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 8192) << 1;
             device.setSampleRate(sampleRate);
             device.setMaxBufferSize(maxBufferSize);
             device.initializeAudio();
+
             this.device = device;
           }
         }, {
@@ -2016,10 +2019,27 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.device && this.device.setVolume(volume);
           }
         }, {
+          key: "adjustUnderrun",
+          value: function adjustUnderrun() {
+            if (!settings.soundOn) return;
+            var underrunAmount = this.device.remainingBuffer();
+            if (typeof underrunAmount === "number") {
+              underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
+              if (underrunAmount > 0) {
+                this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.resamplerFirstPassFactor);
+              }
+            }
+          }
+        }, {
+          key: "recalculateIterationClockLimitForAudio",
+          value: function recalculateIterationClockLimitForAudio(audioClocking) {
+            this.cpu.cyclesTotal += Math.min(audioClocking >> 2 << 2, this.cpu.cyclesTotalBase << 1);
+          }
+        }, {
           key: "outputAudio",
           value: function outputAudio() {
             this.fillBuffer();
-            if (this.bufferPosition === this.soundBufferLength) {
+            if (this.bufferPosition === this.bufferLength) {
               this.device.writeAudio(this.buffer);
               this.bufferPosition = 0;
             }
@@ -2038,8 +2058,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.bufferPosition = 0;
             this.downsampleInput = 0;
             this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 4096) << 1;
-            this.soundBufferLength = this.cpu.baseCyclesPerIteration / this.resamplerFirstPassFactor << 1;
-            this.buffer = getTypedArray(this.soundBufferLength, 0, "float32");
+            this.bufferLength = this.cpu.baseCyclesPerIteration / this.resamplerFirstPassFactor << 1;
+            this.buffer = getTypedArray(this.bufferLength, 0, "float32");
           }
         }, {
           key: "generateWhiteNoise",
@@ -2054,13 +2074,13 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         }, {
           key: "generateLSFR7Table",
           value: function generateLSFR7Table() {
-            //7-bit LSFR Cache Generation:
+            // 7-bit LSFR Cache Generation:
             var LSFR7Table = getTypedArray(0x800, 0, "int8");
             var LSFR = 0x7f; // Seed value has all its bits set.
             for (var index = 0; index < 0x80; ++index) {
-              //Normalize the last LSFR value for usage:
-              var randomFactor = 1 - (LSFR & 1); //Docs say it's the inverse.
-              //Cache the different volume level results:
+              // Normalize the last LSFR value for usage:
+              var randomFactor = 1 - (LSFR & 1); // Docs say it's the inverse.
+              // Cache the different volume level results:
               LSFR7Table[0x080 | index] = randomFactor;
               LSFR7Table[0x100 | index] = randomFactor * 0x2;
               LSFR7Table[0x180 | index] = randomFactor * 0x3;
@@ -2086,13 +2106,13 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         }, {
           key: "generateLSFR15Table",
           value: function generateLSFR15Table() {
-            //15-bit LSFR Cache Generation:
+            // 15-bit LSFR Cache Generation:
             var LSFR15Table = getTypedArray(0x80000, 0, "int8");
-            var LSFR = 0x7fff; //Seed value has all its bits set.
+            var LSFR = 0x7fff; // Seed value has all its bits set.
             for (var index = 0; index < 0x8000; ++index) {
-              //Normalize the last LSFR value for usage:
-              var randomFactor = 1 - (LSFR & 1); //Docs say it's the inverse.
-              //Cache the different volume level results:
+              // Normalize the last LSFR value for usage:
+              var randomFactor = 1 - (LSFR & 1); // Docs say it's the inverse.
+              // Cache the different volume level results:
               LSFR15Table[0x08000 | index] = randomFactor;
               LSFR15Table[0x10000 | index] = randomFactor * 0x2;
               LSFR15Table[0x18000 | index] = randomFactor * 0x3;
@@ -2108,7 +2128,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               LSFR15Table[0x68000 | index] = randomFactor * 0xd;
               LSFR15Table[0x70000 | index] = randomFactor * 0xe;
               LSFR15Table[0x78000 | index] = randomFactor * 0xf;
-              //Recompute the LSFR algorithm:
+              // Recompute the LSFR algorithm:
               var LSFRShifted = LSFR >> 1;
               LSFR = LSFRShifted | ((LSFRShifted ^ LSFR) & 0x1) << 14;
             }
@@ -3885,17 +3905,17 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           if ((this.memory[0xff4d] & 0x01) === 0x01) {
             //Speed change requested.
             if (this.memory[0xff4d] > 0x7f) {
-              //Go back to single speed mode.
+              // Go back to single speed mode.
               console.log("Going into single clock speed mode.");
               this.doubleSpeedShifter = 0;
-              this.memory[0xff4d] &= 0x7f; //Clear the double speed mode flag.
+              this.memory[0xff4d] &= 0x7f; // Clear the double speed mode flag.
             } else {
-              //Go to double speed mode.
+              // Go to double speed mode.
               console.log("Going into double clock speed mode.");
               this.doubleSpeedShifter = 1;
-              this.memory[0xff4d] |= 0x80; //Set the double speed mode flag.
+              this.memory[0xff4d] |= 0x80; // Set the double speed mode flag.
             }
-            this.memory[0xff4d] &= 0xfe; //Reset the request bit.
+            this.memory[0xff4d] &= 0xfe; // Reset the request bit.
           } else {
             this.handleSTOP();
           }
@@ -6462,7 +6482,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         function CPU() {
           _classCallCheck(this, CPU);
 
-          this.speedMultiplier = 1;
+          this.speed = 1;
           this.ticks = 0;
           this.cyclesTotal = 0;
           this.cyclesTotalBase = 0;
@@ -6480,16 +6500,16 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         _createClass(CPU, [{
           key: "calculateTimings",
           value: function calculateTimings() {
-            this.clocksPerSecond = this.speedMultiplier * 0x400000;
+            this.clocksPerSecond = this.speed * 0x400000;
             this.baseCyclesPerIteration = this.clocksPerSecond / 1000 * settings.runInterval;
             this.cyclesTotalRoundoff = this.baseCyclesPerIteration % 4;
             this.cyclesTotalBase = this.cyclesTotal = this.baseCyclesPerIteration - this.cyclesTotalRoundoff | 0;
             this.cyclesTotalCurrent = 0;
           }
         }, {
-          key: "setSpeedMultiplier",
-          value: function setSpeedMultiplier(value) {
-            this.speedMultiplier = value;
+          key: "setSpeed",
+          value: function setSpeed(speed) {
+            this.speed = speed;
             this.calculateTimings();
           }
         }]);
@@ -6774,26 +6794,13 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         }
       };
       GameBoyCore.prototype.setSpeed = function (speed) {
-        this.cpu.setSpeedMultiplier(speed);
+        this.cpu.setSpeed(speed);
         this.initSound();
       };
       GameBoyCore.prototype.initSound = function () {
-        this.audioController.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
-        this.audioController.downSampleInputDivider = 1 / (this.audioController.resamplerFirstPassFactor * 0xf0);
-
         this.audioController.connectDevice(this.audioDevice);
         this.audioController.setVolume(settings.soundOn ? settings.soundVolume : 0);
         this.audioController.initBuffer();
-      };
-      GameBoyCore.prototype.audioUnderrunAdjustment = function () {
-        if (!settings.soundOn) return;
-        var underrunAmount = this.audioDevice.remainingBuffer();
-        if (typeof underrunAmount === "number") {
-          underrunAmount = this.audioController.bufferContainAmount - Math.max(underrunAmount, 0);
-          if (underrunAmount > 0) {
-            this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.audioController.resamplerFirstPassFactor);
-          }
-        }
       };
       GameBoyCore.prototype.initializeAudioStartState = function () {
         this.channel1FrequencyTracker = 0x2000;
@@ -7296,7 +7303,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             if (!this.CPUStopped) {
               this.stopEmulator = 0;
 
-              this.audioUnderrunAdjustment();
+              this.audioController.adjustUnderrun();
 
               if (this.cartridge.hasRTC) {
                 this.cartridge.mbc.rtc.updateClock();
@@ -7319,7 +7326,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               // Request the graphics target to be updated:
               this.lcd.requestDraw();
             } else {
-              this.audioUnderrunAdjustment();
+              this.audioController.adjustUnderrun();
               this.audioController.audioTicks += this.cpu.cyclesTotal;
               this.audioJIT();
               this.stopEmulator |= 1; // End current loop.
@@ -7333,7 +7340,6 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       GameBoyCore.prototype.executeIteration = function () {
         //Iterate the interpreter loop:
         var operationCode = 0;
-        var timedTicks = 0;
         while (this.stopEmulator === 0) {
           //Interrupt Arming:
           switch (this.IRQEnableDelay) {
@@ -7365,11 +7371,11 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
 
           //Update the state (Inlined updateCoreFull manually here):
           //Update the clocking for the LCD emulation:
-          this.LCDTicks += this.CPUTicks >> this.doubleSpeedShifter; //LCD Timing
+          var timedTicks = this.CPUTicks >> this.doubleSpeedShifter;
+          this.LCDTicks += timedTicks; //LCD Timing
           this.LCDCONTROL[this.actualScanLine](this); //Scan Line and STAT Mode Control
 
           //Single-speed relative timing for A/V emulation:
-          timedTicks = this.CPUTicks >> this.doubleSpeedShifter; //CPU clocking can be updated from the LCD handling.
           this.audioController.audioTicks += timedTicks; //Audio Timing
           this.cpu.ticks += timedTicks; //Emulator Timing
           //CPU Timers:
@@ -7433,9 +7439,6 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.cpu.cyclesTotal = this.cpu.cyclesTotalBase + this.cpu.cyclesTotalCurrent - endModulus;
         this.cpu.cyclesTotalCurrent = endModulus;
       };
-      GameBoyCore.prototype.recalculateIterationClockLimitForAudio = function (audioClocking) {
-        this.cpu.cyclesTotal += Math.min(audioClocking >> 2 << 2, this.cpu.cyclesTotalBase << 1);
-      };
       GameBoyCore.prototype.scanLineMode2 = function () {
         //OAM Search Period
         if (this.STATTracker !== 1) {
@@ -7460,8 +7463,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       };
       GameBoyCore.prototype.scanLineMode0 = function () {
         //Horizontal Blanking Period
-        if (this.modeSTAT != 0) {
-          if (this.STATTracker != 2) {
+        if (this.modeSTAT !== 0) {
+          if (this.STATTracker !== 2) {
             if (this.STATTracker === 0) {
               if (this.mode2TriggerSTAT) {
                 this.interruptsRequested |= 0x2;
@@ -7487,7 +7490,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         }
       };
       GameBoyCore.prototype.clocksUntilLYCMatch = function () {
-        if (this.memory[0xff45] != 0) {
+        if (this.memory[0xff45] !== 0) {
           if (this.memory[0xff45] > this.actualScanLine) {
             return 456 * (this.memory[0xff45] - this.actualScanLine);
           }
