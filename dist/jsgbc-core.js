@@ -336,7 +336,7 @@ $__System.registerDynamic('d', ['c'], true, function ($__require, exports, modul
 $__System.register('a', ['b', 'd'], function (_export, _context5) {
   "use strict";
 
-  var EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, util, LCD, TickTable, CartridgeSlot, Resampler, AudioServer, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, CPU, LocalStorage, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1;
+  var EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, util, LCD, TickTable, CartridgeSlot, Resampler, AudioDevice, AudioController, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, dutyLookup, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, CPU, LocalStorage, ROM, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1;
 
   function toTypedArray(baseArray, memtype) {
     // TODO: remove
@@ -506,6 +506,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
     this.memoryNew = new Memory({ gameboy: this });
 
     this.cpu = new CPU();
+    this.audioController = new AudioController({ cpu: this.cpu });
     this.joypad = new Joypad(this);
     this.cartridgeSlot = new CartridgeSlot(this);
     this.lcd = new LCD(lcdOptions);
@@ -558,20 +559,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
     this.initializeLCDController(); //Compile the LCD controller functions.
 
     //Sound variables:
-    this.audioServer = null; //XAudioJS handle
-    this.numSamplesTotal = 0; //Length of the sound buffers.
-    this.bufferContainAmount = 0; //Buffer maintenance metric.
-    this.LSFR15Table = null;
-    this.LSFR7Table = null;
-    this.noiseSampleTable = null;
+    this.audioDevice = null; //XAudioJS handle
     this.initializeAudioStartState();
-
-    //Audio generation counters:
-    this.audioTicks = 0; //Used to sample the audio system every x CPU instructions.
-    this.audioIndex = 0; //Used to keep alignment on audio generation.
-    this.downsampleInput = 0;
-    this.audioDestinationPosition = 0; //Used to keep alignment on audio generation.
-    this.rollover = 0; //Used to keep alignment on the number of samples to output (Realign from counter alias).
 
     //Graphics Variables
     this.drewFrame = false; //Throttle how many draws we can do to once per iteration.
@@ -596,8 +585,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
     this.SpriteLayerRender = null; // Reference to the OAM rendering function.
     this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
 
-    //Initialize the white noise cache tables ahead of time:
-    this.intializeWhiteNoise();
+    // generate the white noise cache tables ahead of time
+    this.audioController.generateWhiteNoise();
   }
 
 
@@ -1858,8 +1847,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         return Resampler;
       }();
 
-      AudioServer = function () {
-        function AudioServer(_ref) {
+      AudioDevice = function () {
+        function AudioDevice(_ref) {
           var audioContext = _ref.audioContext,
               channels = _ref.channels,
               sampleRate = _ref.sampleRate,
@@ -1867,7 +1856,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               maxBufferSize = _ref.maxBufferSize,
               volume = _ref.volume;
 
-          _classCallCheck(this, AudioServer);
+          _classCallCheck(this, AudioDevice);
 
           this.audioContext = audioContext || new AudioContext();
           this.samplesPerCallback = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
@@ -1880,7 +1869,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           this.initializeAudio();
         }
 
-        _createClass(AudioServer, [{
+        _createClass(AudioDevice, [{
           key: "writeAudio",
           value: function writeAudio(buffer) {
             var bufferCounter = 0;
@@ -2001,7 +1990,148 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           }
         }]);
 
-        return AudioServer;
+        return AudioDevice;
+      }();
+
+      AudioController = function () {
+        // Used to keep alignment on audio generation.
+
+        // Used to sample the audio system every x CPU instructions.
+        function AudioController(_ref) {
+          var cpu = _ref.cpu;
+
+          _classCallCheck(this, AudioController);
+
+          this.LSFR15Table = null;
+          this.LSFR7Table = null;
+          this.noiseSampleTable = null;
+          this.soundBufferLength = 0;
+          this.audioTicks = 0;
+          this.audioIndex = 0;
+          this.downsampleInput = 0;
+          this.bufferContainAmount = 0;
+          this.bufferPosition = 0;
+
+          this.cpu = cpu;
+          this.generateWhiteNoise();
+        } // Buffer maintenance metric.
+        // Used to keep alignment on audio generation.
+        // Length of the sound buffers.
+
+
+        _createClass(AudioController, [{
+          key: "connectDevice",
+          value: function connectDevice(device) {
+            this.device = device;
+          }
+        }, {
+          key: "changeVolume",
+          value: function changeVolume(volume) {
+            this.device && this.device.changeVolume(volume);
+          }
+        }, {
+          key: "outputAudio",
+          value: function outputAudio() {
+            this.fillBuffer();
+            if (this.bufferPosition === this.soundBufferLength) {
+              this.device.writeAudio(this.buffer);
+              this.bufferPosition = 0;
+            }
+            this.downsampleInput = 0;
+          }
+        }, {
+          key: "fillBuffer",
+          value: function fillBuffer() {
+            this.buffer[this.bufferPosition++] = (this.downsampleInput >>> 16) * this.downSampleInputDivider - 1;
+            this.buffer[this.bufferPosition++] = (this.downsampleInput & 0xffff) * this.downSampleInputDivider - 1;
+          }
+        }, {
+          key: "initBuffer",
+          value: function initBuffer() {
+            this.audioIndex = 0;
+            this.bufferPosition = 0;
+            this.downsampleInput = 0;
+            this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 4096) << 1;
+            this.soundBufferLength = this.cpu.baseCyclesPerIteration / this.resamplerFirstPassFactor << 1;
+            this.buffer = getTypedArray(this.soundBufferLength, 0, "float32");
+          }
+        }, {
+          key: "generateWhiteNoise",
+          value: function generateWhiteNoise() {
+            // Noise Sample Tables
+            this.LSFR7Table = this.generateLSFR7Table();
+            this.LSFR15Table = this.generateLSFR15Table();
+
+            // Set the default noise table
+            this.noiseSampleTable = this.LSFR15Table;
+          }
+        }, {
+          key: "generateLSFR7Table",
+          value: function generateLSFR7Table() {
+            //7-bit LSFR Cache Generation:
+            var LSFR7Table = getTypedArray(0x800, 0, "int8");
+            var LSFR = 0x7f; // Seed value has all its bits set.
+            for (var index = 0; index < 0x80; ++index) {
+              //Normalize the last LSFR value for usage:
+              var randomFactor = 1 - (LSFR & 1); //Docs say it's the inverse.
+              //Cache the different volume level results:
+              LSFR7Table[0x080 | index] = randomFactor;
+              LSFR7Table[0x100 | index] = randomFactor * 0x2;
+              LSFR7Table[0x180 | index] = randomFactor * 0x3;
+              LSFR7Table[0x200 | index] = randomFactor * 0x4;
+              LSFR7Table[0x280 | index] = randomFactor * 0x5;
+              LSFR7Table[0x300 | index] = randomFactor * 0x6;
+              LSFR7Table[0x380 | index] = randomFactor * 0x7;
+              LSFR7Table[0x400 | index] = randomFactor * 0x8;
+              LSFR7Table[0x480 | index] = randomFactor * 0x9;
+              LSFR7Table[0x500 | index] = randomFactor * 0xa;
+              LSFR7Table[0x580 | index] = randomFactor * 0xb;
+              LSFR7Table[0x600 | index] = randomFactor * 0xc;
+              LSFR7Table[0x680 | index] = randomFactor * 0xd;
+              LSFR7Table[0x700 | index] = randomFactor * 0xe;
+              LSFR7Table[0x780 | index] = randomFactor * 0xf;
+              // Recompute the LSFR algorithm:
+              var LSFRShifted = LSFR >> 1;
+              LSFR = LSFRShifted | ((LSFRShifted ^ LSFR) & 0x1) << 6;
+            }
+
+            return LSFR7Table;
+          }
+        }, {
+          key: "generateLSFR15Table",
+          value: function generateLSFR15Table() {
+            //15-bit LSFR Cache Generation:
+            var LSFR15Table = getTypedArray(0x80000, 0, "int8");
+            var LSFR = 0x7fff; //Seed value has all its bits set.
+            for (var index = 0; index < 0x8000; ++index) {
+              //Normalize the last LSFR value for usage:
+              var randomFactor = 1 - (LSFR & 1); //Docs say it's the inverse.
+              //Cache the different volume level results:
+              LSFR15Table[0x08000 | index] = randomFactor;
+              LSFR15Table[0x10000 | index] = randomFactor * 0x2;
+              LSFR15Table[0x18000 | index] = randomFactor * 0x3;
+              LSFR15Table[0x20000 | index] = randomFactor * 0x4;
+              LSFR15Table[0x28000 | index] = randomFactor * 0x5;
+              LSFR15Table[0x30000 | index] = randomFactor * 0x6;
+              LSFR15Table[0x38000 | index] = randomFactor * 0x7;
+              LSFR15Table[0x40000 | index] = randomFactor * 0x8;
+              LSFR15Table[0x48000 | index] = randomFactor * 0x9;
+              LSFR15Table[0x50000 | index] = randomFactor * 0xa;
+              LSFR15Table[0x58000 | index] = randomFactor * 0xb;
+              LSFR15Table[0x60000 | index] = randomFactor * 0xc;
+              LSFR15Table[0x68000 | index] = randomFactor * 0xd;
+              LSFR15Table[0x70000 | index] = randomFactor * 0xe;
+              LSFR15Table[0x78000 | index] = randomFactor * 0xf;
+              //Recompute the LSFR algorithm:
+              var LSFRShifted = LSFR >> 1;
+              LSFR = LSFRShifted | ((LSFRShifted ^ LSFR) & 0x1) << 14;
+            }
+
+            return LSFR15Table;
+          }
+        }]);
+
+        return AudioController;
       }();
 
       bitInstructions = [
@@ -6389,7 +6519,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.memoryWriteJumpCompile();
         this.lcd.init();
         this.initSound();
-        this.noiseSampleTable = this.channel4BitRange === 0x7fff ? this.LSFR15Table : this.LSFR7Table;
+        this.audioController.noiseSampleTable = this.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
         this.channel4VolumeShifter = this.channel4BitRange === 0x7fff ? 15 : 7;
       };
       GameBoyCore.prototype.start = function (cartridge) {
@@ -6655,114 +6785,39 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       };
       GameBoyCore.prototype.setSpeed = function (speed) {
         this.cpu.setSpeedMultiplier(speed);
-        if (this.audioServer) {
+        if (this.audioDevice) {
           this.initSound();
         }
       };
       GameBoyCore.prototype.initSound = function () {
-        this.audioResamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
-        this.downSampleInputDivider = 1 / (this.audioResamplerFirstPassFactor * 0xf0);
+        this.audioController.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
+        this.audioController.downSampleInputDivider = 1 / (this.audioController.resamplerFirstPassFactor * 0xf0);
 
-        // TODO: create sound controller
-        // TODO: separate turn sound off / on
-        if (!settings.soundOn) {
-          if (this.audioServer) this.audioServer.changeVolume(0);
-        } else {
-          if (!this.audioServer) {
-            var sampleRate = this.cpu.clocksPerSecond / this.audioResamplerFirstPassFactor;
-            var maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 8192) << 1;
+        this.audioController.changeVolume(settings.soundOn ? settings.soundVolume : 0);
 
-            this.audioServer = new AudioServer({
-              audioContext: this.audioContext,
-              channels: 2,
-              sampleRate: sampleRate,
-              minBufferSize: 0,
-              maxBufferSize: maxBufferSize,
-              volume: settings.soundVolume
-            });
-            this.initAudioBuffer();
-          }
+        if (!this.audioDevice) {
+          var sampleRate = this.cpu.clocksPerSecond / this.audioController.resamplerFirstPassFactor;
+          var maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.audioController.resamplerFirstPassFactor, 8192) << 1;
+
+          this.audioDevice = new AudioDevice({
+            audioContext: this.audioContext,
+            channels: 2,
+            sampleRate: sampleRate,
+            minBufferSize: 0,
+            maxBufferSize: maxBufferSize,
+            volume: settings.soundVolume
+          });
+          this.audioController.connectDevice(this.audioDevice);
+          this.audioController.initBuffer();
         }
-      };
-      GameBoyCore.prototype.changeVolume = function () {
-        if (this.audioServer) {
-          this.audioServer.changeVolume(settings.soundVolume);
-        }
-      };
-      GameBoyCore.prototype.initAudioBuffer = function () {
-        this.audioIndex = 0;
-        this.audioDestinationPosition = 0;
-        this.downsampleInput = 0;
-        this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.audioResamplerFirstPassFactor, 4096) << 1;
-        this.numSamplesTotal = this.cpu.baseCyclesPerIteration / this.audioResamplerFirstPassFactor << 1;
-        this.audioBuffer = getTypedArray(this.numSamplesTotal, 0, "float32");
-      };
-      GameBoyCore.prototype.intializeWhiteNoise = function () {
-        //Noise Sample Tables:
-        var randomFactor = 1;
-        //15-bit LSFR Cache Generation:
-        this.LSFR15Table = getTypedArray(0x80000, 0, "int8");
-        var LSFR = 0x7fff; //Seed value has all its bits set.
-        var LSFRShifted = 0x3fff;
-        for (var index = 0; index < 0x8000; ++index) {
-          //Normalize the last LSFR value for usage:
-          randomFactor = 1 - (LSFR & 1); //Docs say it's the inverse.
-          //Cache the different volume level results:
-          this.LSFR15Table[0x08000 | index] = randomFactor;
-          this.LSFR15Table[0x10000 | index] = randomFactor * 0x2;
-          this.LSFR15Table[0x18000 | index] = randomFactor * 0x3;
-          this.LSFR15Table[0x20000 | index] = randomFactor * 0x4;
-          this.LSFR15Table[0x28000 | index] = randomFactor * 0x5;
-          this.LSFR15Table[0x30000 | index] = randomFactor * 0x6;
-          this.LSFR15Table[0x38000 | index] = randomFactor * 0x7;
-          this.LSFR15Table[0x40000 | index] = randomFactor * 0x8;
-          this.LSFR15Table[0x48000 | index] = randomFactor * 0x9;
-          this.LSFR15Table[0x50000 | index] = randomFactor * 0xa;
-          this.LSFR15Table[0x58000 | index] = randomFactor * 0xb;
-          this.LSFR15Table[0x60000 | index] = randomFactor * 0xc;
-          this.LSFR15Table[0x68000 | index] = randomFactor * 0xd;
-          this.LSFR15Table[0x70000 | index] = randomFactor * 0xe;
-          this.LSFR15Table[0x78000 | index] = randomFactor * 0xf;
-          //Recompute the LSFR algorithm:
-          LSFRShifted = LSFR >> 1;
-          LSFR = LSFRShifted | ((LSFRShifted ^ LSFR) & 0x1) << 14;
-        }
-        //7-bit LSFR Cache Generation:
-        this.LSFR7Table = getTypedArray(0x800, 0, "int8");
-        LSFR = 0x7f; //Seed value has all its bits set.
-        for (index = 0; index < 0x80; ++index) {
-          //Normalize the last LSFR value for usage:
-          randomFactor = 1 - (LSFR & 1); //Docs say it's the inverse.
-          //Cache the different volume level results:
-          this.LSFR7Table[0x080 | index] = randomFactor;
-          this.LSFR7Table[0x100 | index] = randomFactor * 0x2;
-          this.LSFR7Table[0x180 | index] = randomFactor * 0x3;
-          this.LSFR7Table[0x200 | index] = randomFactor * 0x4;
-          this.LSFR7Table[0x280 | index] = randomFactor * 0x5;
-          this.LSFR7Table[0x300 | index] = randomFactor * 0x6;
-          this.LSFR7Table[0x380 | index] = randomFactor * 0x7;
-          this.LSFR7Table[0x400 | index] = randomFactor * 0x8;
-          this.LSFR7Table[0x480 | index] = randomFactor * 0x9;
-          this.LSFR7Table[0x500 | index] = randomFactor * 0xa;
-          this.LSFR7Table[0x580 | index] = randomFactor * 0xb;
-          this.LSFR7Table[0x600 | index] = randomFactor * 0xc;
-          this.LSFR7Table[0x680 | index] = randomFactor * 0xd;
-          this.LSFR7Table[0x700 | index] = randomFactor * 0xe;
-          this.LSFR7Table[0x780 | index] = randomFactor * 0xf;
-          // Recompute the LSFR algorithm:
-          LSFRShifted = LSFR >> 1;
-          LSFR = LSFRShifted | ((LSFRShifted ^ LSFR) & 0x1) << 6;
-        }
-        // Set the default noise table:
-        this.noiseSampleTable = this.LSFR15Table;
       };
       GameBoyCore.prototype.audioUnderrunAdjustment = function () {
         if (!settings.soundOn) return;
-        var underrunAmount = this.audioServer.remainingBuffer();
+        var underrunAmount = this.audioDevice.remainingBuffer();
         if (typeof underrunAmount === "number") {
-          underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
+          underrunAmount = this.audioController.bufferContainAmount - Math.max(underrunAmount, 0);
           if (underrunAmount > 0) {
-            this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.audioResamplerFirstPassFactor);
+            this.recalculateIterationClockLimitForAudio((underrunAmount >> 1) * this.audioController.resamplerFirstPassFactor);
           }
         }
       };
@@ -6809,7 +6864,6 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.channel4envelopeSweepsLast = 0;
         this.channel4consecutive = true;
         this.channel4BitRange = 0x7fff;
-        this.noiseSampleTable = this.LSFR15Table;
         this.channel4VolumeShifter = 15;
         this.channel1FrequencyCounter = 0x2000;
         this.channel2FrequencyCounter = 0x2000;
@@ -6839,20 +6893,10 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.channel2OutputLevelCache();
         this.channel3OutputLevelCache();
         this.channel4OutputLevelCache();
-        this.noiseSampleTable = this.LSFR15Table;
-      };
-      GameBoyCore.prototype.outputAudio = function () {
-        this.audioBuffer[this.audioDestinationPosition++] = (this.downsampleInput >>> 16) * this.downSampleInputDivider - 1;
-        this.audioBuffer[this.audioDestinationPosition++] = (this.downsampleInput & 0xffff) * this.downSampleInputDivider - 1;
-        if (this.audioDestinationPosition === this.numSamplesTotal) {
-          this.audioServer.writeAudio(this.audioBuffer);
-          this.audioDestinationPosition = 0;
-        }
-        this.downsampleInput = 0;
+        this.audioController.noiseSampleTable = this.audioController.LSFR15Table;
       };
       //Below are the audio generation functions timed against the CPU:
       GameBoyCore.prototype.generateAudio = function (numSamples) {
-        var multiplier = 0;
         if (this.soundMasterEnabled && !this.CPUStopped) {
           for (var clockUpTo = 0; numSamples > 0;) {
             clockUpTo = Math.min(this.audioClocksUntilNextEventCounter, this.sequencerClocks, numSamples);
@@ -6860,13 +6904,13 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.sequencerClocks -= clockUpTo;
             numSamples -= clockUpTo;
             while (clockUpTo > 0) {
-              multiplier = Math.min(clockUpTo, this.audioResamplerFirstPassFactor - this.audioIndex);
+              var multiplier = Math.min(clockUpTo, this.audioController.resamplerFirstPassFactor - this.audioController.audioIndex);
               clockUpTo -= multiplier;
-              this.audioIndex += multiplier;
-              this.downsampleInput += this.mixerOutputCache * multiplier;
-              if (this.audioIndex === this.audioResamplerFirstPassFactor) {
-                this.audioIndex = 0;
-                this.outputAudio();
+              this.audioController.audioIndex += multiplier;
+              this.audioController.downsampleInput += this.mixerOutputCache * multiplier;
+              if (this.audioController.audioIndex === this.audioController.resamplerFirstPassFactor) {
+                this.audioController.audioIndex = 0;
+                this.audioController.outputAudio();
               }
             }
             if (this.sequencerClocks === 0) {
@@ -6880,12 +6924,12 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         } else {
           //SILENT OUTPUT:
           while (numSamples > 0) {
-            multiplier = Math.min(numSamples, this.audioResamplerFirstPassFactor - this.audioIndex);
-            numSamples -= multiplier;
-            this.audioIndex += multiplier;
-            if (this.audioIndex === this.audioResamplerFirstPassFactor) {
-              this.audioIndex = 0;
-              this.outputAudio();
+            var _multiplier = Math.min(numSamples, this.audioController.resamplerFirstPassFactor - this.audioController.audioIndex);
+            numSamples -= _multiplier;
+            this.audioController.audioIndex += _multiplier;
+            if (this.audioController.audioIndex === this.audioController.resamplerFirstPassFactor) {
+              this.audioController.audioIndex = 0;
+              this.audioController.outputAudio();
             }
           }
         }
@@ -6912,11 +6956,11 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       GameBoyCore.prototype.audioJIT = function () {
         // Audio Sample Generation Timing:
         if (settings.soundOn) {
-          this.generateAudio(this.audioTicks);
+          this.generateAudio(this.audioController.audioTicks);
         } else {
-          this.generateAudioFake(this.audioTicks);
+          this.generateAudioFake(this.audioController.audioTicks);
         }
-        this.audioTicks = 0;
+        this.audioController.audioTicks = 0;
       };
       GameBoyCore.prototype.audioComputeSequencer = function () {
         switch (this.sequencePosition++) {
@@ -7268,11 +7312,11 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.channel3PCM[address | 1] = data & 0xf;
       };
       GameBoyCore.prototype.channel4UpdateCache = function () {
-        this.cachedChannel4Sample = this.noiseSampleTable[this.channel4currentVolume | this.channel4lastSampleLookup];
+        this.cachedChannel4Sample = this.audioController.noiseSampleTable[this.channel4currentVolume | this.channel4lastSampleLookup];
         this.channel4OutputLevelCache();
       };
       GameBoyCore.prototype.run = function () {
-        //The preprocessing before the actual iteration loop:
+        // The preprocessing before the actual iteration loop:
         if ((this.stopEmulator & 2) === 0) {
           if ((this.stopEmulator & 1) === 1) {
             if (!this.CPUStopped) {
@@ -7302,14 +7346,13 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               this.lcd.requestDraw();
             } else {
               this.audioUnderrunAdjustment();
-              this.audioTicks += this.cpu.cyclesTotal;
+              this.audioController.audioTicks += this.cpu.cyclesTotal;
               this.audioJIT();
               this.stopEmulator |= 1; // End current loop.
             }
           } else {
             // We can only get here if there was an internal error, but the loop was restarted.
-            console.log("Iterator restarted a faulted core.", 2);
-            pause();
+            console.error("Iterator restarted a faulted core.");
           }
         }
       };
@@ -7353,7 +7396,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
 
           //Single-speed relative timing for A/V emulation:
           timedTicks = this.CPUTicks >> this.doubleSpeedShifter; //CPU clocking can be updated from the LCD handling.
-          this.audioTicks += timedTicks; //Audio Timing
+          this.audioController.audioTicks += timedTicks; //Audio Timing
           this.cpu.ticks += timedTicks; //Emulator Timing
           //CPU Timers:
           this.DIVTicks += this.CPUTicks; //DIV Timing
@@ -7407,7 +7450,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.CPUStopped = true; //Stop CPU until joypad input changes.
         this.iterationEndRoutine();
         if (this.cpu.ticks < 0) {
-          this.audioTicks -= this.cpu.ticks;
+          this.audioController.audioTicks -= this.cpu.ticks;
           this.audioJIT();
         }
       };
@@ -7529,7 +7572,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.LCDCONTROL[this.actualScanLine](this); //Scan Line and STAT Mode Control
         //Single-speed relative timing for A/V emulation:
         var timedTicks = this.CPUTicks >> this.doubleSpeedShifter; // CPU clocking can be updated from the LCD handling.
-        this.audioTicks += timedTicks; // Audio Timing
+        this.audioController.audioTicks += timedTicks; // Audio Timing
         this.cpu.ticks += timedTicks; // CPU Timing
         //CPU Timers:
         this.DIVTicks += this.CPUTicks; // DIV Timing
@@ -9512,7 +9555,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.memoryWriter[index] = this.memoryWriteOAMRAM;
           } else if (index < 0xff00) {
             if (this.cartridgeSlot.cartridge.useGBCMode) {
-              //Only GBC has access to this RAM.
+              // Only GBC has access to this RAM.
               this.memoryWriter[index] = this.memoryWriteNormal;
             } else {
               this.memoryWriter[index] = this.cartIgnoreWrite;
@@ -10117,7 +10160,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               _this4.channel4BitRange = bitWidth === 0x8 ? 0x7f : 0x7fff;
               _this4.channel4VolumeShifter = bitWidth === 0x8 ? 7 : 15;
               _this4.channel4currentVolume = _this4.channel4envelopeVolume << _this4.channel4VolumeShifter;
-              _this4.noiseSampleTable = bitWidth === 0x8 ? _this4.LSFR7Table : _this4.LSFR15Table;
+              _this4.audioController.noiseSampleTable = bitWidth === 0x8 ? _this4.audioController.LSFR7Table : _this4.audioController.LSFR15Table;
             }
             _this4.memory[0xff22] = data;
             _this4.channel4UpdateCache();
