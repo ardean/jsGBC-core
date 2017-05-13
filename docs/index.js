@@ -10290,7 +10290,6 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         _ref$lcd = _ref.lcd,
         lcdOptions = _ref$lcd === undefined ? {} : _ref$lcd;
 
-    this.audioContext = audioOptions.context;
     this.api = api;
     this.events = new EventEmitter(); // TODO: use as super
 
@@ -10300,7 +10299,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
 
     this.cpu = new CPU();
     this.audioDevice = new AudioDevice({
-      context: this.audioContext,
+      context: audioOptions.context,
       channels: 2,
       volume: settings.soundVolume
     });
@@ -11151,7 +11150,6 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
         runInterval: 8, // Interval for the emulator loop.
         minAudioBufferSpanAmountOverXInterpreterIterations: 10, // Audio buffer minimum span amount over x interpreter iterations.
         maxAudioBufferSpanAmountOverXInterpreterIterations: 20, // Audio buffer maximum span amount over x interpreter iterations.
-        enableMBC1Override: false, // Override to allow for MBC1 instead of ROM only (compatibility for broken 3rd-party cartridges).
         alwaysAllowRWtoBanks: false, // Override MBC RAM disabling and always allow reading and writing to the banks.
         forceGBBootRom: false, // Use the GameBoy boot ROM instead of the GameBoy Color boot ROM.
         // User controlled channel enables.
@@ -21403,10 +21401,8 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
           value: function setTypeName() {
             switch (this.type) {
               case 0x00:
-                //ROM w/o bank switching
-                if (!settings.enableMBC1Override) {
-                  this.typeName = "ROM";
-                }
+                this.typeName = "ROM";
+                break;
               case 0x01:
                 this.hasMBC1 = true;
                 this.typeName = "MBC1";
@@ -21536,10 +21532,7 @@ $__System.register('a', ['c', 'e', 'b'], function (_export, _context5) {
                 this.typeName = "HuC1";
                 break;
               default:
-                this.typeName = "Unknown";
-                console.log("Cartridge type is unknown.");
-                // TODO error
-                break;
+                throw new Error("Unknown Cartridge Type");
             }
 
             if (this.hasMBC1) this.mbc1 = new MBC1(this);

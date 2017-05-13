@@ -14,7 +14,6 @@ import Memory from "./memory/index.js";
 import CPU from "./cpu.js";
 
 function GameBoyCore({ audio: audioOptions = {}, api, lcd: lcdOptions = {} }) {
-  this.audioContext = audioOptions.context;
   this.api = api;
   this.events = new EventEmitter(); // TODO: use as super
 
@@ -24,7 +23,7 @@ function GameBoyCore({ audio: audioOptions = {}, api, lcd: lcdOptions = {} }) {
 
   this.cpu = new CPU();
   this.audioDevice = new AudioDevice({
-    context: this.audioContext,
+    context: audioOptions.context,
     channels: 2,
     volume: settings.soundVolume
   });

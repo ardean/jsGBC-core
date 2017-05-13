@@ -4,17 +4,17 @@ const fs = require("fs");
 const AudioContext = require("web-audio-api/lib/AudioContext.js");
 const Speaker = require("speaker");
 
-const audioContext = new AudioContext();
+const context = new AudioContext();
 
-audioContext.outStream = new Speaker({
-  channels: audioContext.format.numberOfChannels,
-  bitDepth: audioContext.format.bitDepth,
-  sampleRate: audioContext.sampleRate
+context.outStream = new Speaker({
+  channels: context.format.numberOfChannels,
+  bitDepth: context.format.bitDepth,
+  sampleRate: context.sampleRate
 });
 
 const canvas = new Canvas();
 const gameboy = new GameBoy({
-  audioContext,
+  audio: { context },
   lcd: {
     canvas,
     offscreenCanvas: new Canvas()
