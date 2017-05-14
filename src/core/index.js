@@ -526,7 +526,7 @@ GameBoyCore.prototype.executeIteration = function () {
       this.serialShiftTimer -= this.CPUTicks;
       if (this.serialShiftTimer <= 0) {
         this.serialShiftTimer = this.serialShiftTimerAllocated;
-        this.memory[0xff01] = this.memory[0xff01] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
+        this.memory[0xff01] = this.memory[0xff01] << 1 & 0xfe | 0x01; // We could shift in actual link data here if we were to implement such!!!
       }
     }
     //End of iteration routine:
@@ -3390,7 +3390,7 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
     } else if (this.soundMasterEnabled && data < 0x80) {
       this.memory[0xff26] = 0;
       this.soundMasterEnabled = false;
-      //GBDev wiki says the registers are written with zeros on power off:
+      //GBDev wiki says the registers are written with zeros on audio off:
       for (var index = 0xff10; index < 0xff26; index++) {
         this.memoryWriter[index].apply(this, [index, 0]);
       }
