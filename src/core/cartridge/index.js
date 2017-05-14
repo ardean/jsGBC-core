@@ -1,5 +1,5 @@
 import settings from "../../settings.js";
-import ROM from "./rom.js";
+import ROM from "../rom.js";
 import MBC1 from "./mbc1.js";
 import MBC2 from "./mbc2.js";
 import MBC3 from "./mbc3.js";
@@ -8,7 +8,7 @@ import MBC7 from "./mbc7.js";
 
 export default class Cartridge {
   constructor(rom) {
-    this.rom = new ROM(rom);
+    this.rom = rom instanceof ROM ? rom : new ROM(rom);
 
     this.hasMBC1 = false; // Does the cartridge use MBC1?
     this.hasMBC2 = false; // Does the cartridge use MBC2?
@@ -28,61 +28,6 @@ export default class Cartridge {
 
   connect(gameboy) {
     this.gameboy = gameboy;
-    this.parseROM();
-  }
-
-  parseROM() {
-    // TODO: move to gameboy core
-    // Load the first two ROM banks (0x0000 - 0x7FFF) into regular gameboy memory:
-    this.gameboy.usedBootROM = settings.bootBootRomFirst &&
-      (!settings.forceGBBootRom && this.gameboy.GBCBOOTROM.length === 0x800 ||
-        settings.forceGBBootRom && this.gameboy.GBBOOTROM.length === 0x100);
-
-    // http://www.enliten.force9.co.uk/gameboy/carthead.htm
-    if (this.rom.length < 0x4000) throw new Error("ROM size too small.");
-
-    let romIndex = 0;
-    if (this.gameboy.usedBootROM) {
-      if (!settings.forceGBBootRom) {
-        // Patch in the GBC boot ROM into the memory map:
-        while (romIndex < 0x100) {
-          this.memory[romIndex] = this.GBCBOOTROM[romIndex]; // Load in the GameBoy Color BOOT ROM.
-          this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
-          ++romIndex;
-        }
-
-        while (romIndex < 0x200) {
-          this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
-          ++romIndex;
-        }
-
-        while (romIndex < 0x900) {
-          this.memory[romIndex] = this.GBCBOOTROM[romIndex - 0x100]; // Load in the GameBoy Color BOOT ROM.
-          this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
-          ++romIndex;
-        }
-
-        this.usedGBCBootROM = true;
-      } else {
-        // Patch in the GB boot ROM into the memory map:
-        while (romIndex < 0x100) {
-          this.memory[romIndex] = this.GBBOOTROM[romIndex]; // Load in the GameBoy BOOT ROM.
-          this.ROM[romIndex] = this.rom.getByte(romIndex); // Decode the ROM binary for the switch out.
-          ++romIndex;
-        }
-      }
-
-      while (romIndex < 0x4000) {
-        this.memory[romIndex] = this.ROM[romIndex] = this.rom.getByte(romIndex); // Load in the game ROM.
-        ++romIndex;
-      }
-    } else {
-      // Don't load in the boot ROM:
-      while (romIndex < 0x4000) {
-        this.gameboy.memory[romIndex] = this.rom.getByte(romIndex) & 0xff;
-        ++romIndex;
-      }
-    }
   }
 
   interpret() {
@@ -143,10 +88,10 @@ export default class Cartridge {
     const oldLicenseCode = this.rom.getByte(0x14b);
     const newLicenseCode = this.rom.getByte(0x144) & 0xff00 | this.rom.getByte(0x145) & 0xff;
     if (oldLicenseCode !== 0x33) {
-      this.isNewLicenseCode = false;
+      this.hasNewLicenseCode = false;
       this.licenseCode = oldLicenseCode;
     } else {
-      this.isNewLicenseCode = true;
+      this.hasNewLicenseCode = true;
       this.licenseCode = newLicenseCode;
     }
   }

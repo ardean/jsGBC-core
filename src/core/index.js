@@ -12,9 +12,17 @@ import Joypad from "./joypad.js";
 import EventEmitter from "events";
 import Memory from "./memory/index.js";
 import CPU from "./cpu.js";
+import ROM from "./rom.js";
 
-function GameBoyCore({ audio: audioOptions = {}, api, lcd: lcdOptions = {} }) {
+function GameBoyCore({
+  audio: audioOptions = {},
+  api,
+  lcd: lcdOptions = {},
+  bootRom
+}) {
   this.api = api;
+  if (bootRom) this.setBootRom(bootRom);
+
   this.events = new EventEmitter(); // TODO: use as super
 
   lcdOptions.gameboy = this;
@@ -64,7 +72,6 @@ function GameBoyCore({ audio: audioOptions = {}, api, lcd: lcdOptions = {} }) {
   this.SpriteGBLayerRender = this.SpriteGBLayerRender.bind(this);
   this.SpriteGBCLayerRender = this.SpriteGBCLayerRender.bind(this);
 
-  this.usedGBCBootROM = false; // Did we boot to the GBC boot ROM?
   this.stopEmulator = 3; // Has the emulation been paused or a frame has ended?
   this.IRQLineMatched = 0; // CPU IRQ assertion.
 
@@ -103,6 +110,9 @@ function GameBoyCore({ audio: audioOptions = {}, api, lcd: lcdOptions = {} }) {
   this.SpriteLayerRender = null; // Reference to the OAM rendering function.
   this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
 }
+GameBoyCore.prototype.setBootRom = function (bootRom) {
+  this.bootRom = bootRom instanceof ROM ? bootRom : new ROM(bootRom);
+};
 GameBoyCore.prototype.loadState = function (state) {
   this.stateManager.load(state);
 
@@ -117,7 +127,33 @@ GameBoyCore.prototype.loadState = function (state) {
 GameBoyCore.prototype.connectCartridge = function (cartridge) {
   cartridge.connect(this);
   this.cartridge = cartridge;
+
+  this.loadCartridgeRomIntoMemory();
+  if (this.bootRom) this.loadBootRomIntoMemory();
+
   this.cartridge.interpret();
+};
+
+GameBoyCore.prototype.loadCartridgeRomIntoMemory = function () {
+  const memory = this.memory;
+  const rom = this.cartridge.rom;
+  for (let index = 0; index < 0x4000; index++) {
+    memory[index] = rom.getByte(index);
+  }
+};
+
+GameBoyCore.prototype.loadBootRomIntoMemory = function () {
+  const memory = this.memory;
+  const bootRom = this.bootRom;
+  for (let index = 0; index < 0x100; index++) {
+    memory[index] = bootRom.getByte(index);
+  }
+
+  if (bootRom.length >= 0x100) {
+    for (let index = 0x200; index < 0x900; index++) {
+      memory[index] = bootRom.getByte(index - 0x100);
+    }
+  }
 };
 GameBoyCore.prototype.start = function (cartridge) {
   this.init();
@@ -357,17 +393,9 @@ GameBoyCore.prototype.initBootstrap = function () {
 };
 GameBoyCore.prototype.disableBootROM = function () {
   // Remove any traces of the boot ROM from ROM memory.
-  let index = 0;
-  while (index < 0x100) {
-    this.memory[index] = this.cartridge.rom.getByte(index); // Replace the GameBoy or GameBoy Color boot ROM with the game ROM.
-    ++index;
-  }
+  this.cartridge.loadCartridgeRomIntoMemory();
 
   if (this.usedGBCBootROM) {
-    // Remove any traces of the boot ROM from ROM memory.
-    for (index = 0x200; index < 0x900; ++index) {
-      this.memory[index] = this.cartridge.rom.getByte(index); // Replace the GameBoy Color boot ROM with the game ROM.
-    }
     if (!this.cartridge.useGBCMode) {
       // Clean up the post-boot (GB mode only) state:
       this.adjustGBCtoGBMode();

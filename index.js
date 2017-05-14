@@ -56,4 +56,9 @@ $(".upload-battery-file").on("click", async() => {
   await gameboy.loadBatteryFileArrayBuffer(result);
 });
 
+$(".upload-boot-rom-file").on("click", async() => {
+  const result = await util.uploadFile(["gb", "gbc"]);
+  gameboy.setBootRom(result);
+});
+
 $(".loading").hide();

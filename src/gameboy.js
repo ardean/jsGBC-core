@@ -14,7 +14,8 @@ export default class GameBoy extends EventEmitter {
     audio,
     isPaused,
     lcd,
-    isSoundEnabled
+    isSoundEnabled,
+    bootRom
   } = {}) {
     super();
 
@@ -24,7 +25,8 @@ export default class GameBoy extends EventEmitter {
     this.core = new GameBoyCore({
       audio,
       api: this,
-      lcd
+      lcd,
+      bootRom
     });
 
     this.debouncedAutoSave = debounce(this.autoSave.bind(this), 100);
@@ -39,6 +41,10 @@ export default class GameBoy extends EventEmitter {
     if (typeof document !== "undefined") {
       this.storage = new LocalStorage();
     }
+  }
+
+  setBootRom(bootRom) {
+    this.core.setBootRom(bootRom);
   }
 
   isPaused() {
