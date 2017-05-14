@@ -1,23 +1,26 @@
 export default class ROM {
   constructor(data) {
-    this.data = data;
-    this.dataType = typeof data;
+    if (data instanceof ArrayBuffer) {
+      this.data = new Uint8Array(data);
+    } else if (typeof data === "string") {
+      const dataLength = data.length;
+      const buffer = new ArrayBuffer(dataLength);
+      const view = new Uint8Array(buffer);
+      for (let i = 0; i < dataLength; i++) {
+        view[i] = data.charCodeAt(i);
+      }
+      this.data = view;
+    } else {
+      this.data = data;
+    }
   }
 
   getByte(index) {
-    if (this.dataType === "string") {
-      return this.data.charCodeAt(index);
-    } else {
-      return this.data[index];
-    }
+    return this.data[index];
   }
 
   getChar(index) {
-    if (this.dataType === "string") {
-      return this.data[index] || "";
-    } else {
-      return String.fromCharCode(this.data[index]);
-    }
+    return String.fromCharCode(this.data[index]);
   }
 
   getString(from, to) {

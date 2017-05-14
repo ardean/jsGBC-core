@@ -481,7 +481,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               resolve(this.result);
             }
           });
-          binaryHandle.readAsBinaryString(file);
+          binaryHandle.readAsArrayBuffer(file);
         }
         input.removeEventListener("change", inputChange);
       }
@@ -2234,6 +2234,28 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
                   this.cacheChannel4Update();
                 } else {
                   this.channel4envelopeSweepsLast = -1;
+                }
+              }
+            }
+          }
+        }, {
+          key: "performChannel1AudioSweepDummy",
+          value: function performChannel1AudioSweepDummy() {
+            //Channel 1:
+            if (this.channel1frequencySweepDivider > 0) {
+              if (!this.channel1decreaseSweep) {
+                var channel1ShadowFrequency = this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider);
+                if (channel1ShadowFrequency <= 0x7ff) {
+                  //Run overflow check twice:
+                  if (channel1ShadowFrequency + (channel1ShadowFrequency >> this.channel1frequencySweepDivider) > 0x7ff) {
+                    this.channel1SweepFault = true;
+                    this.checkChannel1Enable();
+                    this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
+                  }
+                } else {
+                  this.channel1SweepFault = true;
+                  this.checkChannel1Enable();
+                  this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
                 }
               }
             }
@@ -7346,27 +7368,6 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.audioController.setVolume(settings.soundOn ? settings.soundVolume : 0);
         this.audioController.initBuffer();
       };
-
-      GameBoyCore.prototype.performChannel1AudioSweepDummy = function () {
-        //Channel 1:
-        if (this.audioController.channel1frequencySweepDivider > 0) {
-          if (!this.audioController.channel1decreaseSweep) {
-            var channel1ShadowFrequency = this.audioController.channel1ShadowFrequency + (this.audioController.channel1ShadowFrequency >> this.audioController.channel1frequencySweepDivider);
-            if (channel1ShadowFrequency <= 0x7ff) {
-              //Run overflow check twice:
-              if (channel1ShadowFrequency + (channel1ShadowFrequency >> this.audioController.channel1frequencySweepDivider) > 0x7ff) {
-                this.audioController.channel1SweepFault = true;
-                this.audioController.checkChannel1Enable();
-                this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
-              }
-            } else {
-              this.audioController.channel1SweepFault = true;
-              this.audioController.checkChannel1Enable();
-              this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
-            }
-          }
-        }
-      };
       GameBoyCore.prototype.writeChannel3RAM = function (address, data) {
         if (this.audioController.channel3canPlay) {
           this.audioController.runJIT();
@@ -7419,16 +7420,20 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         }
       };
       GameBoyCore.prototype.executeIteration = function () {
-        //Iterate the interpreter loop:
-        var operationCode = 0;
+        // Iterate the interpreter loop
         while (this.stopEmulator === 0) {
-          //Interrupt Arming:
+          // Interrupt Arming:
           switch (this.IRQEnableDelay) {
             case 1:
               this.IME = true;
               this.checkIRQMatching();
+              --this.IRQEnableDelay;
+              break;
             case 2:
               --this.IRQEnableDelay;
+              break;
+            default:
+              break;
           }
           //Is an IRQ set to fire?:
           if (this.IRQLineMatched > 0) {
@@ -7436,7 +7441,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.launchIRQ();
           }
           //Fetch the current opcode:
-          operationCode = this.memoryReader[this.programCounter].apply(this, [this.programCounter]);
+          var operationCode = this.memoryReader[this.programCounter].apply(this, [this.programCounter]);
           //Increment the program counter to the next instruction:
           this.programCounter = this.programCounter + 1 & 0xffff;
           //Check for the program counter quirk:
@@ -7485,7 +7490,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.serialShiftTimer -= this.CPUTicks;
             if (this.serialShiftTimer <= 0) {
               this.serialShiftTimer = this.serialShiftTimerAllocated;
-              this.memory[0xff01] = this.memory[0xff01] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
+              this.memory[0xff01] = this.memory[0xff01] << 1 & 0xfe | 0x01; // We could shift in actual link data here if we were to implement such!!!
             }
           }
           //End of iteration routine:
@@ -10027,7 +10032,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               //Reset frequency overflow check + frequency sweep type check:
               _this4.audioController.channel1SweepFault = false;
               //Supposed to run immediately:
-              _this4.performChannel1AudioSweepDummy();
+              _this4.audioController.performChannel1AudioSweepDummy();
             }
             _this4.audioController.checkChannel1Enable();
             _this4.memory[0xff14] = data;
@@ -10284,7 +10289,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           } else if (_this4.soundMasterEnabled && data < 0x80) {
             _this4.memory[0xff26] = 0;
             _this4.soundMasterEnabled = false;
-            //GBDev wiki says the registers are written with zeros on power off:
+            //GBDev wiki says the registers are written with zeros on audio off:
             for (var index = 0xff10; index < 0xff26; index++) {
               _this4.memoryWriter[index].apply(_this4, [index, 0]);
             }
@@ -10872,27 +10877,30 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         function ROM(data) {
           _classCallCheck(this, ROM);
 
-          this.data = data;
-          this.dataType = typeof data;
+          if (data instanceof ArrayBuffer) {
+            this.data = new Uint8Array(data);
+          } else if (typeof data === "string") {
+            var dataLength = data.length;
+            var buffer = new ArrayBuffer(dataLength);
+            var view = new Uint8Array(buffer);
+            for (var i = 0; i < dataLength; i++) {
+              view[i] = data.charCodeAt(i);
+            }
+            this.data = view;
+          } else {
+            this.data = data;
+          }
         }
 
         _createClass(ROM, [{
           key: "getByte",
           value: function getByte(index) {
-            if (this.dataType === "string") {
-              return this.data.charCodeAt(index);
-            } else {
-              return this.data[index];
-            }
+            return this.data[index];
           }
         }, {
           key: "getChar",
           value: function getChar(index) {
-            if (this.dataType === "string") {
-              return this.data[index] || "";
-            } else {
-              return String.fromCharCode(this.data[index]);
-            }
+            return String.fromCharCode(this.data[index]);
           }
         }, {
           key: "getString",

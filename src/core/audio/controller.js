@@ -242,6 +242,27 @@ export default class AudioController {
     }
   }
 
+  performChannel1AudioSweepDummy() {
+    //Channel 1:
+    if (this.channel1frequencySweepDivider > 0) {
+      if (!this.channel1decreaseSweep) {
+        const channel1ShadowFrequency = this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider);
+        if (channel1ShadowFrequency <= 0x7ff) {
+          //Run overflow check twice:
+          if (channel1ShadowFrequency + (channel1ShadowFrequency >> this.channel1frequencySweepDivider) > 0x7ff) {
+            this.channel1SweepFault = true;
+            this.checkChannel1Enable();
+            this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
+          }
+        } else {
+          this.channel1SweepFault = true;
+          this.checkChannel1Enable();
+          this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
+        }
+      }
+    }
+  }
+
   audioComputeSequencer() {
     switch (this.sequencePosition++) {
     case 0:

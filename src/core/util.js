@@ -138,7 +138,7 @@ export function uploadFile(extensions) {
             resolve(this.result);
           }
         });
-        binaryHandle.readAsBinaryString(file);
+        binaryHandle.readAsArrayBuffer(file);
       }
       input.removeEventListener("change", inputChange);
     }

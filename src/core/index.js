@@ -387,27 +387,6 @@ GameBoyCore.prototype.initSound = function () {
   this.audioController.setVolume(settings.soundOn ? settings.soundVolume : 0);
   this.audioController.initBuffer();
 };
-
-GameBoyCore.prototype.performChannel1AudioSweepDummy = function () {
-  //Channel 1:
-  if (this.audioController.channel1frequencySweepDivider > 0) {
-    if (!this.audioController.channel1decreaseSweep) {
-      const channel1ShadowFrequency = this.audioController.channel1ShadowFrequency + (this.audioController.channel1ShadowFrequency >> this.audioController.channel1frequencySweepDivider);
-      if (channel1ShadowFrequency <= 0x7ff) {
-        //Run overflow check twice:
-        if (channel1ShadowFrequency + (channel1ShadowFrequency >> this.audioController.channel1frequencySweepDivider) > 0x7ff) {
-          this.audioController.channel1SweepFault = true;
-          this.audioController.checkChannel1Enable();
-          this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
-        }
-      } else {
-        this.audioController.channel1SweepFault = true;
-        this.audioController.checkChannel1Enable();
-        this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
-      }
-    }
-  }
-};
 GameBoyCore.prototype.writeChannel3RAM = function (address, data) {
   if (this.audioController.channel3canPlay) {
     this.audioController.runJIT();
@@ -460,16 +439,20 @@ GameBoyCore.prototype.run = function () {
   }
 };
 GameBoyCore.prototype.executeIteration = function () {
-  //Iterate the interpreter loop:
-  var operationCode = 0;
+  // Iterate the interpreter loop
   while (this.stopEmulator === 0) {
-    //Interrupt Arming:
+    // Interrupt Arming:
     switch (this.IRQEnableDelay) {
     case 1:
       this.IME = true;
       this.checkIRQMatching();
+      --this.IRQEnableDelay;
+      break;
     case 2:
       --this.IRQEnableDelay;
+      break;
+    default:
+      break;
     }
     //Is an IRQ set to fire?:
     if (this.IRQLineMatched > 0) {
@@ -477,7 +460,7 @@ GameBoyCore.prototype.executeIteration = function () {
       this.launchIRQ();
     }
     //Fetch the current opcode:
-    operationCode = this.memoryReader[this.programCounter].apply(this, [this.programCounter]);
+    const operationCode = this.memoryReader[this.programCounter].apply(this, [this.programCounter]);
     //Increment the program counter to the next instruction:
     this.programCounter = this.programCounter + 1 & 0xffff;
     //Check for the program counter quirk:
@@ -3133,7 +3116,7 @@ GameBoyCore.prototype.registerWriteJumpCompile = function () {
         //Reset frequency overflow check + frequency sweep type check:
         this.audioController.channel1SweepFault = false;
         //Supposed to run immediately:
-        this.performChannel1AudioSweepDummy();
+        this.audioController.performChannel1AudioSweepDummy();
       }
       this.audioController.checkChannel1Enable();
       this.memory[0xff14] = data;
