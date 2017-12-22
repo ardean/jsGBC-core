@@ -26,7 +26,8 @@
     "build-src-min": "jspm build src/index.js dist/jsgbc-core.min.js --global-name jsGBC --format umd --externals events --global-deps \"{'events':'EventEmitter'}\" --minify --skip-source-maps",
     "build-docs": "jspm build index.js docs/index.js && cpy *.{html,css} docs/ && npm run build-docs-dist",
     "build-docs-dist": "cpy dist/jsgbc-core.min.js docs/",
-    "cleanup": "del-cli dist"
+    "cleanup": "del-cli dist",
+    "test": "yarn build"
   },
   "devDependencies": {
     "cpy-cli": "^1.0.1",
