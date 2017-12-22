@@ -12,6 +12,7 @@ before_install:
 
 install:
   - yarn install
+  - jspm i
 
 script:
   - yarn test
