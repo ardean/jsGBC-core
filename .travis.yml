@@ -1,0 +1,17 @@
+language: node_js
+
+node_js:
+  - "node"
+os:
+  - linux
+  - osx
+
+before_install:
+  - node --version
+  - yarn --version
+
+install:
+  - yarn install
+
+script:
+  - yarn test
