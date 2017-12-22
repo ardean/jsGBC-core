@@ -1,5 +1,7 @@
 # jsGBC-core
 
+[![Build Status](https://travis-ci.org/ardean/jsGBC-core.svg?branch=master)](https://travis-ci.org/ardean/jsGBC)
+[![Greenkeeper badge](https://badges.greenkeeper.io/ardean/jsGBC-core.svg)](https://greenkeeper.io/)
 [![NPM Version][npm-image]][downloads-url]
 [![NPM Downloads][downloads-image]][downloads-url]
 [![License][license-image]][license-url]
