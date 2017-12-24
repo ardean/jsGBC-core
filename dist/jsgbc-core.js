@@ -1,4 +1,4 @@
-!function(e){function t(e){Object.defineProperty(this,e,{enumerable:!0,get:function(){return this[m][e]}})}function r(e){var t;if(e&&e.__esModule){t={};for(var r in e)Object.hasOwnProperty.call(e,r)&&(t[r]=e[r]);t.__useDefault&&delete t.__useDefault,t.__esModule=!0}else{if("[object Module]"===Object.prototype.toString.call(e)||"undefined"!=typeof System&&System.isModule&&System.isModule(e))return e;t={default:e,__useDefault:!0}}return new o(t)}function o(e){Object.defineProperty(this,m,{value:e}),Object.keys(e).forEach(t,this)}function n(e){return"@node/"===e.substr(0,6)?c(e,r(v(e.substr(6))),{}):p[e]}function u(e){var t=n(e);if(!t)throw new Error('Module "'+e+'" expected, but not contained in build.');if(t.module)return t.module;var r=t.linkRecord;return d(t,r),a(t,r,[]),t.module}function d(e,t){if(!t.depLoads){t.declare&&i(e,t),t.depLoads=[];for(var r=0;r<t.deps.length;r++){var o=n(t.deps[r]);t.depLoads.push(o),o.linkRecord&&d(o,o.linkRecord);var u=t.setters&&t.setters[r];u&&(u(o.module||o.linkRecord.moduleObj),o.importerSetters.push(u))}return e}}function i(t,r){var o=r.moduleObj,n=t.importerSetters,u=!1,d=r.declare.call(e,function(e,t){if(!u){if("object"==typeof e)for(var r in e)"__useDefault"!==r&&(o[r]=e[r]);else o[e]=t;u=!0;for(var d=0;d<n.length;d++)n[d](o);return u=!1,t}},{id:t.key});"function"!=typeof d?(r.setters=d.setters,r.execute=d.execute):(r.setters=[],r.execute=d)}function l(e,t,r){return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:r,setters:void 0,execute:void 0,moduleObj:{}}}}function f(e,t,r,o){return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:void 0,execute:o,executingRequire:r,moduleObj:{default:{},__useDefault:!0},setters:void 0}}}function s(e,t,r){return function(o){for(var n=0;n<e.length;n++)if(e[n]===o){var u,d=t[n],i=d.linkRecord;return u=i?-1===r.indexOf(d)?a(d,i,r):i.moduleObj:d.module,u.__useDefault?u.default:u}}}function a(t,r,n){if(n.push(t),t.module)return t.module;var u;if(r.setters){for(var d=0;d<r.deps.length;d++){var i=r.depLoads[d],l=i.linkRecord;l&&-1===n.indexOf(i)&&(u=a(i,l,l.setters?n:[]))}r.execute.call(y)}else{var f={id:t.key},c=r.moduleObj;Object.defineProperty(f,"exports",{configurable:!0,set:function(e){c.default=e},get:function(){return c.default}});var p=s(r.deps,r.depLoads,n);if(!r.executingRequire)for(var d=0;d<r.deps.length;d++)p(r.deps[d]);var m=r.execute.call(e,p,c.default,f);if(void 0!==m?c.default=m:f.exports!==c.default&&(c.default=f.exports),c.default&&c.default.__esModule)for(var v in c.default)Object.hasOwnProperty.call(c.default,v)&&"default"!==v&&(c[v]=c.default[v])}var f=t.module=new o(r.moduleObj);if(!r.setters)for(var d=0;d<t.importerSetters.length;d++)t.importerSetters[d](f);return f}function c(e,t){return p[e]={key:e,module:t,importerSetters:[],linkRecord:void 0}}var p={},m="undefined"!=typeof Symbol?Symbol():"@@baseObject";o.prototype=Object.create(null),"undefined"!=typeof Symbol&&Symbol.toStringTag&&(o.prototype[Symbol.toStringTag]="Module");var v="undefined"!=typeof System&&System._nodeRequire||"undefined"!=typeof require&&"undefined"!=typeof require.resolve&&"undefined"!=typeof process&&process.platform&&require,y={};return Object.freeze&&Object.freeze(y),function(e,t,n,d){return function(i){i(function(i){var s={_nodeRequire:v,register:l,registerDynamic:f,registry:{get:function(e){return p[e].module},set:c},newModule:function(e){return new o(e)}};c("@empty",new o({}));for(var a=0;a<t.length;a++)c(t[a],r(arguments[a],{}));d(s);var m=u(e[0]);if(e.length>1)for(var a=1;a<e.length;a++)u(e[a]);return n?m.default:(m instanceof o&&Object.defineProperty(m,"__esModule",{value:!0}),m)})}}}("undefined"!=typeof self?self:global)
+!function(e){function t(e){Object.defineProperty(this,e,{enumerable:!0,get:function(){return this[v][e]}})}function r(e){if("undefined"!=typeof System&&System.isModule?System.isModule(e):"[object Module]"===Object.prototype.toString.call(e))return e;var t={default:e,__useDefault:e};if(e&&e.__esModule)for(var r in e)Object.hasOwnProperty.call(e,r)&&(t[r]=e[r]);return new o(t)}function o(e){Object.defineProperty(this,v,{value:e}),Object.keys(e).forEach(t,this)}function n(e){return"@node/"===e.substr(0,6)?c(e,r(m(e.substr(6))),{}):p[e]}function u(e){var t=n(e);if(!t)throw new Error('Module "'+e+'" expected, but not contained in build.');if(t.module)return t.module;var r=t.linkRecord;return i(t,r),a(t,r,[]),t.module}function i(e,t){if(!t.depLoads){t.declare&&d(e,t),t.depLoads=[];for(var r=0;r<t.deps.length;r++){var o=n(t.deps[r]);t.depLoads.push(o),o.linkRecord&&i(o,o.linkRecord);var u=t.setters&&t.setters[r];u&&(u(o.module||o.linkRecord.moduleObj),o.importerSetters.push(u))}return e}}function d(t,r){var o=r.moduleObj,n=t.importerSetters,u=!1,i=r.declare.call(e,function(e,t){if(!u){if("object"==typeof e)for(var r in e)"__useDefault"!==r&&(o[r]=e[r]);else o[e]=t;u=!0;for(var i=0;i<n.length;i++)n[i](o);return u=!1,t}},{id:t.key});"function"!=typeof i?(r.setters=i.setters,r.execute=i.execute):(r.setters=[],r.execute=i)}function l(e,t,r){return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:r,setters:void 0,execute:void 0,moduleObj:{}}}}function f(e,t,r,o){var n={};return p[e]={key:e,module:void 0,importerSetters:[],linkRecord:{deps:t,depLoads:void 0,declare:void 0,execute:o,executingRequire:r,moduleObj:{default:n,__useDefault:n},setters:void 0}}}function s(e,t,r){return function(o){for(var n=0;n<e.length;n++)if(e[n]===o){var u,i=t[n],d=i.linkRecord;return u=d?-1===r.indexOf(i)?a(i,d,r):d.moduleObj:i.module,"__useDefault"in u?u.__useDefault:u}}}function a(t,r,n){if(n.push(t),t.module)return t.module;var u;if(r.setters){for(var i=0;i<r.deps.length;i++){var d=r.depLoads[i],l=d.linkRecord;l&&-1===n.indexOf(d)&&(u=a(d,l,l.setters?n:[]))}r.execute.call(y)}else{var f={id:t.key},c=r.moduleObj;Object.defineProperty(f,"exports",{configurable:!0,set:function(e){c.default=c.__useDefault=e},get:function(){return c.__useDefault}});var p=s(r.deps,r.depLoads,n);if(!r.executingRequire)for(var i=0;i<r.deps.length;i++)p(r.deps[i]);var v=r.execute.call(e,p,c.__useDefault,f);void 0!==v?c.default=c.__useDefault=v:f.exports!==c.__useDefault&&(c.default=c.__useDefault=f.exports);var m=c.__useDefault;if(m&&m.__esModule)for(var b in m)Object.hasOwnProperty.call(m,b)&&(c[b]=m[b])}var f=t.module=new o(r.moduleObj);if(!r.setters)for(var i=0;i<t.importerSetters.length;i++)t.importerSetters[i](f);return f}function c(e,t){return p[e]={key:e,module:t,importerSetters:[],linkRecord:void 0}}var p={},v="undefined"!=typeof Symbol?Symbol():"@@baseObject";o.prototype=Object.create(null),"undefined"!=typeof Symbol&&Symbol.toStringTag&&(o.prototype[Symbol.toStringTag]="Module");var m="undefined"!=typeof System&&System._nodeRequire||"undefined"!=typeof require&&"undefined"!=typeof require.resolve&&"undefined"!=typeof process&&process.platform&&require,y={};return Object.freeze&&Object.freeze(y),function(e,t,n,i){return function(d){d(function(d){var s={_nodeRequire:m,register:l,registerDynamic:f,registry:{get:function(e){return p[e].module},set:c},newModule:function(e){return new o(e)}};c("@empty",new o({}));for(var a=0;a<t.length;a++)c(t[a],r(arguments[a],{}));i(s);var v=u(e[0]);if(e.length>1)for(var a=1;a<e.length;a++)u(e[a]);return n?v.__useDefault:(v instanceof o&&Object.defineProperty(v,"__esModule",{value:!0}),v)})}}}("undefined"!=typeof self?self:"undefined"!=typeof global?global:this)
 
 (["a"], [], false, function($__System) {
 var require = this.require, exports = this.exports, module = this.module;
@@ -336,7 +336,7 @@ $__System.registerDynamic('d', ['c'], true, function ($__require, exports, modul
 $__System.register('a', ['b', 'd'], function (_export, _context5) {
   "use strict";
 
-  var EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, util, LCD, TickTable, Resampler, AudioDevice, dutyLookup, AudioController, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, CPU, ROM, LocalStorage, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1;
+  var EventEmitter, debounce, _regeneratorRuntime, _asyncToGenerator, _classCallCheck, _createClass, _possibleConstructorReturn, _inherits, settings, fetchFileAsArrayBuffer, util, TickTable, Resampler, AudioDevice, dutyLookup, AudioController, LcdDevice, LcdController, bitInstructions, SecondaryTickTable, mainInstructions, PostBootRegisterState, initialState, StateManager, Joypad, MemoryWriter, MemoryReader, Memory, CPU, ROM, LocalStorage, MBC, MBC1, MBC2, RTC, MBC3, MBC5, MBC7, Cartridge, Actions, GameBoy$1;
 
   function toTypedArray(baseArray, memtype) {
     // TODO: remove
@@ -519,7 +519,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       gameboy: this
     });
     this.joypad = new Joypad(this);
-    this.lcd = new LCD(lcdOptions);
+    this.lcdDevice = new LcdDevice(lcdOptions);
+    this.lcdController = new LcdController();
     this.stateManager = new StateManager(this);
     this.stateManager.init();
 
@@ -546,10 +547,10 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
     this.memoryReadMBC3 = this.memoryReadMBC3.bind(this);
     this.memoryReadMBC7 = this.memoryReadMBC7.bind(this);
 
-    this.BGGBLayerRender = this.BGGBLayerRender.bind(this);
-    this.WindowGBLayerRender = this.WindowGBLayerRender.bind(this);
-    this.SpriteGBLayerRender = this.SpriteGBLayerRender.bind(this);
-    this.SpriteGBCLayerRender = this.SpriteGBCLayerRender.bind(this);
+    this.renderBGGBLayer = this.renderBGGBLayer.bind(this);
+    this.renderWindowGBLayer = this.renderWindowGBLayer.bind(this);
+    this.renderSpriteGBLayer = this.renderSpriteGBLayer.bind(this);
+    this.renderSpriteGBCLayer = this.renderSpriteGBCLayer.bind(this);
 
     this.stopEmulator = 3; // Has the emulation been paused or a frame has ended?
     this.IRQLineMatched = 0; // CPU IRQ assertion.
@@ -584,9 +585,9 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
     this.BGPalette = null;
     this.updateGBBGPalette = this.updateGBRegularBGPalette;
     this.updateGBOBJPalette = this.updateGBRegularOBJPalette;
-    this.BGLayerRender = null; // Reference to the BG rendering function.
-    this.WindowLayerRender = null; // Reference to the window rendering function.
-    this.SpriteLayerRender = null; // Reference to the OAM rendering function.
+    this.renderBGLayer = null; // Reference to the BG rendering function.
+    this.renderWindowLayer = null; // Reference to the window rendering function.
+    this.renderSpriteLayer = null; // Reference to the OAM rendering function.
     this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
   }
 
@@ -1404,202 +1405,6 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         downloadFile: downloadFile,
         uploadFile: uploadFile
       }));
-
-      LCD = function () {
-        function LCD(_ref) {
-          var canvas = _ref.canvas,
-              context = _ref.context,
-              offscreenCanvas = _ref.offscreenCanvas,
-              offscreenContext = _ref.offscreenContext,
-              gameboy = _ref.gameboy,
-              width = _ref.width,
-              height = _ref.height;
-
-          _classCallCheck(this, LCD);
-
-          this.canvas = canvas;
-          this.context = context;
-          this.offscreenCanvas = offscreenCanvas;
-          this.offscreenContext = offscreenContext;
-          this.gameboy = gameboy;
-          this.offscreenWidth = 160;
-          this.offscreenHeight = 144;
-          this.offscreenRGBCount = this.offscreenWidth * this.offscreenHeight * 3;
-          this.offscreenRGBACount = this.offscreenWidth * this.offscreenHeight * 4;
-          this.width = width || this.offscreenWidth;
-          this.height = height || this.offscreenHeight;
-          this.swizzledFrame = null; // The secondary gfx buffer that holds the converted RGBA values.
-          this.canvasBuffer = null; // imageData handle
-
-          this.resizePathClear = true;
-
-          if (typeof document !== "undefined") {
-            if (!this.canvas) this.canvas = document.createElement("canvas");
-            if (!this.offscreenCanvas) this.offscreenCanvas = document.createElement("canvas");
-          }
-
-          if (this.canvas) {
-            this.canvas.height = this.height;
-            this.canvas.width = this.width;
-
-            if (!this.context) this.context = this.canvas.getContext("2d");
-          }
-
-          if (this.offscreenCanvas) {
-            this.offscreenCanvas.height = this.offscreenHeight;
-            this.offscreenCanvas.width = this.offscreenWidth;
-
-            if (!this.offscreenContext) this.offscreenContext = this.offscreenCanvas.getContext("2d");
-          }
-
-          if (!this.context) {
-            throw new Error("please provide a canvas context in the lcd options");
-          }
-
-          if (!this.offscreenContext) {
-            throw new Error("please provide a canvas offscreen context in the lcd options");
-          }
-        }
-
-        _createClass(LCD, [{
-          key: "init",
-          value: function init() {
-            this.offscreenContext.msImageSmoothingEnabled = false;
-            this.offscreenContext.mozImageSmoothingEnabled = false;
-            this.offscreenContext.webkitImageSmoothingEnabled = false;
-            this.offscreenContext.imageSmoothingEnabled = false;
-
-            this.context.msImageSmoothingEnabled = false;
-            this.context.mozImageSmoothingEnabled = false;
-            this.context.webkitImageSmoothingEnabled = false;
-            this.context.imageSmoothingEnabled = false;
-
-            this.canvasBuffer = this.offscreenContext.createImageData(this.offscreenWidth, this.offscreenHeight);
-
-            var index = this.offscreenRGBACount;
-            while (index > 0) {
-              index -= 4;
-              this.canvasBuffer.data[index] = 0xf8;
-              this.canvasBuffer.data[index + 1] = 0xf8;
-              this.canvasBuffer.data[index + 2] = 0xf8;
-              this.canvasBuffer.data[index + 3] = 0xff; // opacity
-            }
-
-            this.graphicsBlit();
-            if (!this.swizzledFrame) this.swizzledFrame = getTypedArray(this.offscreenRGBCount, 0xff, "uint8");
-
-            //Test the draw system and browser vblank latching:
-            this.drewFrame = true; //Copy the latest graphics to buffer.
-            this.requestDraw();
-          }
-        }, {
-          key: "graphicsBlit",
-          value: function graphicsBlit() {
-            if (this.offscreenWidth === this.width && this.offscreenHeight === this.height) {
-              this.context.putImageData(this.canvasBuffer, 0, 0);
-            } else {
-              this.offscreenContext.putImageData(this.canvasBuffer, 0, 0);
-              this.context.drawImage(this.offscreenCanvas, 0, 0, this.width, this.height);
-            }
-          }
-        }, {
-          key: "requestDraw",
-          value: function requestDraw() {
-            if (this.drewFrame) {
-              this.dispatchDraw();
-            }
-          }
-        }, {
-          key: "dispatchDraw",
-          value: function dispatchDraw() {
-            if (this.offscreenRGBACount > 0) {
-              //We actually updated the graphics internally, so copy out:
-              if (this.offscreenRGBACount === 92160) {
-                this.processDraw(this.swizzledFrame);
-              } else {
-                // this.resizeFrameBuffer();
-              }
-            }
-          }
-        }, {
-          key: "resizeFrameBuffer",
-          value: function resizeFrameBuffer() {
-            // Resize in javascript with resize.js:
-            if (this.resizePathClear) {
-              this.resizePathClear = false;
-              this.resizer.resize(this.swizzledFrame);
-            }
-          }
-        }, {
-          key: "processDraw",
-          value: function processDraw(frameBuffer) {
-            var canvasData = this.canvasBuffer.data;
-            var bufferIndex = 0;
-            var canvasIndex = 0;
-
-            while (canvasIndex < this.offscreenRGBACount) {
-              canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
-              canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
-              canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
-              ++canvasIndex;
-            }
-
-            this.graphicsBlit();
-            this.drewFrame = false;
-          }
-        }, {
-          key: "prepareFrame",
-          value: function prepareFrame() {
-            //Copy the internal frame buffer to the output buffer:
-            this.swizzleFrameBuffer();
-            this.drewFrame = true;
-          }
-        }, {
-          key: "swizzleFrameBuffer",
-          value: function swizzleFrameBuffer() {
-            //Convert our dirty 24-bit (24-bit, with internal render flags above it) framebuffer to an 8-bit buffer with separate indices for the RGB channels:
-            var frameBuffer = this.gameboy.frameBuffer;
-            var swizzledFrame = this.swizzledFrame;
-            var bufferIndex = 0;
-            var canvasIndex = 0;
-            while (canvasIndex < this.offscreenRGBCount) {
-              swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 16 & 0xff; // red
-              swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 8 & 0xff; // green
-              swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] & 0xff; // blue
-              ++bufferIndex;
-            }
-          }
-        }, {
-          key: "DisplayShowOff",
-          value: function DisplayShowOff() {
-            if (this.drewBlank === 0) {
-              // Output a blank screen to the output framebuffer:
-              this.clearFrameBuffer();
-              this.drewFrame = true;
-            }
-            this.drewBlank = 2;
-          }
-        }, {
-          key: "clearFrameBuffer",
-          value: function clearFrameBuffer() {
-            var frameBuffer = this.swizzledFrame;
-            var bufferIndex = 0;
-            if (this.cartridge.useGBCMode || this.colorizedGBPalettes) {
-              while (bufferIndex < this.offscreenRGBCount) {
-                frameBuffer[bufferIndex++] = 248;
-              }
-            } else {
-              while (bufferIndex < this.offscreenRGBCount) {
-                frameBuffer[bufferIndex++] = 239;
-                frameBuffer[bufferIndex++] = 255;
-                frameBuffer[bufferIndex++] = 222;
-              }
-            }
-          }
-        }]);
-
-        return LCD;
-      }();
 
       TickTable = [// Number of machine cycles for each instruction:
       /*   0,  1,  2,  3,  4,  5,  6,  7,      8,  9,  A, B,  C,  D, E,  F*/
@@ -2709,6 +2514,206 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
 
         return AudioController;
       }();
+
+      LcdDevice = function () {
+        function LcdDevice(_ref) {
+          var canvas = _ref.canvas,
+              context = _ref.context,
+              offscreenCanvas = _ref.offscreenCanvas,
+              offscreenContext = _ref.offscreenContext,
+              gameboy = _ref.gameboy,
+              width = _ref.width,
+              height = _ref.height;
+
+          _classCallCheck(this, LcdDevice);
+
+          this.canvas = canvas;
+          this.context = context;
+          this.offscreenCanvas = offscreenCanvas;
+          this.offscreenContext = offscreenContext;
+          this.gameboy = gameboy;
+          this.offscreenWidth = 160;
+          this.offscreenHeight = 144;
+          this.offscreenRGBCount = this.offscreenWidth * this.offscreenHeight * 3;
+          this.offscreenRGBACount = this.offscreenWidth * this.offscreenHeight * 4;
+          this.width = width || this.offscreenWidth;
+          this.height = height || this.offscreenHeight;
+          this.swizzledFrame = null; // The secondary gfx buffer that holds the converted RGBA values.
+          this.canvasBuffer = null; // imageData handle
+
+          this.resizePathClear = true;
+
+          if (typeof document !== "undefined") {
+            if (!this.canvas) this.canvas = document.createElement("canvas");
+            if (!this.offscreenCanvas) this.offscreenCanvas = document.createElement("canvas");
+          }
+
+          if (this.canvas) {
+            this.canvas.height = this.height;
+            this.canvas.width = this.width;
+
+            if (!this.context) this.context = this.canvas.getContext("2d");
+          }
+
+          if (this.offscreenCanvas) {
+            this.offscreenCanvas.height = this.offscreenHeight;
+            this.offscreenCanvas.width = this.offscreenWidth;
+
+            if (!this.offscreenContext) this.offscreenContext = this.offscreenCanvas.getContext("2d");
+          }
+
+          if (!this.context) {
+            throw new Error("please provide a canvas context in the lcd options");
+          }
+
+          if (!this.offscreenContext) {
+            throw new Error("please provide a canvas offscreen context in the lcd options");
+          }
+        }
+
+        _createClass(LcdDevice, [{
+          key: "init",
+          value: function init() {
+            this.offscreenContext.msImageSmoothingEnabled = false;
+            this.offscreenContext.mozImageSmoothingEnabled = false;
+            this.offscreenContext.webkitImageSmoothingEnabled = false;
+            this.offscreenContext.imageSmoothingEnabled = false;
+
+            this.context.msImageSmoothingEnabled = false;
+            this.context.mozImageSmoothingEnabled = false;
+            this.context.webkitImageSmoothingEnabled = false;
+            this.context.imageSmoothingEnabled = false;
+
+            this.canvasBuffer = this.offscreenContext.createImageData(this.offscreenWidth, this.offscreenHeight);
+
+            var index = this.offscreenRGBACount;
+            while (index > 0) {
+              index -= 4;
+              this.canvasBuffer.data[index] = 0xf8;
+              this.canvasBuffer.data[index + 1] = 0xf8;
+              this.canvasBuffer.data[index + 2] = 0xf8;
+              this.canvasBuffer.data[index + 3] = 0xff; // opacity
+            }
+
+            this.graphicsBlit();
+            if (!this.swizzledFrame) this.swizzledFrame = getTypedArray(this.offscreenRGBCount, 0xff, "uint8");
+
+            //Test the draw system and browser vblank latching:
+            this.drewFrame = true; //Copy the latest graphics to buffer.
+            this.requestDraw();
+          }
+        }, {
+          key: "graphicsBlit",
+          value: function graphicsBlit() {
+            if (this.offscreenWidth === this.width && this.offscreenHeight === this.height) {
+              this.context.putImageData(this.canvasBuffer, 0, 0);
+            } else {
+              this.offscreenContext.putImageData(this.canvasBuffer, 0, 0);
+              this.context.drawImage(this.offscreenCanvas, 0, 0, this.width, this.height);
+            }
+          }
+        }, {
+          key: "requestDraw",
+          value: function requestDraw() {
+            if (this.drewFrame) {
+              this.dispatchDraw();
+            }
+          }
+        }, {
+          key: "dispatchDraw",
+          value: function dispatchDraw() {
+            if (this.offscreenRGBACount > 0) {
+              //We actually updated the graphics internally, so copy out:
+              if (this.offscreenRGBACount === 92160) {
+                this.processDraw(this.swizzledFrame);
+              } else {
+                // this.resizeFrameBuffer();
+              }
+            }
+          }
+        }, {
+          key: "resizeFrameBuffer",
+          value: function resizeFrameBuffer() {
+            // Resize in javascript with resize.js:
+            if (this.resizePathClear) {
+              this.resizePathClear = false;
+              this.resizer.resize(this.swizzledFrame);
+            }
+          }
+        }, {
+          key: "processDraw",
+          value: function processDraw(frameBuffer) {
+            var canvasData = this.canvasBuffer.data;
+            var bufferIndex = 0;
+            var canvasIndex = 0;
+
+            while (canvasIndex < this.offscreenRGBACount) {
+              canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
+              canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
+              canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
+              ++canvasIndex;
+            }
+
+            this.graphicsBlit();
+            this.drewFrame = false;
+          }
+        }, {
+          key: "prepareFrame",
+          value: function prepareFrame() {
+            //Copy the internal frame buffer to the output buffer:
+            this.swizzleFrameBuffer();
+            this.drewFrame = true;
+          }
+        }, {
+          key: "swizzleFrameBuffer",
+          value: function swizzleFrameBuffer() {
+            //Convert our dirty 24-bit (24-bit, with internal render flags above it) framebuffer to an 8-bit buffer with separate indices for the RGB channels:
+            var frameBuffer = this.gameboy.frameBuffer;
+            var swizzledFrame = this.swizzledFrame;
+            var bufferIndex = 0;
+            var canvasIndex = 0;
+            while (canvasIndex < this.offscreenRGBCount) {
+              swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 16 & 0xff; // red
+              swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 8 & 0xff; // green
+              swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] & 0xff; // blue
+              ++bufferIndex;
+            }
+          }
+        }, {
+          key: "DisplayShowOff",
+          value: function DisplayShowOff() {
+            if (this.drewBlank === 0) {
+              // Output a blank screen to the output framebuffer:
+              this.clearFrameBuffer();
+              this.drewFrame = true;
+            }
+            this.drewBlank = 2;
+          }
+        }, {
+          key: "clearFrameBuffer",
+          value: function clearFrameBuffer() {
+            var frameBuffer = this.swizzledFrame;
+            var bufferIndex = 0;
+            if (this.cartridge.useGBCMode || this.colorizedGBPalettes) {
+              while (bufferIndex < this.offscreenRGBCount) {
+                frameBuffer[bufferIndex++] = 248;
+              }
+            } else {
+              while (bufferIndex < this.offscreenRGBCount) {
+                frameBuffer[bufferIndex++] = 239;
+                frameBuffer[bufferIndex++] = 255;
+                frameBuffer[bufferIndex++] = 222;
+              }
+            }
+          }
+        }]);
+
+        return LcdDevice;
+      }();
+
+      LcdController = function LcdController() {
+        _classCallCheck(this, LcdController);
+      };
 
       bitInstructions = [
       //RLC B
@@ -7144,7 +7149,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.initializeReferencesFromSaveState();
         this.memoryReadJumpCompile();
         this.memoryWriteJumpCompile();
-        this.lcd.init();
+        this.lcdDevice.init();
         this.initSound();
         this.audioController.noiseSampleTable = this.audioController.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
         this.audioController.channel4VolumeShifter = this.audioController.channel4BitRange === 0x7fff ? 15 : 7;
@@ -7208,7 +7213,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       GameBoyCore.prototype.init = function () {
         this.stateManager.init();
         this.initMemory(); // Write the startup memory.
-        this.lcd.init(); // Initialize the graphics.
+        this.lcdDevice.init(); // Initialize the graphics.
         this.initSound(); // Sound object initialization.
       };
       GameBoyCore.prototype.setupRAM = function () {
@@ -7379,7 +7384,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.gfxSpriteShow = false;
         this.gfxSpriteNormalHeight = true;
         this.bgEnabled = true;
-        this.BGPriorityEnabled = true;
+        this.hasBGPriority = true;
         this.gfxWindowCHRBankPosition = 0;
         this.gfxBackgroundCHRBankPosition = 0;
         this.gfxBackgroundBankOffset = 0;
@@ -7480,7 +7485,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
                 }
               }
               // Request the graphics target to be updated:
-              this.lcd.requestDraw();
+              this.lcdDevice.requestDraw();
             } else {
               this.audioController.adjustUnderrun();
               this.audioController.audioTicks += this.cpu.cyclesTotal;
@@ -7854,7 +7859,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
                     //Make sure our gfx are up-to-date:
                     _this2.graphicsJITVBlank();
                     //Draw the frame:
-                    _this2.lcd.prepareFrame();
+                    _this2.lcdDevice.prepareFrame();
                   }
                 } else {
                   //LCD off takes at least 2 frames:
@@ -7938,8 +7943,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         this.pixelStart = scanlineToRender * 160;
         if (this.bgEnabled) {
           this.pixelEnd = 160;
-          this.BGLayerRender(scanlineToRender);
-          this.WindowLayerRender(scanlineToRender);
+          this.renderBGLayer(scanlineToRender);
+          this.renderWindowLayer(scanlineToRender);
         } else {
           var pixelLine = (scanlineToRender + 1) * 160;
           var defaultColor = this.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
@@ -7947,7 +7952,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.frameBuffer[pixelPosition] = defaultColor;
           }
         }
-        this.SpriteLayerRender(scanlineToRender);
+        this.renderSpriteLayer(scanlineToRender);
         this.currentX = 0;
         this.midScanlineOffset = -1;
       };
@@ -7963,8 +7968,8 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
 
             if (this.bgEnabled) {
               this.pixelStart = this.lastUnrenderedLine * 160;
-              this.BGLayerRender(this.lastUnrenderedLine);
-              this.WindowLayerRender(this.lastUnrenderedLine);
+              this.renderBGLayer(this.lastUnrenderedLine);
+              this.renderWindowLayer(this.lastUnrenderedLine);
               //TODO: Do midscanline JIT for sprites...
             } else {
               var pixelLine = this.lastUnrenderedLine * 160 + this.pixelEnd;
@@ -8025,26 +8030,25 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
       };
       GameBoyCore.prototype.renderPathBuild = function () {
         if (!this.cartridge.useGBCMode) {
-          this.BGLayerRender = this.BGGBLayerRender;
-          this.WindowLayerRender = this.WindowGBLayerRender;
-          this.SpriteLayerRender = this.SpriteGBLayerRender;
+          this.renderBGLayer = this.renderBGGBLayer;
+          this.renderWindowLayer = this.renderWindowGBLayer;
+          this.renderSpriteLayer = this.renderSpriteGBLayer;
         } else {
           this.priorityFlaggingPathRebuild();
-          this.SpriteLayerRender = this.SpriteGBCLayerRender;
+          this.renderSpriteLayer = this.renderSpriteGBCLayer;
         }
       };
       GameBoyCore.prototype.priorityFlaggingPathRebuild = function () {
-        if (this.BGPriorityEnabled) {
-          this.BGLayerRender = this.BGGBCLayerRender;
-          this.WindowLayerRender = this.WindowGBCLayerRender;
+        if (this.hasBGPriority) {
+          this.renderBGLayer = this.BGGBCLayerRender;
+          this.renderWindowLayer = this.WindowGBCLayerRender;
         } else {
-          this.BGLayerRender = this.BGGBCLayerRenderNoPriorityFlagging;
-          this.WindowLayerRender = this.WindowGBCLayerRenderNoPriorityFlagging;
+          this.renderBGLayer = this.BGGBCLayerRenderNoPriorityFlagging;
+          this.renderWindowLayer = this.WindowGBCLayerRenderNoPriorityFlagging;
         }
       };
       GameBoyCore.prototype.initializeReferencesFromSaveState = function () {
         this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
-        var tileIndex = 0;
         if (!this.cartridge.useGBCMode) {
           if (this.colorizedGBPalettes) {
             this.BGPalette = this.gbBGColorizedPalette;
@@ -8055,21 +8059,24 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             this.BGPalette = this.gbBGPalette;
             this.OBJPalette = this.gbOBJPalette;
           }
+
           this.tileCache = this.generateCacheArray(0x700);
-          for (tileIndex = 0x8000; tileIndex < 0x9000; tileIndex += 2) {
+          for (var tileIndex = 0x8000; tileIndex < 0x9000; tileIndex += 2) {
             this.generateGBOAMTileLine(tileIndex);
           }
-          for (tileIndex = 0x9000; tileIndex < 0x9800; tileIndex += 2) {
-            this.generateGBTileLine(tileIndex);
+
+          for (var _tileIndex = 0x9000; _tileIndex < 0x9800; _tileIndex += 2) {
+            this.generateGBTileLine(_tileIndex);
           }
+
           this.sortBuffer = getTypedArray(0x100, 0, "uint8");
           this.OAMAddressCache = getTypedArray(10, 0, "int32");
         } else {
           this.BGCHRCurrentBank = this.currVRAMBank > 0 ? this.BGCHRBank2 : this.BGCHRBank1;
           this.tileCache = this.generateCacheArray(0xf80);
-          for (; tileIndex < 0x1800; tileIndex += 0x10) {
-            this.generateGBCTileBank1(tileIndex);
-            this.generateGBCTileBank2(tileIndex);
+          for (var _tileIndex2 = 0; _tileIndex2 < 0x1800; _tileIndex2 += 0x10) {
+            this.generateGBCTileBank1(_tileIndex2);
+            this.generateGBCTileBank2(_tileIndex2);
           }
         }
         this.renderPathBuild();
@@ -8161,7 +8168,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           }
         }
       };
-      GameBoyCore.prototype.BGGBLayerRender = function (scanlineToRender) {
+      GameBoyCore.prototype.renderBGGBLayer = function (scanlineToRender) {
         var scrollYAdjusted = this.backgroundY + scanlineToRender & 0xff; //The line of the BG we're at.
         var tileYLine = (scrollYAdjusted & 7) << 3;
         var tileYDown = this.gfxBackgroundCHRBankPosition | (scrollYAdjusted & 0xf8) << 2; //The row of cached tiles we're fetching from.
@@ -8445,7 +8452,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           }
         }
       };
-      GameBoyCore.prototype.WindowGBLayerRender = function (scanlineToRender) {
+      GameBoyCore.prototype.renderWindowGBLayer = function (scanlineToRender) {
         if (this.gfxWindowDisplay) {
           //Is the window enabled?
           var scrollYAdjusted = scanlineToRender - this.windowY; //The line of the BG we're at.
@@ -8652,7 +8659,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
           }
         }
       };
-      GameBoyCore.prototype.SpriteGBLayerRender = function (scanlineToRender) {
+      GameBoyCore.prototype.renderSpriteGBLayer = function (scanlineToRender) {
         if (this.gfxSpriteShow) {
           //Are sprites enabled?
           var lineAdjusted = scanlineToRender + 0x10;
@@ -8752,7 +8759,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         }
         return spriteCount;
       };
-      GameBoyCore.prototype.SpriteGBCLayerRender = function (scanlineToRender) {
+      GameBoyCore.prototype.renderSpriteGBCLayer = function (scanlineToRender) {
         if (this.gfxSpriteShow) {
           //Are sprites enabled?
           var OAMAddress = 0xfe00;
@@ -9038,7 +9045,6 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
         if (!this.halt) {
           this.halt = true;
           var currentClocks = -1;
-          var temp_var = 0;
           if (this.LCDisOn) {
             //If the LCD is enabled, then predict the LCD IRQs enabled:
             if ((this.interruptsEnabled & 0x1) === 0x1) {
@@ -9046,36 +9052,36 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
             }
             if ((this.interruptsEnabled & 0x2) === 0x2) {
               if (this.mode0TriggerSTAT) {
-                temp_var = this.clocksUntilMode0() - this.LCDTicks << this.doubleSpeedShifter;
+                var temp_var = this.clocksUntilMode0() - this.LCDTicks << this.doubleSpeedShifter;
                 if (temp_var <= currentClocks || currentClocks === -1) {
                   currentClocks = temp_var;
                 }
               }
               if (this.mode1TriggerSTAT && (this.interruptsEnabled & 0x1) === 0) {
-                temp_var = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
-                if (temp_var <= currentClocks || currentClocks === -1) {
-                  currentClocks = temp_var;
+                var _temp_var = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
+                if (_temp_var <= currentClocks || currentClocks === -1) {
+                  currentClocks = _temp_var;
                 }
               }
               if (this.mode2TriggerSTAT) {
-                temp_var = (this.actualScanLine >= 143 ? 456 * (154 - this.actualScanLine) : 456) - this.LCDTicks << this.doubleSpeedShifter;
-                if (temp_var <= currentClocks || currentClocks === -1) {
-                  currentClocks = temp_var;
+                var _temp_var2 = (this.actualScanLine >= 143 ? 456 * (154 - this.actualScanLine) : 456) - this.LCDTicks << this.doubleSpeedShifter;
+                if (_temp_var2 <= currentClocks || currentClocks === -1) {
+                  currentClocks = _temp_var2;
                 }
               }
               if (this.LYCMatchTriggerSTAT && this.memory[0xff45] <= 153) {
-                temp_var = this.clocksUntilLYCMatch() - this.LCDTicks << this.doubleSpeedShifter;
-                if (temp_var <= currentClocks || currentClocks === -1) {
-                  currentClocks = temp_var;
+                var _temp_var3 = this.clocksUntilLYCMatch() - this.LCDTicks << this.doubleSpeedShifter;
+                if (_temp_var3 <= currentClocks || currentClocks === -1) {
+                  currentClocks = _temp_var3;
                 }
               }
             }
           }
           if (this.TIMAEnabled && (this.interruptsEnabled & 0x4) === 0x4) {
             //CPU timer IRQ prediction:
-            temp_var = (0x100 - this.memory[0xff05]) * this.TACClocker - this.timerTicks;
-            if (temp_var <= currentClocks || currentClocks === -1) {
-              currentClocks = temp_var;
+            var _temp_var4 = (0x100 - this.memory[0xff05]) * this.TACClocker - this.timerTicks;
+            if (_temp_var4 <= currentClocks || currentClocks === -1) {
+              currentClocks = _temp_var4;
             }
           }
           if (this.serialTimer > 0 && (this.interruptsEnabled & 0x8) === 0x8) {
@@ -10530,7 +10536,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
                 } else {
                   _this5.modeSTAT = 0;
                   _this5.LCDCONTROL = _this5.DISPLAYOFFCONTROL;
-                  _this5.lcd.DisplayShowOff();
+                  _this5.lcdDevice.DisplayShowOff();
                 }
                 _this5.interruptsRequested &= 0xfd;
               }
@@ -10540,7 +10546,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
               _this5.gfxBackgroundCHRBankPosition = (data & 0x08) === 0x08 ? 0x400 : 0;
               _this5.gfxSpriteNormalHeight = (data & 0x04) === 0;
               _this5.gfxSpriteShow = (data & 0x02) === 0x02;
-              _this5.BGPriorityEnabled = (data & 0x01) === 0x01;
+              _this5.hasBGPriority = (data & 0x01) === 0x01;
               _this5.priorityFlaggingPathRebuild(); //Special case the priority flagging as an optimization.
               _this5.memory[0xff40] = data;
             }
@@ -10710,7 +10716,7 @@ $__System.register('a', ['b', 'd'], function (_export, _context5) {
                 } else {
                   _this5.modeSTAT = 0;
                   _this5.LCDCONTROL = _this5.DISPLAYOFFCONTROL;
-                  _this5.lcd.DisplayShowOff();
+                  _this5.lcdDevice.DisplayShowOff();
                 }
                 _this5.interruptsRequested &= 0xfd;
               }

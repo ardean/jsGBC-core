@@ -1,6 +1,6 @@
-import * as util from "./util";
+import * as util from "../util";
 
-export default class LCD {
+export default class LcdDevice {
   constructor({
     canvas,
     context,

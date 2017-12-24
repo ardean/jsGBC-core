@@ -1,9 +1,10 @@
-import LCD from "./lcd.js";
 import * as util from "./util";
 import settings from "../settings.js";
 import TickTable from "./tick-table.js";
 import AudioDevice from "./audio/device.js";
 import AudioController from "./audio/controller.js";
+import LcdDevice from "./lcd/device.js";
+import LcdController from "./lcd/controller.js";
 import mainInstructions from "./main-instructions.js";
 import PostBootRegisterState from "./post-boot-register-state.js";
 import StateManager from "./state-manager.js";
@@ -40,7 +41,8 @@ function GameBoyCore({
     gameboy: this
   });
   this.joypad = new Joypad(this);
-  this.lcd = new LCD(lcdOptions);
+  this.lcdDevice = new LcdDevice(lcdOptions);
+  this.lcdController = new LcdController();
   this.stateManager = new StateManager(this);
   this.stateManager.init();
 
@@ -67,10 +69,10 @@ function GameBoyCore({
   this.memoryReadMBC3 = this.memoryReadMBC3.bind(this);
   this.memoryReadMBC7 = this.memoryReadMBC7.bind(this);
 
-  this.BGGBLayerRender = this.BGGBLayerRender.bind(this);
-  this.WindowGBLayerRender = this.WindowGBLayerRender.bind(this);
-  this.SpriteGBLayerRender = this.SpriteGBLayerRender.bind(this);
-  this.SpriteGBCLayerRender = this.SpriteGBCLayerRender.bind(this);
+  this.renderBGGBLayer = this.renderBGGBLayer.bind(this);
+  this.renderWindowGBLayer = this.renderWindowGBLayer.bind(this);
+  this.renderSpriteGBLayer = this.renderSpriteGBLayer.bind(this);
+  this.renderSpriteGBCLayer = this.renderSpriteGBCLayer.bind(this);
 
   this.stopEmulator = 3; // Has the emulation been paused or a frame has ended?
   this.IRQLineMatched = 0; // CPU IRQ assertion.
@@ -105,9 +107,9 @@ function GameBoyCore({
   this.BGPalette = null;
   this.updateGBBGPalette = this.updateGBRegularBGPalette;
   this.updateGBOBJPalette = this.updateGBRegularOBJPalette;
-  this.BGLayerRender = null; // Reference to the BG rendering function.
-  this.WindowLayerRender = null; // Reference to the window rendering function.
-  this.SpriteLayerRender = null; // Reference to the OAM rendering function.
+  this.renderBGLayer = null; // Reference to the BG rendering function.
+  this.renderWindowLayer = null; // Reference to the window rendering function.
+  this.renderSpriteLayer = null; // Reference to the OAM rendering function.
   this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
 }
 GameBoyCore.prototype.setBootRom = function (bootRom) {
@@ -119,7 +121,7 @@ GameBoyCore.prototype.loadState = function (state) {
   this.initializeReferencesFromSaveState();
   this.memoryReadJumpCompile();
   this.memoryWriteJumpCompile();
-  this.lcd.init();
+  this.lcdDevice.init();
   this.initSound();
   this.audioController.noiseSampleTable = this.audioController.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
   this.audioController.channel4VolumeShifter = this.audioController.channel4BitRange === 0x7fff ? 15 : 7;
@@ -181,7 +183,7 @@ GameBoyCore.prototype.start = function (cartridge) {
 GameBoyCore.prototype.init = function () {
   this.stateManager.init();
   this.initMemory(); // Write the startup memory.
-  this.lcd.init(); // Initialize the graphics.
+  this.lcdDevice.init(); // Initialize the graphics.
   this.initSound(); // Sound object initialization.
 };
 GameBoyCore.prototype.setupRAM = function () {
@@ -352,7 +354,7 @@ GameBoyCore.prototype.initSkipBootstrap = function () {
   this.gfxSpriteShow = false;
   this.gfxSpriteNormalHeight = true;
   this.bgEnabled = true;
-  this.BGPriorityEnabled = true;
+  this.hasBGPriority = true;
   this.gfxWindowCHRBankPosition = 0;
   this.gfxBackgroundCHRBankPosition = 0;
   this.gfxBackgroundBankOffset = 0;
@@ -453,7 +455,7 @@ GameBoyCore.prototype.run = function () {
           }
         }
         // Request the graphics target to be updated:
-        this.lcd.requestDraw();
+        this.lcdDevice.requestDraw();
       } else {
         this.audioController.adjustUnderrun();
         this.audioController.audioTicks += this.cpu.cyclesTotal;
@@ -827,7 +829,7 @@ GameBoyCore.prototype.initializeLCDController = function () {
               //Make sure our gfx are up-to-date:
               this.graphicsJITVBlank();
               //Draw the frame:
-              this.lcd.prepareFrame();
+              this.lcdDevice.prepareFrame();
             }
           } else {
             //LCD off takes at least 2 frames:
@@ -913,8 +915,8 @@ GameBoyCore.prototype.renderScanLine = function (scanlineToRender) {
   this.pixelStart = scanlineToRender * 160;
   if (this.bgEnabled) {
     this.pixelEnd = 160;
-    this.BGLayerRender(scanlineToRender);
-    this.WindowLayerRender(scanlineToRender);
+    this.renderBGLayer(scanlineToRender);
+    this.renderWindowLayer(scanlineToRender);
   } else {
     const pixelLine = (scanlineToRender + 1) * 160;
     const defaultColor = this.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
@@ -922,7 +924,7 @@ GameBoyCore.prototype.renderScanLine = function (scanlineToRender) {
       this.frameBuffer[pixelPosition] = defaultColor;
     }
   }
-  this.SpriteLayerRender(scanlineToRender);
+  this.renderSpriteLayer(scanlineToRender);
   this.currentX = 0;
   this.midScanlineOffset = -1;
 };
@@ -941,8 +943,8 @@ GameBoyCore.prototype.renderMidScanLine = function () {
 
       if (this.bgEnabled) {
         this.pixelStart = this.lastUnrenderedLine * 160;
-        this.BGLayerRender(this.lastUnrenderedLine);
-        this.WindowLayerRender(this.lastUnrenderedLine);
+        this.renderBGLayer(this.lastUnrenderedLine);
+        this.renderWindowLayer(this.lastUnrenderedLine);
         //TODO: Do midscanline JIT for sprites...
       } else {
         var pixelLine = this.lastUnrenderedLine * 160 + this.pixelEnd;
@@ -1010,26 +1012,25 @@ GameBoyCore.prototype.adjustGBCtoGBMode = function () {
 };
 GameBoyCore.prototype.renderPathBuild = function () {
   if (!this.cartridge.useGBCMode) {
-    this.BGLayerRender = this.BGGBLayerRender;
-    this.WindowLayerRender = this.WindowGBLayerRender;
-    this.SpriteLayerRender = this.SpriteGBLayerRender;
+    this.renderBGLayer = this.renderBGGBLayer;
+    this.renderWindowLayer = this.renderWindowGBLayer;
+    this.renderSpriteLayer = this.renderSpriteGBLayer;
   } else {
     this.priorityFlaggingPathRebuild();
-    this.SpriteLayerRender = this.SpriteGBCLayerRender;
+    this.renderSpriteLayer = this.renderSpriteGBCLayer;
   }
 };
 GameBoyCore.prototype.priorityFlaggingPathRebuild = function () {
-  if (this.BGPriorityEnabled) {
-    this.BGLayerRender = this.BGGBCLayerRender;
-    this.WindowLayerRender = this.WindowGBCLayerRender;
+  if (this.hasBGPriority) {
+    this.renderBGLayer = this.BGGBCLayerRender;
+    this.renderWindowLayer = this.WindowGBCLayerRender;
   } else {
-    this.BGLayerRender = this.BGGBCLayerRenderNoPriorityFlagging;
-    this.WindowLayerRender = this.WindowGBCLayerRenderNoPriorityFlagging;
+    this.renderBGLayer = this.BGGBCLayerRenderNoPriorityFlagging;
+    this.renderWindowLayer = this.WindowGBCLayerRenderNoPriorityFlagging;
   }
 };
 GameBoyCore.prototype.initializeReferencesFromSaveState = function () {
   this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
-  var tileIndex = 0;
   if (!this.cartridge.useGBCMode) {
     if (this.colorizedGBPalettes) {
       this.BGPalette = this.gbBGColorizedPalette;
@@ -1040,21 +1041,22 @@ GameBoyCore.prototype.initializeReferencesFromSaveState = function () {
       this.BGPalette = this.gbBGPalette;
       this.OBJPalette = this.gbOBJPalette;
     }
+
     this.tileCache = this.generateCacheArray(0x700);
-    for (tileIndex = 0x8000; tileIndex < 0x9000; tileIndex += 2) {
+    for (let tileIndex = 0x8000; tileIndex < 0x9000; tileIndex += 2) {
       this.generateGBOAMTileLine(tileIndex);
     }
-    for (tileIndex = 0x9000; tileIndex < 0x9800; tileIndex += 2) {
+
+    for (let tileIndex = 0x9000; tileIndex < 0x9800; tileIndex += 2) {
       this.generateGBTileLine(tileIndex);
     }
+
     this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
     this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
   } else {
-    this.BGCHRCurrentBank = this.currVRAMBank > 0 ?
-      this.BGCHRBank2 :
-      this.BGCHRBank1;
+    this.BGCHRCurrentBank = this.currVRAMBank > 0 ? this.BGCHRBank2 : this.BGCHRBank1;
     this.tileCache = this.generateCacheArray(0xf80);
-    for (; tileIndex < 0x1800; tileIndex += 0x10) {
+    for (let tileIndex = 0; tileIndex < 0x1800; tileIndex += 0x10) {
       this.generateGBCTileBank1(tileIndex);
       this.generateGBCTileBank2(tileIndex);
     }
@@ -1113,15 +1115,9 @@ GameBoyCore.prototype.updateGBRegularOBJPalette = function (index, data) {
 };
 GameBoyCore.prototype.updateGBColorizedOBJPalette = function (index, data) {
   //GB colorization:
-  this.gbOBJColorizedPalette[index | 1] = this.cachedOBJPaletteConversion[
-    index | data >> 2 & 0x03
-  ];
-  this.gbOBJColorizedPalette[index | 2] = this.cachedOBJPaletteConversion[
-    index | data >> 4 & 0x03
-  ];
-  this.gbOBJColorizedPalette[index | 3] = this.cachedOBJPaletteConversion[
-    index | data >> 6
-  ];
+  this.gbOBJColorizedPalette[index | 1] = this.cachedOBJPaletteConversion[index | data >> 2 & 0x03];
+  this.gbOBJColorizedPalette[index | 2] = this.cachedOBJPaletteConversion[index | data >> 4 & 0x03];
+  this.gbOBJColorizedPalette[index | 3] = this.cachedOBJPaletteConversion[index | data >> 6];
 };
 GameBoyCore.prototype.updateGBCBGPalette = function (index, data) {
   if (this.gbcBGRawPalette[index] != data) {
@@ -1154,7 +1150,7 @@ GameBoyCore.prototype.updateGBCOBJPalette = function (index, data) {
     }
   }
 };
-GameBoyCore.prototype.BGGBLayerRender = function (scanlineToRender) {
+GameBoyCore.prototype.renderBGGBLayer = function (scanlineToRender) {
   var scrollYAdjusted = this.backgroundY + scanlineToRender & 0xff; //The line of the BG we're at.
   var tileYLine = (scrollYAdjusted & 7) << 3;
   var tileYDown = this.gfxBackgroundCHRBankPosition | (scrollYAdjusted & 0xf8) << 2; //The row of cached tiles we're fetching from.
@@ -1171,14 +1167,9 @@ GameBoyCore.prototype.BGGBLayerRender = function (scanlineToRender) {
     var texel = scrollXAdjusted & 0x7; texel < 8 && pixelPosition < pixelPositionEnd && scrollXAdjusted < 0x100;
     ++scrollXAdjusted
   ) {
-    this.frameBuffer[pixelPosition++] = this.BGPalette[
-      tile[tileYLine | texel++]
-    ];
+    this.frameBuffer[pixelPosition++] = this.BGPalette[tile[tileYLine | texel++]];
   }
-  var scrollXAdjustedAligned = Math.min(
-    pixelPositionEnd - pixelPosition,
-    0x100 - scrollXAdjusted
-  ) >> 3;
+  var scrollXAdjustedAligned = Math.min(pixelPositionEnd - pixelPosition, 0x100 - scrollXAdjusted) >> 3;
   scrollXAdjusted += scrollXAdjustedAligned << 3;
   scrollXAdjustedAligned += tileNumber;
   while (tileNumber < scrollXAdjustedAligned) {
@@ -1204,15 +1195,11 @@ GameBoyCore.prototype.BGGBLayerRender = function (scanlineToRender) {
         chrCode |= 0x100;
       }
       tile = this.tileCache[chrCode];
-      for (
-        texel = tileYLine - 1; pixelPosition < pixelPositionEnd && scrollXAdjusted < 0x100;
-        ++scrollXAdjusted
-      ) {
+      for (texel = tileYLine - 1; pixelPosition < pixelPositionEnd && scrollXAdjusted < 0x100; ++scrollXAdjusted) {
         this.frameBuffer[pixelPosition++] = this.BGPalette[tile[++texel]];
       }
     }
-    scrollXAdjustedAligned = (pixelPositionEnd - pixelPosition >> 3) +
-      tileYDown;
+    scrollXAdjustedAligned = (pixelPositionEnd - pixelPosition >> 3) + tileYDown;
     while (tileYDown < scrollXAdjustedAligned) {
       chrCode = this.BGCHRBank1[tileYDown++];
       if (chrCode < this.gfxBackgroundBankOffset) {
@@ -1365,9 +1352,7 @@ GameBoyCore.prototype.BGGBCLayerRenderNoPriorityFlagging = function (scanlineToR
     chrCode |= 0x100;
   }
   var attrCode = this.BGCHRBank2[tileNumber];
-  var tile = this.tileCache[
-    (attrCode & 0x08) << 8 | (attrCode & 0x60) << 4 | chrCode
-  ];
+  var tile = this.tileCache[(attrCode & 0x08) << 8 | (attrCode & 0x60) << 4 | chrCode];
   var palette = (attrCode & 0x7) << 2;
   for (var texel = scrollXAdjusted & 0x7; texel < 8 && pixelPosition < pixelPositionEnd && scrollXAdjusted < 0x100; ++scrollXAdjusted) {
     this.frameBuffer[pixelPosition++] = this.gbcBGPalette[palette | tile[tileYLine | texel++]];
@@ -1454,7 +1439,7 @@ GameBoyCore.prototype.BGGBCLayerRenderNoPriorityFlagging = function (scanlineToR
     }
   }
 };
-GameBoyCore.prototype.WindowGBLayerRender = function (scanlineToRender) {
+GameBoyCore.prototype.renderWindowGBLayer = function (scanlineToRender) {
   if (this.gfxWindowDisplay) {
     //Is the window enabled?
     var scrollYAdjusted = scanlineToRender - this.windowY; //The line of the BG we're at.
@@ -1646,40 +1631,26 @@ GameBoyCore.prototype.WindowGBCLayerRenderNoPriorityFlagging = function (scanlin
           palette = (attrCode & 0x7) << 2;
           switch (pixelPositionEnd - pixelPosition) {
           case 7:
-            this.frameBuffer[pixelPosition + 6] = this.gbcBGPalette[
-              palette | tile[tileYLine | 6]
-            ];
+            this.frameBuffer[pixelPosition + 6] = this.gbcBGPalette[palette | tile[tileYLine | 6]];
           case 6:
-            this.frameBuffer[pixelPosition + 5] = this.gbcBGPalette[
-              palette | tile[tileYLine | 5]
-            ];
+            this.frameBuffer[pixelPosition + 5] = this.gbcBGPalette[palette | tile[tileYLine | 5]];
           case 5:
-            this.frameBuffer[pixelPosition + 4] = this.gbcBGPalette[
-              palette | tile[tileYLine | 4]
-            ];
+            this.frameBuffer[pixelPosition + 4] = this.gbcBGPalette[palette | tile[tileYLine | 4]];
           case 4:
-            this.frameBuffer[pixelPosition + 3] = this.gbcBGPalette[
-              palette | tile[tileYLine | 3]
-            ];
+            this.frameBuffer[pixelPosition + 3] = this.gbcBGPalette[palette | tile[tileYLine | 3]];
           case 3:
-            this.frameBuffer[pixelPosition + 2] = this.gbcBGPalette[
-              palette | tile[tileYLine | 2]
-            ];
+            this.frameBuffer[pixelPosition + 2] = this.gbcBGPalette[palette | tile[tileYLine | 2]];
           case 2:
-            this.frameBuffer[pixelPosition + 1] = this.gbcBGPalette[
-              palette | tile[tileYLine | 1]
-            ];
+            this.frameBuffer[pixelPosition + 1] = this.gbcBGPalette[palette | tile[tileYLine | 1]];
           case 1:
-            this.frameBuffer[pixelPosition] = this.gbcBGPalette[
-              palette | tile[tileYLine]
-            ];
+            this.frameBuffer[pixelPosition] = this.gbcBGPalette[palette | tile[tileYLine]];
           }
         }
       }
     }
   }
 };
-GameBoyCore.prototype.SpriteGBLayerRender = function (scanlineToRender) {
+GameBoyCore.prototype.renderSpriteGBLayer = function (scanlineToRender) {
   if (this.gfxSpriteShow) {
     //Are sprites enabled?
     var lineAdjusted = scanlineToRender + 0x10;
@@ -1779,7 +1750,7 @@ GameBoyCore.prototype.findLowestSpriteDrawable = function (scanlineToRender, dra
   }
   return spriteCount;
 };
-GameBoyCore.prototype.SpriteGBCLayerRender = function (scanlineToRender) {
+GameBoyCore.prototype.renderSpriteGBCLayer = function (scanlineToRender) {
   if (this.gfxSpriteShow) {
     //Are sprites enabled?
     var OAMAddress = 0xfe00;
@@ -2065,7 +2036,6 @@ GameBoyCore.prototype.calculateHALTPeriod = function () {
   if (!this.halt) {
     this.halt = true;
     var currentClocks = -1;
-    var temp_var = 0;
     if (this.LCDisOn) {
       //If the LCD is enabled, then predict the LCD IRQs enabled:
       if ((this.interruptsEnabled & 0x1) === 0x1) {
@@ -2073,25 +2043,25 @@ GameBoyCore.prototype.calculateHALTPeriod = function () {
       }
       if ((this.interruptsEnabled & 0x2) === 0x2) {
         if (this.mode0TriggerSTAT) {
-          temp_var = this.clocksUntilMode0() - this.LCDTicks << this.doubleSpeedShifter;
+          const temp_var = this.clocksUntilMode0() - this.LCDTicks << this.doubleSpeedShifter;
           if (temp_var <= currentClocks || currentClocks === -1) {
             currentClocks = temp_var;
           }
         }
         if (this.mode1TriggerSTAT && (this.interruptsEnabled & 0x1) === 0) {
-          temp_var = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
+          const temp_var = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
           if (temp_var <= currentClocks || currentClocks === -1) {
             currentClocks = temp_var;
           }
         }
         if (this.mode2TriggerSTAT) {
-          temp_var = (this.actualScanLine >= 143 ? 456 * (154 - this.actualScanLine) : 456) - this.LCDTicks << this.doubleSpeedShifter;
+          const temp_var = (this.actualScanLine >= 143 ? 456 * (154 - this.actualScanLine) : 456) - this.LCDTicks << this.doubleSpeedShifter;
           if (temp_var <= currentClocks || currentClocks === -1) {
             currentClocks = temp_var;
           }
         }
         if (this.LYCMatchTriggerSTAT && this.memory[0xff45] <= 153) {
-          temp_var = this.clocksUntilLYCMatch() - this.LCDTicks << this.doubleSpeedShifter;
+          const temp_var = this.clocksUntilLYCMatch() - this.LCDTicks << this.doubleSpeedShifter;
           if (temp_var <= currentClocks || currentClocks === -1) {
             currentClocks = temp_var;
           }
@@ -2100,7 +2070,7 @@ GameBoyCore.prototype.calculateHALTPeriod = function () {
     }
     if (this.TIMAEnabled && (this.interruptsEnabled & 0x4) === 0x4) {
       //CPU timer IRQ prediction:
-      temp_var = (0x100 - this.memory[0xff05]) * this.TACClocker - this.timerTicks;
+      const temp_var = (0x100 - this.memory[0xff05]) * this.TACClocker - this.timerTicks;
       if (temp_var <= currentClocks || currentClocks === -1) {
         currentClocks = temp_var;
       }
@@ -3566,7 +3536,7 @@ GameBoyCore.prototype.recompileModelSpecificIOWriteHandling = function () {
           } else {
             this.modeSTAT = 0;
             this.LCDCONTROL = this.DISPLAYOFFCONTROL;
-            this.lcd.DisplayShowOff();
+            this.lcdDevice.DisplayShowOff();
           }
           this.interruptsRequested &= 0xfd;
         }
@@ -3576,7 +3546,7 @@ GameBoyCore.prototype.recompileModelSpecificIOWriteHandling = function () {
         this.gfxBackgroundCHRBankPosition = (data & 0x08) === 0x08 ? 0x400 : 0;
         this.gfxSpriteNormalHeight = (data & 0x04) === 0;
         this.gfxSpriteShow = (data & 0x02) === 0x02;
-        this.BGPriorityEnabled = (data & 0x01) === 0x01;
+        this.hasBGPriority = (data & 0x01) === 0x01;
         this.priorityFlaggingPathRebuild(); //Special case the priority flagging as an optimization.
         this.memory[0xff40] = data;
       }
@@ -3746,7 +3716,7 @@ GameBoyCore.prototype.recompileModelSpecificIOWriteHandling = function () {
           } else {
             this.modeSTAT = 0;
             this.LCDCONTROL = this.DISPLAYOFFCONTROL;
-            this.lcd.DisplayShowOff();
+            this.lcdDevice.DisplayShowOff();
           }
           this.interruptsRequested &= 0xfd;
         }
