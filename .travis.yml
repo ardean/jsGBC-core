@@ -10,6 +10,7 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - libasound2-dev
+      - libgif-dev
 before_install:
 - node --version
 - yarn --version
