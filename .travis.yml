@@ -11,6 +11,8 @@ addons:
     packages:
       - libasound2-dev
       - libgif-dev
+      - libjpeg-dev
+      - libcairo2-dev
 before_install:
 - node --version
 - yarn --version
