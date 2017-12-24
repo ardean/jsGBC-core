@@ -4,6 +4,12 @@ node_js:
 os:
 - linux
 - osx
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libasound2-dev
 before_install:
 - node --version
 - yarn --version
