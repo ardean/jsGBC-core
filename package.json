@@ -2,7 +2,7 @@
   "name": "jsgbc",
   "version": "0.5.0",
   "description": "jsGBC Core Emulator",
-  "main": "./dist/jsgbc-core.min.js",
+  "main": "./dist/jsgbc-core.js",
   "repository": "https://github.com/ardean/jsGBC-core",
   "bugs": "https://github.com/ardean/jsGBC-core/issues",
   "author": "ardean",
@@ -20,59 +20,29 @@
     "jsgbc"
   ],
   "scripts": {
-    "start": "node dev-server/index.js",
-    "build": "npm run cleanup && npm run build-src && npm run build-src-min && npm run build-docs",
-    "build-src": "jspm build src/index.js dist/jsgbc-core.js --global-name jsGBC --format umd --externals events --global-deps \"{'events':'EventEmitter'}\"",
-    "build-src-min": "jspm build src/index.js dist/jsgbc-core.min.js --global-name jsGBC --format umd --externals events --global-deps \"{'events':'EventEmitter'}\" --minify --skip-source-maps",
-    "build-docs": "jspm build index.js docs/index.js && cpy *.{html,css} docs/ && npm run build-docs-dist",
-    "build-docs-dist": "cpy dist/jsgbc-core.min.js docs/",
-    "cleanup": "del-cli dist",
+    "start": "NODE_ENV=development webpack-dev-server --config webpack.dev.js --host 0.0.0.0",
+    "start-node": "node demo-node/index.js",
+    "build": "webpack --config webpack.prod.js",
     "test": "yarn build"
   },
+  "dependencies": {
+    "@types/events": "^1.2.0",
+    "jszip": "^3.1.5"
+  },
   "devDependencies": {
-    "babel-eslint": "^8.1.0",
     "canvas": "^1.6.9",
+    "clean-webpack-plugin": "^0.1.19",
     "cpy-cli": "^1.0.1",
     "del-cli": "^1.1.0",
-    "express": "^4.14.1",
-    "jspm": "^0.17.0-beta.41",
     "speaker": "^0.4.0",
-    "web-audio-api": "^0.2.2"
-  },
-  "jspm": {
-    "main": "src/index.js",
-    "dependencies": {
-      "debounce": "npm:debounce@^1.0.0"
-    },
-    "devDependencies": {
-      "jquery": "npm:jquery@^3.1.1",
-      "plugin-babel": "npm:systemjs-plugin-babel@^0.0.20"
-    },
-    "peerDependencies": {
-      "assert": "npm:jspm-nodelibs-assert@^0.2.0",
-      "buffer": "npm:jspm-nodelibs-buffer@^0.2.0",
-      "constants": "npm:jspm-nodelibs-constants@^0.2.0",
-      "crypto": "npm:jspm-nodelibs-crypto@^0.2.0",
-      "events": "npm:jspm-nodelibs-events@^0.2.0",
-      "fs": "npm:jspm-nodelibs-fs@^0.2.0",
-      "os": "npm:jspm-nodelibs-os@^0.2.0",
-      "path": "npm:jspm-nodelibs-path@^0.2.0",
-      "process": "npm:jspm-nodelibs-process@^0.2.0",
-      "stream": "npm:jspm-nodelibs-stream@^0.2.0",
-      "string_decoder": "npm:jspm-nodelibs-string_decoder@^0.2.0",
-      "timers": "npm:jspm-nodelibs-timers@^0.2.0",
-      "util": "npm:jspm-nodelibs-util@^0.2.0",
-      "vm": "npm:jspm-nodelibs-vm@^0.2.0"
-    },
-    "overrides": {
-      "npm:inherits@2.0.3": {
-        "ignore": [
-          "test.js"
-        ]
-      },
-      "npm:jquery@3.1.1": {
-        "format": "amd"
-      }
-    }
+    "ts-loader": "^4.3.0",
+    "typescript": "^2.8.3",
+    "web-audio-api": "^0.2.2",
+    "webpack": "^4.10.1",
+    "webpack-cli": "^2.1.4",
+    "webpack-dev-server": "^3.1.4",
+    "webpack-merge": "^4.1.2",
+    "webpack-node-externals": "^1.7.2",
+    "worklet-loader": "^1.0.0"
   }
 }
