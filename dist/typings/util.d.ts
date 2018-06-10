@@ -7,8 +7,8 @@ export declare function fetchFileAsArrayBuffer(url: any): Promise<ArrayBuffer>;
 export declare function concatArrayBuffers(...buffers: any[]): ArrayBuffer;
 export declare function downloadFile(filename: any, arrayBuffer: any): void;
 export declare type Debounced = (() => any) & {
-    clear?();
-    flush?();
+    clear?(): any;
+    flush?(): any;
 };
 export declare function readBlob(file: Blob): Promise<ArrayBuffer>;
 export declare function readCartridgeROM(blob: Blob, filename?: string): Promise<ArrayBuffer>;

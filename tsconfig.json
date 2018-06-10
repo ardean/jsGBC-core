@@ -11,8 +11,8 @@
     ],
     "target": "es6"
   },
-  "include": [
-    "src",
-    "typings"
+  "files": [
+    "typings/index.d.ts",
+    "src/index.ts"
   ]
 }

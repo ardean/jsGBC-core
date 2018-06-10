@@ -204,7 +204,7 @@ export default class GameBoyCore {
     memoryNew: Memory;
     events: EventEmitter;
     api: GameBoy;
-    constructor({audio: audioOptions, api, lcd: lcdOptions, bootRom}: any);
+    constructor({ audio: audioOptions, api, lcd: lcdOptions, bootRom }: any);
     setBootRom(bootRom: any): void;
     loadState(state: any): void;
     connectCartridge(cartridge: any): void;

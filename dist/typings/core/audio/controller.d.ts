@@ -113,7 +113,7 @@ export default class AudioController {
     bufferPosition: number;
     downsampleInput: number;
     buffer: util.TypedArray;
-    constructor({cpu, gameboy}: {
+    constructor({ cpu, gameboy }: {
         cpu: CPU;
         gameboy: GameBoyCore;
     });

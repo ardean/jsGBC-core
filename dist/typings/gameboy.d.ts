@@ -14,7 +14,7 @@ export default class GameBoy extends EventEmitter {
     storage: LocalStorage;
     cartridge: Cartridge;
     lastRun: number;
-    constructor({audio, isPaused, lcd, isSoundEnabled, bootRom}?: any);
+    constructor({ audio, isPaused, lcd, isSoundEnabled, bootRom }?: any);
     setBootRom(bootRom: any): void;
     isPaused(): boolean;
     setStorage(storage: any): void;

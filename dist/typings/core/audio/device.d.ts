@@ -17,7 +17,7 @@ export default class AudioDevice {
     minBufferSize: number;
     sampleRate: number;
     maxBufferSize: number;
-    constructor({context, channels, minBufferSize, volume}: any);
+    constructor({ context, channels, minBufferSize, volume }: any);
     setSampleRate(sampleRate: any): void;
     setMaxBufferSize(maxBufferSize: any): void;
     writeAudio(buffer: any): void;

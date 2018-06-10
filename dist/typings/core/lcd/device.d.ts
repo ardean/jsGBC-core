@@ -18,7 +18,7 @@ export default class LcdDevice {
     canvas: any;
     resizePathClear: boolean;
     offscreenRGBCount: number;
-    constructor({canvas, context, offscreenCanvas, offscreenContext, gameboy, width, height}: {
+    constructor({ canvas, context, offscreenCanvas, offscreenContext, gameboy, width, height }: {
         canvas: any;
         context: any;
         offscreenCanvas: any;

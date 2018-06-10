@@ -2,7 +2,7 @@ import GameBoyCore from "../GameBoyCore";
 export default class MemoryReader {
     data: any;
     gameboy: GameBoyCore;
-    constructor({data, gameboy}: {
+    constructor({ data, gameboy }: {
         data: any;
         gameboy: any;
     });
