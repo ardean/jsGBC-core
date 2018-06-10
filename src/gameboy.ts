@@ -1,6 +1,6 @@
 import settings from "./settings";
 import { stringToArrayBuffer, concatArrayBuffers, debounce, Debounced } from "./util";
-import LocalStorage from "./storages/localstorage";
+import LocalStorage from "./storages/LocalStorage";
 import Cartridge from "./core/cartridge/index";
 import Actions from "./actions";
 import { EventEmitter } from "events";
