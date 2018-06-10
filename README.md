@@ -6,19 +6,11 @@
 [![NPM Downloads][downloads-image]][downloads-url]
 [![License][license-image]][license-url]
 
-[Demo](https://ardean.github.io/jsGBC-core/)
+[Demo](https://ardean.github.io/jsGBC/)
 
 **jsGBC Core Emulator**
 
 This is just the core emulator. For a desktop emulator look at [jsGBC](https://github.com/ardean/jsGBC) or for an online emulator please check [jsGBC-web](https://github.com/ardean/jsGBC-web).
-
-## Usage
-
-I suggest you to use [jspm](http://jspm.io/) as your package manager.
-
-### Minified
-
-Please checkout the [direct/index.html](https://ardean.github.io/jsGBC-core/direct/) file for direct usage in a browser.
 
 ## Related Projects
 

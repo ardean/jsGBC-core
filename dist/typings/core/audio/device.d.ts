@@ -1,0 +1,33 @@
+import Resampler from "./resampler";
+export default class AudioDevice {
+    audioContextSampleBuffer: Float32Array;
+    resampleControl: Resampler;
+    resampleBufferSize: any;
+    resampledBuffer: Float32Array;
+    resampleBufferStart: number;
+    resampleBufferEnd: number;
+    volume: number;
+    audioBufferSize: number;
+    audioNode: any;
+    context: AudioContext;
+    audioWorkletSupport: boolean;
+    samplesPerCallback: number;
+    channelsAllocated: number;
+    bufferSize: number;
+    minBufferSize: number;
+    sampleRate: number;
+    maxBufferSize: number;
+    constructor({ context, channels, minBufferSize, volume }: any);
+    setSampleRate(sampleRate: any): void;
+    setMaxBufferSize(maxBufferSize: any): void;
+    writeAudio(buffer: any): void;
+    remainingBuffer(): number;
+    initializeAudio(): Promise<void>;
+    processAudio(e: any): void;
+    setVolume(volume: any): void;
+    resetAudioBuffer(sampleRate: any): void;
+    refillResampledBuffer(): void;
+    initializeResampler(sampleRate: any): void;
+    resampledSamplesLeft(): number;
+    getBufferSamples(): Float32Array;
+}

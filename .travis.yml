@@ -3,14 +3,21 @@ node_js:
 - node
 os:
 - linux
-- osx
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libasound2-dev
+      - libgif-dev
+      - libjpeg-dev
+      - libcairo2-dev
 before_install:
 - node --version
 - yarn --version
 - yarn global add greenkeeper-lockfile@1
 install:
 - yarn install
-- jspm i
 before_script: greenkeeper-lockfile-update
 script:
 - yarn test
