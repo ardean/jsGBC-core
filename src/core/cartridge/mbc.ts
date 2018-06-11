@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import settings from "../../settings";
 import * as util from "../../util";
 import Cartridge from ".";
+import RTC from "./rtc";
 
 export default class MBC extends EventEmitter {
   currentROMBank: number;
@@ -13,6 +14,7 @@ export default class MBC extends EventEmitter {
   MBCRAMBanksEnabled: boolean;
   romSize: number;
   ramSize: number;
+  rtc?: RTC;
 
   romSizes = [
     0x00008000, // 32K
@@ -57,8 +59,8 @@ export default class MBC extends EventEmitter {
     this.RAM = util.getTypedArray(this.ramSize, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
   }
 
-  loadSRAM(data) {
-    if (data.length !== this.ramSize) return;
+  loadSRAM(data: Uint8Array) {
+    if (data.byteLength !== this.ramSize) return;
     this.RAM = data.slice(0);
   }
 
@@ -66,8 +68,8 @@ export default class MBC extends EventEmitter {
     return new Uint8Array(this.RAM.buffer.slice(0, this.ramSize));
   }
 
-  cutSRAMFromBatteryFileArray(data) {
-    return new Uint8Array(data.buffer.slice(0, this.ramSize));
+  cutSRAMFromBatteryFileArray(data: ArrayBuffer) {
+    return new Uint8Array(data.slice(0, this.ramSize));
   }
 
   saveState() {

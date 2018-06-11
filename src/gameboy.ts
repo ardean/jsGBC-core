@@ -256,8 +256,8 @@ export default class GameBoy extends EventEmitter {
     this.emit("rtcLoaded", { name, rtc });
   }
 
-  getBatteryFileArrayBuffer() {
-    if (!this.core.cartridge) return;
+  getBatteryFileArrayBuffer(): ArrayBuffer {
+    if (!this.core.cartridge) return null;
 
     const sram = this.core.cartridge.mbc.getSRAM();
     let rtc = null;
@@ -266,14 +266,8 @@ export default class GameBoy extends EventEmitter {
     return rtc ? concatArrayBuffers(sram.buffer, rtc.buffer) : sram.buffer;
   }
 
-  async loadBatteryFileArrayBuffer(data) {
-    if (typeof data === "string") {
-      data = stringToArrayBuffer(data);
-    }
-
-    const sram = this.core.cartridge.mbc.cutSRAMFromBatteryFileArray(
-      data
-    );
+  async loadBatteryFileArrayBuffer(data: ArrayBuffer) {
+    const sram = this.core.cartridge.mbc.cutSRAMFromBatteryFileArray(data);
     let rtc = null;
     if (this.core.cartridge.hasRTC) {
       rtc = this.core.cartridge.mbc.rtc.cutBatteryFileArray(data);

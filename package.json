@@ -1,6 +1,6 @@
 {
   "name": "jsgbc",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "jsGBC Core Emulator",
   "main": "./dist/jsgbc-core.js",
   "types": "./dist/typings/index.d.ts",
@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@types/events": "^1.2.0",
+    "@types/file-saver": "^1.3.0",
+    "file-saver": "^1.3.8",
     "jszip": "^3.1.5"
   },
   "devDependencies": {

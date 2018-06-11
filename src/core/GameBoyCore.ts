@@ -15,6 +15,7 @@ import Memory from "./memory/index";
 import CPU from "./cpu";
 import ROM from "./rom";
 import { GameBoy } from "..";
+import Cartridge from "./cartridge";
 
 export default class GameBoyCore {
   useGBCMode: any;
@@ -110,7 +111,7 @@ export default class GameBoyCore {
   renderSpriteLayer: any;
   pixelStart: number;
   bootRom: ROM;
-  cartridge: any;
+  cartridge: Cartridge;
   memory: any;
   usedBootROM: any;
   inBootstrap: boolean;
@@ -603,7 +604,7 @@ export default class GameBoyCore {
 
   disableBootROM() {
     // Remove any traces of the boot ROM from ROM memory.
-    this.cartridge.loadCartridgeRomIntoMemory();
+    this.loadCartridgeRomIntoMemory();
 
     if (this.usedGBCBootROM) {
       if (!this.cartridge.useGBCMode) {
@@ -1137,7 +1138,7 @@ export default class GameBoyCore {
   }
 
   updateClock() {
-    return this.cartridge.updateClock();
+    if (this.cartridge.mbc && this.cartridge.mbc.rtc) this.cartridge.mbc.rtc.updateClock();
   }
 
   renderScanLine(scanlineToRender) {
@@ -2393,7 +2394,7 @@ export default class GameBoyCore {
       } else if (index < 0xa000) {
         this.memoryReader[index] = this.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
       } else if (index >= 0xa000 && index < 0xc000) {
-        if (this.cartridge.ramSize !== 0) {
+        if (this.cartridge.mbc.ramSize !== 0) {
           if (this.cartridge.hasMBC7) {
             this.memoryReader[index] = this.memoryReadMBC7;
           } else if (!this.cartridge.hasMBC3) {
@@ -2958,7 +2959,7 @@ export default class GameBoyCore {
       } else if (index < 0xa000) {
         this.memoryWriter[index] = this.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
       } else if (index < 0xc000) {
-        if (this.cartridge.ramSize !== 0) {
+        if (this.cartridge.mbc.ramSize !== 0) {
           if (!this.cartridge.hasMBC3) {
             this.memoryWriter[index] = this.memoryWriteMBCRAM;
           } else {
@@ -3003,43 +3004,43 @@ export default class GameBoyCore {
   }
 
   MBC1WriteROMBank(address, data) {
-    this.cartridge.mbc.writeROMBank(address, data);
+    this.cartridge.mbc1.writeROMBank(address, data);
   }
 
   MBC1WriteRAMBank(address, data) {
-    this.cartridge.mbc.writeRAMBank(address, data);
+    this.cartridge.mbc1.writeRAMBank(address, data);
   }
 
   MBC1WriteType(address, data) {
-    this.cartridge.mbc.writeType(address, data);
+    this.cartridge.mbc1.writeType(address, data);
   }
 
   MBC2WriteROMBank(address, data) {
-    this.cartridge.mbc.writeROMBank(address, data);
+    this.cartridge.mbc2.writeROMBank(address, data);
   }
 
   MBC3WriteROMBank(address, data) {
-    return this.cartridge.mbc.writeROMBank(address, data);
+    return this.cartridge.mbc3.writeROMBank(address, data);
   }
 
   MBC3WriteRAMBank(address, data) {
-    return this.cartridge.mbc.writeRAMBank(address, data);
+    return this.cartridge.mbc3.writeRAMBank(address, data);
   }
 
   MBC3WriteRTCLatch(address, data) {
-    return this.cartridge.mbc.rtc.writeLatch(address, data);
+    return this.cartridge.mbc3.rtc.writeLatch(address, data);
   }
 
   MBC5WriteROMBankLow(address, data) {
-    return this.cartridge.mbc.writeROMBankLow(address, data);
+    return this.cartridge.mbc5.writeROMBankLow(address, data);
   }
 
   MBC5WriteROMBankHigh(address, data) {
-    return this.cartridge.mbc.writeROMBankHigh(address, data);
+    return this.cartridge.mbc5.writeROMBankHigh(address, data);
   }
 
   MBC5WriteRAMBank(address, data) {
-    return this.cartridge.mbc.writeRAMBank(address, data);
+    return this.cartridge.mbc5.writeRAMBank(address, data);
   }
 
   RUMBLEWriteRAMBank(address, data) {

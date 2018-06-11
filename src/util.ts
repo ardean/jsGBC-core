@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import * as FileSaver from "file-saver";
 
 export function toTypedArray(baseArray, memtype) { // TODO: remove
   try {
@@ -113,16 +114,16 @@ export function concatArrayBuffers(...buffers) {
   return array.buffer;
 }
 
-export function downloadFile(filename, arrayBuffer) {
-  const a = document.createElement("a");
-  const blob = new Blob([new Uint8Array(arrayBuffer)], { type: "application/octet-binary" });
-  const url = URL.createObjectURL(blob);
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.parentNode.removeChild(a);
-  URL.revokeObjectURL(url);
+export function saveAs(file: Blob | ArrayBuffer | Uint8Array, filename?: string) {
+  if (file instanceof ArrayBuffer) {
+    file = new Uint8Array(file);
+  }
+
+  if (file instanceof Uint8Array) {
+    file = new Blob([file], { type: "application/octet-binary" });
+  }
+
+  FileSaver.saveAs(file, filename);
 }
 
 export type Debounced = (() => any) & { clear?(), flush?() };

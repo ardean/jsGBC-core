@@ -399,7 +399,7 @@ export default class StateManager {
       gameboy.cartridge.mbc3.rtc.RTCHours = state[index++];
       gameboy.cartridge.mbc3.rtc.RTCDays = state[index++];
       gameboy.cartridge.mbc3.rtc.RTCDayOverFlow = state[index++];
-      gameboy.cartridge.mbc3.rtc.RTCHALT = state[index++];
+      gameboy.cartridge.mbc3.rtc.RTCHalt = state[index++];
     } else {
       index += 12;
     }

@@ -148,13 +148,8 @@ export default class RTC {
     this.lastTime = options.lastTime;
   }
 
-  cutBatteryFileArray(data) {
-    return new Uint32Array(
-      data.buffer.slice(
-        this.mbc.ramSize,
-        this.mbc.ramSize + 4 * 12
-      )
-    );
+  cutBatteryFileArray(data: ArrayBuffer) {
+    return new Uint32Array(data.slice(this.mbc.ramSize, this.mbc.ramSize + 4 * 12));
   }
 
   extract(array) {

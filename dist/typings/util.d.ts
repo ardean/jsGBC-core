@@ -5,7 +5,7 @@ export declare function getTypedArray(length: any, defaultValue: any, numberType
 export declare function stringToArrayBuffer(data: any): Uint8Array;
 export declare function fetchFileAsArrayBuffer(url: any): Promise<ArrayBuffer>;
 export declare function concatArrayBuffers(...buffers: any[]): ArrayBuffer;
-export declare function downloadFile(filename: any, arrayBuffer: any): void;
+export declare function saveAs(file: Blob | ArrayBuffer | Uint8Array, filename?: string): void;
 export declare type Debounced = (() => any) & {
     clear?(): any;
     flush?(): any;

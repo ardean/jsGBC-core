@@ -51,7 +51,7 @@ selectRomElement.addEventListener("change", async () => {
 document
   .querySelector(".download-battery-file-text")
   .addEventListener("click", () => {
-    util.downloadFile(gameboy.core.cartridge.name + ".sav", gameboy.getBatteryFileArrayBuffer());
+    util.saveAs(gameboy.getBatteryFileArrayBuffer(), gameboy.core.cartridge.name + ".sav");
   });
 
 const uploadBatteryFileElement = document.querySelector<HTMLInputElement>(".upload-battery-file");

@@ -28,7 +28,7 @@ export default class RTC {
     writeLatch(address: any, data: any): void;
     get(): Uint32Array;
     load(array: any): void;
-    cutBatteryFileArray(data: any): Uint32Array;
+    cutBatteryFileArray(data: ArrayBuffer): Uint32Array;
     extract(array: any): {
         seconds: any;
         minutes: any;

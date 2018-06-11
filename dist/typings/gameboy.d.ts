@@ -1,5 +1,5 @@
 import { Debounced } from "./util";
-import LocalStorage from "./storages/localstorage";
+import LocalStorage from "./storages/LocalStorage";
 import Cartridge from "./core/cartridge/index";
 import Actions from "./actions";
 import { EventEmitter } from "events";
@@ -37,7 +37,7 @@ export default class GameBoy extends EventEmitter {
     loadState(state: any): boolean;
     loadSRAM(sram?: any): boolean;
     loadRTC(rtc?: any): boolean;
-    getBatteryFileArrayBuffer(): any;
-    loadBatteryFileArrayBuffer(data: any): Promise<void>;
+    getBatteryFileArrayBuffer(): ArrayBuffer;
+    loadBatteryFileArrayBuffer(data: ArrayBuffer): Promise<void>;
     requestFrame(fn: (now: number) => void): void;
 }
