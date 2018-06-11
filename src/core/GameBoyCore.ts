@@ -341,7 +341,9 @@ export default class GameBoyCore {
 
     // TODO: cleanup
     this.cartridge.mbc.on("rumble", () => {
-      if (typeof window !== "undefined" && "vibrate" in window.navigator) window.navigator.vibrate(200);
+      if (typeof window !== "undefined" && "vibrate" in window.navigator) {
+        window.navigator.vibrate(200);
+      }
     });
   }
 

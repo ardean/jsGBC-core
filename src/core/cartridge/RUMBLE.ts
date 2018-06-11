@@ -7,6 +7,6 @@ export default class RUMBLE extends MBC5 {
     // console.log((data & 0x03).toString(2));
     this.currentMBCRAMBank = data & 0x03;
     this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
-    if ((data & 0x03) === 0) this.emit("rumble");
+    if (data & 0x08) this.emit("rumble");
   }
 }
