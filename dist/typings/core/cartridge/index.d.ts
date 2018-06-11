@@ -5,6 +5,7 @@ import MBC2 from "./mbc2";
 import MBC3 from "./mbc3";
 import MBC5 from "./mbc5";
 import MBC7 from "./mbc7";
+import RUMBLE from "./RUMBLE";
 import GameBoyCore from "../GameBoyCore";
 export default class Cartridge {
     hasMBC1: boolean;
@@ -13,12 +14,12 @@ export default class Cartridge {
     hasMBC5: boolean;
     hasMBC7: boolean;
     hasSRAM: boolean;
-    cRUMBLE: boolean;
-    cCamera: boolean;
-    cTAMA5: boolean;
-    cHuC3: boolean;
-    cHuC1: boolean;
-    cMMMO1: boolean;
+    hasRUMBLE: boolean;
+    hasCamera: boolean;
+    hasTAMA5: boolean;
+    hasHuC3: boolean;
+    hasHuC1: boolean;
+    hasMMMO1: boolean;
     hasRTC: boolean;
     hasBattery: boolean;
     gameboy: GameBoyCore;
@@ -39,6 +40,7 @@ export default class Cartridge {
     mbc3: MBC3;
     mbc5: MBC5;
     mbc7: MBC7;
+    rumble: RUMBLE;
     constructor(rom: ROM | Uint8Array | ArrayBuffer);
     connect(gameboy: GameBoyCore): void;
     interpret(): void;

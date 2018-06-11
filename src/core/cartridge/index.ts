@@ -6,6 +6,7 @@ import MBC2 from "./mbc2";
 import MBC3 from "./mbc3";
 import MBC5 from "./mbc5";
 import MBC7 from "./mbc7";
+import RUMBLE from "./RUMBLE";
 import GameBoyCore from "../GameBoyCore";
 
 const GAME_AND_WATCH_ID = "Game and Watch 50";
@@ -17,12 +18,12 @@ export default class Cartridge {
   hasMBC5: boolean = false; // does the cartridge use MBC5?
   hasMBC7: boolean = false; // does the cartridge use MBC7?
   hasSRAM: boolean = false; // does the cartridge use save RAM?
-  cRUMBLE: boolean = false; // does the cartridge use the RUMBLE addressing? (modified MBC5)
-  cCamera: boolean = false; // is the cartridge a GameBoy Camera?
-  cTAMA5: boolean = false; // does the cartridge use TAMA5? (Tamagotchi Cartridge)
-  cHuC3: boolean = false; // does the cartridge use HuC3? (Hudson Soft / modified MBC3)
-  cHuC1: boolean = false; // does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
-  cMMMO1: boolean = false;
+  hasRUMBLE: boolean = false; // does the cartridge have Rumble addressing? (modified MBC5)
+  hasCamera: boolean = false; // is the cartridge a GameBoy Camera?
+  hasTAMA5: boolean = false; // does the cartridge use TAMA5? (Tamagotchi Cartridge)
+  hasHuC3: boolean = false; // does the cartridge use HuC3? (Hudson Soft / modified MBC3)
+  hasHuC1: boolean = false; // does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
+  hasMMMO1: boolean = false;
   hasRTC: boolean = false; // does the cartridge have a RTC?
   hasBattery: boolean = false;
 
@@ -46,6 +47,7 @@ export default class Cartridge {
   mbc3: MBC3;
   mbc5: MBC5;
   mbc7: MBC7;
+  rumble: RUMBLE;
 
   constructor(rom: ROM | Uint8Array | ArrayBuffer) {
     this.rom = rom instanceof ROM ? rom : new ROM(rom);
@@ -170,16 +172,16 @@ export default class Cartridge {
         this.typeName = "ROM + SRAM + Battery";
         break;
       case 0x0b:
-        this.cMMMO1 = true;
+        this.hasMMMO1 = true;
         this.typeName = "MMMO1";
         break;
       case 0x0c:
-        this.cMMMO1 = true;
+        this.hasMMMO1 = true;
         this.hasSRAM = true;
         this.typeName = "MMMO1 + SRAM";
         break;
       case 0x0d:
-        this.cMMMO1 = true;
+        this.hasMMMO1 = true;
         this.hasSRAM = true;
         this.hasBattery = true;
         this.typeName = "MMMO1 + SRAM + Battery";
@@ -228,22 +230,22 @@ export default class Cartridge {
         this.typeName = "MBC5 + SRAM + Battery";
         break;
       case 0x1c:
-        this.cRUMBLE = true;
+        this.hasRUMBLE = true;
         this.typeName = "RUMBLE";
         break;
       case 0x1d:
-        this.cRUMBLE = true;
+        this.hasRUMBLE = true;
         this.hasSRAM = true;
         this.typeName = "RUMBLE + SRAM";
         break;
       case 0x1e:
-        this.cRUMBLE = true;
+        this.hasRUMBLE = true;
         this.hasSRAM = true;
         this.hasBattery = true;
         this.typeName = "RUMBLE + SRAM + Battery";
         break;
       case 0x1f:
-        this.cCamera = true;
+        this.hasCamera = true;
         this.typeName = "GameBoy Camera";
         break;
       case 0x22:
@@ -253,15 +255,15 @@ export default class Cartridge {
         this.typeName = "MBC7 + SRAM + Battery";
         break;
       case 0xfd:
-        this.cTAMA5 = true;
+        this.hasTAMA5 = true;
         this.typeName = "TAMA5";
         break;
       case 0xfe:
-        this.cHuC3 = true;
+        this.hasHuC3 = true;
         this.typeName = "HuC3";
         break;
       case 0xff:
-        this.cHuC1 = true;
+        this.hasHuC1 = true;
         this.typeName = "HuC1";
         break;
       default:
@@ -273,6 +275,7 @@ export default class Cartridge {
     if (this.hasMBC3) this.mbc3 = new MBC3(this);
     if (this.hasMBC5) this.mbc5 = new MBC5(this);
     if (this.hasMBC7) this.mbc7 = new MBC7(this);
+    if (this.hasRUMBLE) this.mbc5 = this.rumble = new RUMBLE(this);
 
     this.mbc =
       this.mbc1 ||
@@ -280,6 +283,7 @@ export default class Cartridge {
       this.mbc3 ||
       this.mbc5 ||
       this.mbc7 ||
+      this.rumble ||
       null;
   }
 

@@ -1,4 +1,5 @@
 import GameBoyCore from "./GameBoyCore";
+import { JOYPAD_REG } from "./memory/Layout";
 
 export default class Joypad {
   initialValue: number = 0xf; // for memory
@@ -30,9 +31,9 @@ export default class Joypad {
   }
 
   writeToMemory() {
-    this.gameboy.memory[0xff00] = (this.gameboy.memory[0xff00] & 0x30) +
-      (((this.gameboy.memory[0xff00] & 0x20) === 0 ? this.value >> 4 : 0xf) &
-        ((this.gameboy.memory[0xff00] & 0x10) === 0 ? this.value & 0xf : 0xf));
+    const currentValue = this.gameboy.memory[JOYPAD_REG];
+
+    this.gameboy.memory[JOYPAD_REG] = (currentValue & 0x30) + (((currentValue & 0x20) === 0 ? this.value >> 4 : 0xf) & ((currentValue & 0x10) === 0 ? this.value & 0xf : 0xf));
     this.gameboy.CPUStopped = false;
   }
 }
