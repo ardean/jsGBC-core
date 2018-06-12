@@ -1,5 +1,5 @@
 import settings from "../../settings";
-import ROM from "../rom";
+import ROM from "../ROM";
 import MBC from "./mbc";
 import MBC1 from "./mbc1";
 import MBC2 from "./mbc2";

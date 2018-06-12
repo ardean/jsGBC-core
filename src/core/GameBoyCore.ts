@@ -13,7 +13,6 @@ import Joypad from "./Joypad";
 import { EventEmitter } from "events";
 import Memory from "./memory/index";
 import CPU from "./cpu";
-import ROM from "./rom";
 import { GameBoy } from "..";
 import Cartridge from "./cartridge";
 import * as MemoryLayout from "./memory/Layout";
@@ -111,7 +110,6 @@ export default class GameBoyCore {
   renderWindowLayer: any;
   renderSpriteLayer: any;
   pixelStart: number;
-  bootROM: ROM;
   cartridge: Cartridge;
   memory: any;
   usedBootROM: any;
@@ -216,12 +214,9 @@ export default class GameBoyCore {
   constructor({
     audio: audioOptions = {},
     api,
-    lcd: lcdOptions = {},
-    bootRom
+    lcd: lcdOptions = {}
   }: any) {
     this.api = api;
-
-    if (bootRom) this.setBootRom(bootRom);
 
     this.events = new EventEmitter(); // TODO: use as super
 
@@ -312,10 +307,6 @@ export default class GameBoyCore {
     this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
   }
 
-  setBootRom(bootRom) {
-    this.bootROM = bootRom instanceof ROM ? bootRom : new ROM(bootRom);
-  }
-
   loadState(state) {
     this.stateManager.load(state);
 
@@ -338,7 +329,6 @@ export default class GameBoyCore {
     this.cartridge = cartridge;
 
     this.loadCartridgeRomIntoMemory();
-    if (this.bootROM) this.loadBootROMIntoMemory();
 
     this.cartridge.interpret();
 
@@ -354,18 +344,6 @@ export default class GameBoyCore {
   loadCartridgeRomIntoMemory() {
     for (let index = 0; index < 0x4000; index++) {
       this.memory[index] = this.cartridge.rom.getByte(index);
-    }
-  }
-
-  loadBootROMIntoMemory() {
-    for (let index = 0; index < 0x100; index++) {
-      this.memory[index] = this.bootROM.getByte(index);
-    }
-
-    if (this.bootROM.length >= 0x100) {
-      for (let index = 0x200; index < 0x900; index++) {
-        this.memory[index] = this.bootROM.getByte(index - 0x100);
-      }
     }
   }
 

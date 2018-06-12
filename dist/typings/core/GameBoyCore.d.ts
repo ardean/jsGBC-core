@@ -8,7 +8,6 @@ import Joypad from "./Joypad";
 import { EventEmitter } from "events";
 import Memory from "./memory/index";
 import CPU from "./cpu";
-import ROM from "./rom";
 import { GameBoy } from "..";
 import Cartridge from "./cartridge";
 export default class GameBoyCore {
@@ -104,7 +103,6 @@ export default class GameBoyCore {
     renderWindowLayer: any;
     renderSpriteLayer: any;
     pixelStart: number;
-    bootROM: ROM;
     cartridge: Cartridge;
     memory: any;
     usedBootROM: any;
@@ -205,14 +203,12 @@ export default class GameBoyCore {
     memoryNew: Memory;
     events: EventEmitter;
     api: GameBoy;
-    constructor({ audio: audioOptions, api, lcd: lcdOptions, bootRom }: any);
-    setBootRom(bootRom: any): void;
+    constructor({ audio: audioOptions, api, lcd: lcdOptions }: any);
     loadState(state: any): void;
     jumpCompile(): void;
     connectCartridge(cartridge: Cartridge): void;
     onRUMBLE(): void;
     loadCartridgeRomIntoMemory(): void;
-    loadBootROMIntoMemory(): void;
     start(cartridge: Cartridge): void;
     init(): void;
     setupRAM(): void;

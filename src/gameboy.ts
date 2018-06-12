@@ -50,10 +50,6 @@ export default class GameBoy extends EventEmitter {
     }
   }
 
-  setBootRom(bootRom) {
-    this.core.setBootRom(bootRom);
-  }
-
   isPaused() {
     return typeof document !== "undefined" && document.hidden;
   }
