@@ -10,6 +10,7 @@ export default class Memory {
     constructor(gameboy: GameBoyCore, data: any);
     write(address: number, value: number): void;
     read(address: number): number;
+    hasReader(address: number): boolean;
     jumpCompile(): void;
     setReaders(from: number, to: number, reader: ReaderFunction): void;
     setReader(address: number, reader: ReaderFunction): void;

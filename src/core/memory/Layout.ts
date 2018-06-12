@@ -43,7 +43,8 @@ export const INTERNAL_RAM_BANK0_END = 0xCFFF;
 export const INTERNAL_RAM_SWITCH_BANK_START = 0xD000;
 export const INTERNAL_RAM_SWITCH_BANK_END = 0xDFFF;
 
-export const ECHO_RAM_START = 0xE000; /*  Mirrored Memory */
+// Mirrored Memory
+export const ECHO_RAM_START = 0xE000;
 export const ECHO_RAM_END = 0xFDFF;
 
 /*--------------- HIGH MEM-------------- */
@@ -61,9 +62,9 @@ export const ZERO_PAGE_END = 0xFFFE;
 
 /* -------------------------------------*/
 
-//Convert between local IO memory address and global address
-// export const GLOBAL_TO_IO_ADDR(A) A - 0xFF00
-// export const IO_TO_GLOBAL_ADDR(A) A + 0xFF00
+// Convert between local IO memory address and global address
+//  export const GLOBAL_TO_IO_ADDR(A) A - 0xFF00
+//  export const IO_TO_GLOBAL_ADDR(A) A + 0xFF00
 
 /*  -------------IO ports/registers ------------------*/
 export const JOYPAD_REG = 0xFF00; /*  Register for reading joy pad info */

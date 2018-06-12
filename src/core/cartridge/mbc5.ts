@@ -18,11 +18,9 @@ export default class MBC5 extends MBC {
     this.setCurrentROMBank();
   }
 
-  writeRAMBank(address, data) {
+  writeRAMBank(address: number, value: number) {
     // MBC5 RAM bank switching
-    this.currentMBCRAMBank = data & 0xf;
-    this.currentRAMBankPosition = (
-      this.currentMBCRAMBank << 13
-    ) - 0xa000;
+    this.currentMBCRAMBank = value & 0xf;
+    this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
   }
 }

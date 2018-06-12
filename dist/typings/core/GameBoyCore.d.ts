@@ -210,6 +210,7 @@ export default class GameBoyCore {
     loadState(state: any): void;
     jumpCompile(): void;
     connectCartridge(cartridge: Cartridge): void;
+    onRUMBLE(): void;
     loadCartridgeRomIntoMemory(): void;
     loadBootROMIntoMemory(): void;
     start(cartridge: Cartridge): void;
