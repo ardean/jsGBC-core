@@ -337,12 +337,12 @@ export default class GameBoyCore {
     cartridge.connect(this);
     this.cartridge = cartridge;
 
-    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.on("rumble", this.onRUMBLE);
-
     this.loadCartridgeRomIntoMemory();
     if (this.bootROM) this.loadBootROMIntoMemory();
 
     this.cartridge.interpret();
+
+    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.on("rumble", this.onRUMBLE);
   }
 
   onRUMBLE() {
