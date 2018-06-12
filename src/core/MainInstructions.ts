@@ -2,22 +2,20 @@ import bitInstructions from "./bit-instructions";
 import SecondaryTickTable from "./secondary-tick-table";
 
 export default [
-  //NOP
-  //#0x00:
+  // NOP
+  // 0x00:
+  () => { },
+
+  // LD BC, nn
+  // 0x01:
   function () {
-    //Do Nothing...
-  },
-  //LD BC, nn
-  //#0x01:
-  function () {
-    this.registerC = this.memoryReader[this.programCounter].apply(this, [
-      this.programCounter
-    ]);
+    this.registerC = this.memoryReader[this.programCounter].apply(this, [this.programCounter]);
     this.registerB = this.memoryRead(this.programCounter + 1 & 0xffff);
     this.programCounter = this.programCounter + 2 & 0xffff;
   },
-  //LD (BC), A
-  //#0x02:
+
+  // LD (BC), A
+  // 0x02:
   function () {
     this.memoryWrite(this.registerB << 8 | this.registerC, this.registerA);
   },
