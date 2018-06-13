@@ -68,13 +68,13 @@ export const ZERO_PAGE_END = 0xFFFE;
 
 /*  -------------IO ports/registers ------------------*/
 export const JOYPAD_REG = 0xFF00; /*  Register for reading joy pad info */
-export const SB_REG = 0xFF01; /*  Serial transfer data */
-export const SC_REG = 0xFF02; /*  SIO control */
+export const SERIAL_DATA_REG = 0xFF01; /*  Serial transfer data */
+export const SERIAL_CONTROL_REG = 0xFF02; /*  SIO control */
 export const DIV_REG = 0xFF04; /*  Divider register */
 export const TIMA_REG = 0xFF05; /*  Timer Counter */
 export const TMA_REG = 0xFF06; /*  Timer Modulo  */
-export const TAC_REG = 0xFF07; /*  Timer Control */
-export const INTERRUPT_REG = 0xFF0F; /*  Interrupt Flag */
+export const TIMER_CONTROL_REG = 0xFF07; /*  Timer Control */
+export const INTERRUPT_FLAG_REG = 0xFF0F; /*  Interrupt Flag */
 
 /*   Sound Mode 1 registers */
 export const NR_10_REG = 0xFF10; /*  Sweep */

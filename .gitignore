@@ -1,6 +1,8 @@
 .DS_Store
 node_modules
+lcd.png
+/roms
 *.log
 *.gbc
 *.gb
-lcd.png
+*.zip

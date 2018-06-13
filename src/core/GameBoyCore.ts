@@ -262,6 +262,12 @@ export default class GameBoyCore {
     this.memoryReadMBC = this.memoryReadMBC.bind(this);
     this.memoryReadMBC3 = this.memoryReadMBC3.bind(this);
     this.memoryReadMBC7 = this.memoryReadMBC7.bind(this);
+    this.memoryReadECHONormal = this.memoryReadECHONormal.bind(this);
+    this.memoryReadECHOGBCMemory = this.memoryReadECHOGBCMemory.bind(this);
+    this.memoryWriteECHONormal = this.memoryWriteECHONormal.bind(this);
+    this.VRAMDATAReadCGBCPU = this.VRAMDATAReadCGBCPU.bind(this);
+    this.VRAMDATAReadDMGCPU = this.VRAMDATAReadDMGCPU.bind(this);
+    this.VRAMCHRReadCGBCPU = this.VRAMCHRReadCGBCPU.bind(this);
 
     this.renderBGGBLayer = this.renderBGGBLayer.bind(this);
     this.renderWindowGBLayer = this.renderWindowGBLayer.bind(this);
@@ -692,7 +698,7 @@ export default class GameBoyCore {
         this.launchIRQ();
       }
       //Fetch the current opcode:
-      const operationCode = this.memoryReader[this.programCounter].apply(this, [this.programCounter]);
+      const operationCode = this.memoryRead(this.programCounter);
       //Increment the program counter to the next instruction:
       this.programCounter = this.programCounter + 1 & 0xffff;
       //Check for the program counter quirk:
@@ -729,22 +735,26 @@ export default class GameBoyCore {
           }
         }
       }
+
       if (this.serialTimer > 0) {
-        //Serial Timing
-        //IRQ Counter:
+        // Serial Timing
+        // IRQ Counter:
         this.serialTimer -= this.CPUTicks;
         if (this.serialTimer <= 0) {
           this.interruptsRequested |= 0x8;
           this.checkIRQMatching();
         }
-        //Bit Shit Counter:
+
+        // Bit Shift Counter:
         this.serialShiftTimer -= this.CPUTicks;
         if (this.serialShiftTimer <= 0) {
           this.serialShiftTimer = this.serialShiftTimerAllocated;
-          this.memory[MemoryLayout.SB_REG] = this.memory[MemoryLayout.SB_REG] << 1 & 0xfe | 0x01; // We could shift in actual link data here if we were to implement such!!!
+          // We could shift in actual link data here if we were to implement such!!!
+          this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01;
         }
       }
-      //End of iteration routine:
+
+      // End of iteration routine:
       if (this.cpu.ticks >= this.cpu.cyclesTotal) {
         this.iterationEndRoutine();
       }
@@ -927,7 +937,7 @@ export default class GameBoyCore {
       this.serialShiftTimer -= this.CPUTicks;
       if (this.serialShiftTimer <= 0) {
         this.serialShiftTimer = this.serialShiftTimerAllocated;
-        this.memory[MemoryLayout.SB_REG] = this.memory[MemoryLayout.SB_REG] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
+        this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
       }
     }
   }
@@ -2361,113 +2371,21 @@ export default class GameBoyCore {
   //Memory Reading:
   memoryRead(address) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
-
-    if (0xFFFF < address) {
-      console.log(address, this.memoryReader[address]);
-    }
-
     if (this.memoryNew.hasReader(address)) return this.memoryNew.read(address);
     return this.memoryReader[address].apply(this, [address]);
   }
 
   memoryHighRead(address) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
+    if (this.memoryNew.hasHighReader(address)) return this.memoryNew.readHigh(address);
     return this.memoryHighReader[address].apply(this, [address]);
   }
 
   memoryReadJumpCompile() {
     // Faster in some browsers, since we are doing less conditionals overall by implementing them in advance.
     for (let index = 0x0000; index <= 0xffff; index++) {
-      if (index < 0x4000) {
-        this.memoryReader[index] = this.memoryReadNormal;
-      } else if (index < 0x8000) {
-        this.memoryReader[index] = this.memoryReadROM;
-      } else if (index < 0x9800) {
-        this.memoryReader[index] = this.cartridge.useGBCMode ? this.VRAMDATAReadCGBCPU : this.VRAMDATAReadDMGCPU;
-      } else if (index < 0xa000) {
-        this.memoryReader[index] = this.cartridge.useGBCMode ? this.VRAMCHRReadCGBCPU : this.VRAMCHRReadDMGCPU;
-      } else if (index >= 0xa000 && index < 0xc000) {
-        if (this.cartridge.mbc && this.cartridge.mbc.ramSize === 0) {
-          this.memoryReader[index] = this.badMemoryRead;
-        } else if (this.cartridge.hasMBC7) {
-          this.memoryReader[index] = this.memoryReadMBC7;
-        } else if (this.cartridge.hasMBC3) {
-          this.memoryReader[index] = this.memoryReadMBC3;
-        } else {
-          this.memoryReader[index] = this.memoryReadMBC;
-        }
-      } else if (index >= 0xc000 && index < 0xe000) {
-        if (!this.cartridge.useGBCMode || index < 0xd000) {
-          this.memoryReader[index] = this.memoryReadNormal;
-        } else {
-          this.memoryReader[index] = this.memoryReadGBCMemory;
-        }
-      } else if (index >= 0xe000 && index < 0xfe00) {
-        if (!this.cartridge.useGBCMode || index < 0xf000) {
-          this.memoryReader[index] = this.memoryReadECHONormal;
-        } else {
-          this.memoryReader[index] = this.memoryReadECHOGBCMemory;
-        }
-      } else if (index < 0xfea0) {
-        this.memoryReader[index] = this.memoryReadOAM;
-      } else if (this.cartridge.useGBCMode && index >= 0xfea0 && index < 0xff00) {
-        this.memoryReader[index] = this.memoryReadNormal;
-      } else if (index >= 0xff00) {
+      if (index >= 0xff00) {
         switch (index) {
-          case MemoryLayout.JOYPAD_REG:
-            this.memoryHighReader[0] = this.memoryReader[MemoryLayout.JOYPAD_REG] = address => 0xc0 | this.memory[MemoryLayout.JOYPAD_REG]; // top nibble returns as set.
-            break;
-          case MemoryLayout.SB_REG:
-            this.memoryHighReader[0x01] = this.memoryReader[MemoryLayout.SB_REG] = address => {
-              return this.memory[MemoryLayout.SC_REG] < 0x80 ? this.memory[MemoryLayout.SB_REG] : 0xff;
-            };
-            break;
-          case MemoryLayout.SC_REG:
-            if (this.cartridge.useGBCMode) {
-              this.memoryHighReader[0x02] = this.memoryReader[MemoryLayout.SC_REG] = address => {
-                return (this.serialTimer <= 0 ? 0x7c : 0xfc) | this.memory[MemoryLayout.SC_REG];
-              };
-            } else {
-              this.memoryHighReader[0x02] = this.memoryReader[MemoryLayout.SC_REG] = address => {
-                return (this.serialTimer <= 0 ? 0x7e : 0xfe) | this.memory[MemoryLayout.SC_REG];
-              };
-            }
-            break;
-          case 0xff03:
-            this.memoryHighReader[0x03] = this.memoryReader[0xff03] = this.badMemoryRead;
-            break;
-          case MemoryLayout.DIV_REG:
-            this.memoryHighReader[0x04] = this.memoryReader[MemoryLayout.DIV_REG] = address => {
-              this.memory[MemoryLayout.DIV_REG] = this.memory[MemoryLayout.DIV_REG] + (this.DIVTicks >> 8) & 0xff;
-              this.DIVTicks &= 0xff;
-              return this.memory[MemoryLayout.DIV_REG];
-            };
-            break;
-          case 0xff05:
-          case 0xff06:
-            this.memoryHighReader[index & 0xff] = this.memoryHighReadNormal;
-            this.memoryReader[index] = this.memoryReadNormal;
-            break;
-          case 0xff07:
-            this.memoryHighReader[0x07] = this.memoryReader[0xff07] = address => {
-              return 0xf8 | this.memory[0xff07];
-            };
-            break;
-          case 0xff08:
-          case 0xff09:
-          case 0xff0a:
-          case 0xff0b:
-          case 0xff0c:
-          case 0xff0d:
-          case 0xff0e:
-            this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.badMemoryRead;
-            break;
-          case 0xff0f:
-            //IF
-            this.memoryHighReader[0x0f] = this.memoryReader[0xff0f] = address => {
-              return 0xe0 | this.interruptsRequested;
-            };
-            break;
           case 0xff10:
             this.memoryHighReader[0x10] = this.memoryReader[0xff10] = address => {
               return 0x80 | this.memory[0xff10];
@@ -2790,15 +2708,15 @@ export default class GameBoyCore {
     }
   }
 
-  memoryReadNormal(address) {
+  memoryReadNormal(address: number) {
     return this.memory[address];
   }
 
-  memoryHighReadNormal(address) {
+  memoryHighReadNormal(address: number) {
     return this.memory[0xff00 | address];
   }
 
-  memoryReadROM(address) {
+  memoryReadROM(address: number) {
     return this.cartridge.rom.getByte(
       this.cartridge.mbc.currentROMBank + address
     );
@@ -3267,15 +3185,15 @@ export default class GameBoyCore {
         ((data & 0x10) === 0 ? this.joypad.value & 0xf : 0xf);
     };
     //SB (Serial Transfer Data)
-    this.memoryHighWriter[0x1] = this.memoryWriter[MemoryLayout.SB_REG] = (address, data) => {
-      if (this.memory[MemoryLayout.SC_REG] < 0x80) {
+    this.memoryHighWriter[0x1] = this.memoryWriter[MemoryLayout.SERIAL_DATA_REG] = (address, data) => {
+      if (this.memory[MemoryLayout.SERIAL_CONTROL_REG] < 0x80) {
         //Cannot write while a serial transfer is active.
-        this.memory[MemoryLayout.SB_REG] = data;
+        this.memory[MemoryLayout.SERIAL_DATA_REG] = data;
       }
     };
     //SC (Serial Transfer Control):
     this.memoryHighWriter[0x2] = this.memoryHighWriteNormal;
-    this.memoryWriter[MemoryLayout.SC_REG] = this.memoryWriteNormal;
+    this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = this.memoryWriteNormal;
     //Unmapped I/O:
     this.memoryHighWriter[0x3] = this.memoryWriter[0xff03] = this.onIllegalWrite;
     //DIV
@@ -3800,15 +3718,15 @@ export default class GameBoyCore {
     if (this.cartridge.useGBCMode) {
       // GameBoy Color Specific I/O:
       // SC (Serial Transfer Control Register)
-      this.memoryHighWriter[0x2] = this.memoryWriter[MemoryLayout.SC_REG] = (address, data) => {
+      this.memoryHighWriter[0x2] = this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = (address, data) => {
         if ((data & 0x1) === 0x1) {
           // Internal clock:
-          this.memory[MemoryLayout.SC_REG] = data & 0x7f;
+          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data & 0x7f;
           this.serialTimer = (data & 0x2) === 0 ? 4096 : 128; //Set the Serial IRQ counter.
           this.serialShiftTimer = this.serialShiftTimerAllocated = (data & 0x2) === 0 ? 512 : 16; //Set the transfer data shift counter.
         } else {
           // External clock:
-          this.memory[MemoryLayout.SC_REG] = data;
+          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data;
           this.serialShiftTimer = this.serialShiftTimerAllocated = this.serialTimer = 0; //Zero the timers, since we're emulating as if nothing is connected.
         }
       };
@@ -3860,7 +3778,7 @@ export default class GameBoyCore {
           this.modeSTAT = 0;
           var newData = 0;
           do {
-            newData = this.memoryReader[data].apply(this, [data++]);
+            newData = this.memoryRead(data++);
             if (newData != this.memory[address]) {
               // JIT the graphics render queue:
               this.modeSTAT = stat;
@@ -3872,10 +3790,10 @@ export default class GameBoyCore {
           } while (++address < 0xfea0);
           if (address < 0xfea0) {
             do {
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
+              this.memory[address++] = this.memoryRead(data++);
+              this.memory[address++] = this.memoryRead(data++);
+              this.memory[address++] = this.memoryRead(data++);
+              this.memory[address++] = this.memoryRead(data++);
             } while (address < 0xfea0);
           }
           this.modeSTAT = stat;
@@ -3980,15 +3898,15 @@ export default class GameBoyCore {
     } else {
       //Fill in the GameBoy Color I/O registers as normal RAM for GameBoy compatibility:
       //SC (Serial Transfer Control Register)
-      this.memoryHighWriter[0x2] = this.memoryWriter[MemoryLayout.SC_REG] = (address, data) => {
+      this.memoryHighWriter[0x2] = this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = (address, data) => {
         if ((data & 0x1) === 0x1) {
           //Internal clock:
-          this.memory[MemoryLayout.SC_REG] = data & 0x7f;
+          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data & 0x7f;
           this.serialTimer = 4096; //Set the Serial IRQ counter.
           this.serialShiftTimer = this.serialShiftTimerAllocated = 512; //Set the transfer data shift counter.
         } else {
           //External clock:
-          this.memory[MemoryLayout.SC_REG] = data;
+          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data;
           this.serialShiftTimer = this.serialShiftTimerAllocated = this.serialTimer = 0; //Zero the timers, since we're emulating as if nothing is connected.
         }
       };
@@ -4044,7 +3962,7 @@ export default class GameBoyCore {
           this.modeSTAT = 0;
           var newData = 0;
           do {
-            newData = this.memoryReader[data].apply(this, [data++]);
+            newData = this.memoryRead(data++);
             if (newData != this.memory[address]) {
               //JIT the graphics render queue:
               this.modeSTAT = stat;
@@ -4056,10 +3974,10 @@ export default class GameBoyCore {
           } while (++address < 0xfea0);
           if (address < 0xfea0) {
             do {
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
-              this.memory[address++] = this.memoryReader[data].apply(this, [data++]);
+              this.memory[address++] = this.memoryRead(data++);
+              this.memory[address++] = this.memoryRead(data++);
+              this.memory[address++] = this.memoryRead(data++);
+              this.memory[address++] = this.memoryRead(data++);
             } while (address < 0xfea0);
           }
           this.modeSTAT = stat;

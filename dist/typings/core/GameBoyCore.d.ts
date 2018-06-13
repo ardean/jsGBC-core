@@ -278,9 +278,9 @@ export default class GameBoyCore {
     memoryRead(address: any): any;
     memoryHighRead(address: any): any;
     memoryReadJumpCompile(): void;
-    memoryReadNormal(address: any): any;
-    memoryHighReadNormal(address: any): any;
-    memoryReadROM(address: any): number;
+    memoryReadNormal(address: number): any;
+    memoryHighReadNormal(address: number): any;
+    memoryReadROM(address: number): number;
     memoryReadMBC(address: any): any;
     memoryReadMBC7(address: any): any;
     memoryReadMBC3(address: any): any;

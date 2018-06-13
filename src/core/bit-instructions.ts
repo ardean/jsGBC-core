@@ -1,7 +1,7 @@
 export default [
   //RLC B
   //#0x00:
-  function() {
+  function () {
     this.FCarry = this.registerB > 0x7f;
     this.registerB = this.registerB << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FHalfCarry = this.FSubtract = false;
@@ -9,7 +9,7 @@ export default [
   },
   //RLC C
   //#0x01:
-  function() {
+  function () {
     this.FCarry = this.registerC > 0x7f;
     this.registerC = this.registerC << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FHalfCarry = this.FSubtract = false;
@@ -17,7 +17,7 @@ export default [
   },
   //RLC D
   //#0x02:
-  function() {
+  function () {
     this.FCarry = this.registerD > 0x7f;
     this.registerD = this.registerD << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FHalfCarry = this.FSubtract = false;
@@ -25,7 +25,7 @@ export default [
   },
   //RLC E
   //#0x03:
-  function() {
+  function () {
     this.FCarry = this.registerE > 0x7f;
     this.registerE = this.registerE << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FHalfCarry = this.FSubtract = false;
@@ -33,7 +33,7 @@ export default [
   },
   //RLC H
   //#0x04:
-  function() {
+  function () {
     this.FCarry = this.registersHL > 0x7fff;
     this.registersHL = this.registersHL << 1 & 0xfe00 |
       (this.FCarry ? 0x100 : 0) |
@@ -43,7 +43,7 @@ export default [
   },
   //RLC L
   //#0x05:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x80) === 0x80;
     this.registersHL = this.registersHL & 0xff00 |
       this.registersHL << 1 & 0xff |
@@ -53,8 +53,8 @@ export default [
   },
   //RLC (HL)
   //#0x06:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     this.FCarry = temp_var > 0x7f;
     temp_var = temp_var << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -63,7 +63,7 @@ export default [
   },
   //RLC A
   //#0x07:
-  function() {
+  function () {
     this.FCarry = this.registerA > 0x7f;
     this.registerA = this.registerA << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FHalfCarry = this.FSubtract = false;
@@ -71,7 +71,7 @@ export default [
   },
   //RRC B
   //#0x08:
-  function() {
+  function () {
     this.FCarry = (this.registerB & 0x01) === 0x01;
     this.registerB = (this.FCarry ? 0x80 : 0) | this.registerB >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -79,7 +79,7 @@ export default [
   },
   //RRC C
   //#0x09:
-  function() {
+  function () {
     this.FCarry = (this.registerC & 0x01) === 0x01;
     this.registerC = (this.FCarry ? 0x80 : 0) | this.registerC >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -87,7 +87,7 @@ export default [
   },
   //RRC D
   //#0x0A:
-  function() {
+  function () {
     this.FCarry = (this.registerD & 0x01) === 0x01;
     this.registerD = (this.FCarry ? 0x80 : 0) | this.registerD >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -95,7 +95,7 @@ export default [
   },
   //RRC E
   //#0x0B:
-  function() {
+  function () {
     this.FCarry = (this.registerE & 0x01) === 0x01;
     this.registerE = (this.FCarry ? 0x80 : 0) | this.registerE >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -103,7 +103,7 @@ export default [
   },
   //RRC H
   //#0x0C:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x0100) === 0x0100;
     this.registersHL = (this.FCarry ? 0x8000 : 0) |
       this.registersHL >> 1 & 0xff00 |
@@ -113,7 +113,7 @@ export default [
   },
   //RRC L
   //#0x0D:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x01) === 0x01;
     this.registersHL = this.registersHL & 0xff00 |
       (this.FCarry ? 0x80 : 0) |
@@ -123,8 +123,8 @@ export default [
   },
   //RRC (HL)
   //#0x0E:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     this.FCarry = (temp_var & 0x01) === 0x01;
     temp_var = (this.FCarry ? 0x80 : 0) | temp_var >> 1;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -133,7 +133,7 @@ export default [
   },
   //RRC A
   //#0x0F:
-  function() {
+  function () {
     this.FCarry = (this.registerA & 0x01) === 0x01;
     this.registerA = (this.FCarry ? 0x80 : 0) | this.registerA >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -141,7 +141,7 @@ export default [
   },
   //RL B
   //#0x10:
-  function() {
+  function () {
     var newFCarry = this.registerB > 0x7f;
     this.registerB = this.registerB << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FCarry = newFCarry;
@@ -150,7 +150,7 @@ export default [
   },
   //RL C
   //#0x11:
-  function() {
+  function () {
     var newFCarry = this.registerC > 0x7f;
     this.registerC = this.registerC << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FCarry = newFCarry;
@@ -159,7 +159,7 @@ export default [
   },
   //RL D
   //#0x12:
-  function() {
+  function () {
     var newFCarry = this.registerD > 0x7f;
     this.registerD = this.registerD << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FCarry = newFCarry;
@@ -168,7 +168,7 @@ export default [
   },
   //RL E
   //#0x13:
-  function() {
+  function () {
     var newFCarry = this.registerE > 0x7f;
     this.registerE = this.registerE << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FCarry = newFCarry;
@@ -177,7 +177,7 @@ export default [
   },
   //RL H
   //#0x14:
-  function() {
+  function () {
     var newFCarry = this.registersHL > 0x7fff;
     this.registersHL = this.registersHL << 1 & 0xfe00 |
       (this.FCarry ? 0x100 : 0) |
@@ -188,7 +188,7 @@ export default [
   },
   //RL L
   //#0x15:
-  function() {
+  function () {
     var newFCarry = (this.registersHL & 0x80) === 0x80;
     this.registersHL = this.registersHL & 0xff00 |
       this.registersHL << 1 & 0xff |
@@ -199,8 +199,8 @@ export default [
   },
   //RL (HL)
   //#0x16:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     var newFCarry = temp_var > 0x7f;
     temp_var = temp_var << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FCarry = newFCarry;
@@ -210,7 +210,7 @@ export default [
   },
   //RL A
   //#0x17:
-  function() {
+  function () {
     var newFCarry = this.registerA > 0x7f;
     this.registerA = this.registerA << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FCarry = newFCarry;
@@ -219,7 +219,7 @@ export default [
   },
   //RR B
   //#0x18:
-  function() {
+  function () {
     var newFCarry = (this.registerB & 0x01) === 0x01;
     this.registerB = (this.FCarry ? 0x80 : 0) | this.registerB >> 1;
     this.FCarry = newFCarry;
@@ -228,7 +228,7 @@ export default [
   },
   //RR C
   //#0x19:
-  function() {
+  function () {
     var newFCarry = (this.registerC & 0x01) === 0x01;
     this.registerC = (this.FCarry ? 0x80 : 0) | this.registerC >> 1;
     this.FCarry = newFCarry;
@@ -237,7 +237,7 @@ export default [
   },
   //RR D
   //#0x1A:
-  function() {
+  function () {
     var newFCarry = (this.registerD & 0x01) === 0x01;
     this.registerD = (this.FCarry ? 0x80 : 0) | this.registerD >> 1;
     this.FCarry = newFCarry;
@@ -246,7 +246,7 @@ export default [
   },
   //RR E
   //#0x1B:
-  function() {
+  function () {
     var newFCarry = (this.registerE & 0x01) === 0x01;
     this.registerE = (this.FCarry ? 0x80 : 0) | this.registerE >> 1;
     this.FCarry = newFCarry;
@@ -255,7 +255,7 @@ export default [
   },
   //RR H
   //#0x1C:
-  function() {
+  function () {
     var newFCarry = (this.registersHL & 0x0100) === 0x0100;
     this.registersHL = (this.FCarry ? 0x8000 : 0) |
       this.registersHL >> 1 & 0xff00 |
@@ -266,7 +266,7 @@ export default [
   },
   //RR L
   //#0x1D:
-  function() {
+  function () {
     var newFCarry = (this.registersHL & 0x01) === 0x01;
     this.registersHL = this.registersHL & 0xff00 |
       (this.FCarry ? 0x80 : 0) |
@@ -277,8 +277,8 @@ export default [
   },
   //RR (HL)
   //#0x1E:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     var newFCarry = (temp_var & 0x01) === 0x01;
     temp_var = (this.FCarry ? 0x80 : 0) | temp_var >> 1;
     this.FCarry = newFCarry;
@@ -288,7 +288,7 @@ export default [
   },
   //RR A
   //#0x1F:
-  function() {
+  function () {
     var newFCarry = (this.registerA & 0x01) === 0x01;
     this.registerA = (this.FCarry ? 0x80 : 0) | this.registerA >> 1;
     this.FCarry = newFCarry;
@@ -297,7 +297,7 @@ export default [
   },
   //SLA B
   //#0x20:
-  function() {
+  function () {
     this.FCarry = this.registerB > 0x7f;
     this.registerB = this.registerB << 1 & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -305,7 +305,7 @@ export default [
   },
   //SLA C
   //#0x21:
-  function() {
+  function () {
     this.FCarry = this.registerC > 0x7f;
     this.registerC = this.registerC << 1 & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -313,7 +313,7 @@ export default [
   },
   //SLA D
   //#0x22:
-  function() {
+  function () {
     this.FCarry = this.registerD > 0x7f;
     this.registerD = this.registerD << 1 & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -321,7 +321,7 @@ export default [
   },
   //SLA E
   //#0x23:
-  function() {
+  function () {
     this.FCarry = this.registerE > 0x7f;
     this.registerE = this.registerE << 1 & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -329,7 +329,7 @@ export default [
   },
   //SLA H
   //#0x24:
-  function() {
+  function () {
     this.FCarry = this.registersHL > 0x7fff;
     this.registersHL = this.registersHL << 1 & 0xfe00 | this.registersHL & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -337,7 +337,7 @@ export default [
   },
   //SLA L
   //#0x25:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x0080) === 0x0080;
     this.registersHL = this.registersHL & 0xff00 | this.registersHL << 1 & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -345,8 +345,8 @@ export default [
   },
   //SLA (HL)
   //#0x26:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     this.FCarry = temp_var > 0x7f;
     temp_var = temp_var << 1 & 0xff;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -355,7 +355,7 @@ export default [
   },
   //SLA A
   //#0x27:
-  function() {
+  function () {
     this.FCarry = this.registerA > 0x7f;
     this.registerA = this.registerA << 1 & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -363,7 +363,7 @@ export default [
   },
   //SRA B
   //#0x28:
-  function() {
+  function () {
     this.FCarry = (this.registerB & 0x01) === 0x01;
     this.registerB = this.registerB & 0x80 | this.registerB >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -371,7 +371,7 @@ export default [
   },
   //SRA C
   //#0x29:
-  function() {
+  function () {
     this.FCarry = (this.registerC & 0x01) === 0x01;
     this.registerC = this.registerC & 0x80 | this.registerC >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -379,7 +379,7 @@ export default [
   },
   //SRA D
   //#0x2A:
-  function() {
+  function () {
     this.FCarry = (this.registerD & 0x01) === 0x01;
     this.registerD = this.registerD & 0x80 | this.registerD >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -387,7 +387,7 @@ export default [
   },
   //SRA E
   //#0x2B:
-  function() {
+  function () {
     this.FCarry = (this.registerE & 0x01) === 0x01;
     this.registerE = this.registerE & 0x80 | this.registerE >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -395,7 +395,7 @@ export default [
   },
   //SRA H
   //#0x2C:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x0100) === 0x0100;
     this.registersHL = this.registersHL >> 1 & 0xff00 |
       this.registersHL & 0x80ff;
@@ -404,7 +404,7 @@ export default [
   },
   //SRA L
   //#0x2D:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x0001) === 0x0001;
     this.registersHL = this.registersHL & 0xff80 |
       (this.registersHL & 0xff) >> 1;
@@ -413,8 +413,8 @@ export default [
   },
   //SRA (HL)
   //#0x2E:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     this.FCarry = (temp_var & 0x01) === 0x01;
     temp_var = temp_var & 0x80 | temp_var >> 1;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -423,7 +423,7 @@ export default [
   },
   //SRA A
   //#0x2F:
-  function() {
+  function () {
     this.FCarry = (this.registerA & 0x01) === 0x01;
     this.registerA = this.registerA & 0x80 | this.registerA >> 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -431,35 +431,35 @@ export default [
   },
   //SWAP B
   //#0x30:
-  function() {
+  function () {
     this.registerB = (this.registerB & 0xf) << 4 | this.registerB >> 4;
     this.FZero = this.registerB === 0;
     this.FCarry = this.FHalfCarry = this.FSubtract = false;
   },
   //SWAP C
   //#0x31:
-  function() {
+  function () {
     this.registerC = (this.registerC & 0xf) << 4 | this.registerC >> 4;
     this.FZero = this.registerC === 0;
     this.FCarry = this.FHalfCarry = this.FSubtract = false;
   },
   //SWAP D
   //#0x32:
-  function() {
+  function () {
     this.registerD = (this.registerD & 0xf) << 4 | this.registerD >> 4;
     this.FZero = this.registerD === 0;
     this.FCarry = this.FHalfCarry = this.FSubtract = false;
   },
   //SWAP E
   //#0x33:
-  function() {
+  function () {
     this.registerE = (this.registerE & 0xf) << 4 | this.registerE >> 4;
     this.FZero = this.registerE === 0;
     this.FCarry = this.FHalfCarry = this.FSubtract = false;
   },
   //SWAP H
   //#0x34:
-  function() {
+  function () {
     this.registersHL = (this.registersHL & 0xf00) << 4 |
       (this.registersHL & 0xf000) >> 4 |
       this.registersHL & 0xff;
@@ -468,7 +468,7 @@ export default [
   },
   //SWAP L
   //#0x35:
-  function() {
+  function () {
     this.registersHL = this.registersHL & 0xff00 |
       (this.registersHL & 0xf) << 4 |
       (this.registersHL & 0xf0) >> 4;
@@ -477,8 +477,8 @@ export default [
   },
   //SWAP (HL)
   //#0x36:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     temp_var = (temp_var & 0xf) << 4 | temp_var >> 4;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
     this.FZero = temp_var === 0;
@@ -486,14 +486,14 @@ export default [
   },
   //SWAP A
   //#0x37:
-  function() {
+  function () {
     this.registerA = (this.registerA & 0xf) << 4 | this.registerA >> 4;
     this.FZero = this.registerA === 0;
     this.FCarry = this.FHalfCarry = this.FSubtract = false;
   },
   //SRL B
   //#0x38:
-  function() {
+  function () {
     this.FCarry = (this.registerB & 0x01) === 0x01;
     this.registerB >>= 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -501,7 +501,7 @@ export default [
   },
   //SRL C
   //#0x39:
-  function() {
+  function () {
     this.FCarry = (this.registerC & 0x01) === 0x01;
     this.registerC >>= 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -509,7 +509,7 @@ export default [
   },
   //SRL D
   //#0x3A:
-  function() {
+  function () {
     this.FCarry = (this.registerD & 0x01) === 0x01;
     this.registerD >>= 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -517,7 +517,7 @@ export default [
   },
   //SRL E
   //#0x3B:
-  function() {
+  function () {
     this.FCarry = (this.registerE & 0x01) === 0x01;
     this.registerE >>= 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -525,7 +525,7 @@ export default [
   },
   //SRL H
   //#0x3C:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x0100) === 0x0100;
     this.registersHL = this.registersHL >> 1 & 0xff00 | this.registersHL & 0xff;
     this.FHalfCarry = this.FSubtract = false;
@@ -533,7 +533,7 @@ export default [
   },
   //SRL L
   //#0x3D:
-  function() {
+  function () {
     this.FCarry = (this.registersHL & 0x0001) === 0x0001;
     this.registersHL = this.registersHL & 0xff00 |
       (this.registersHL & 0xff) >> 1;
@@ -542,8 +542,8 @@ export default [
   },
   //SRL (HL)
   //#0x3E:
-  function() {
-    var temp_var = this.memoryReader[this.registersHL](this.registersHL);
+  function () {
+    var temp_var = this.memoryRead(this.registersHL);
     this.FCarry = (temp_var & 0x01) === 0x01;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var >> 1);
     this.FHalfCarry = this.FSubtract = false;
@@ -551,7 +551,7 @@ export default [
   },
   //SRL A
   //#0x3F:
-  function() {
+  function () {
     this.FCarry = (this.registerA & 0x01) === 0x01;
     this.registerA >>= 1;
     this.FHalfCarry = this.FSubtract = false;
@@ -559,1154 +559,1137 @@ export default [
   },
   //BIT 0, B
   //#0x40:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x01) === 0;
   },
   //BIT 0, C
   //#0x41:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x01) === 0;
   },
   //BIT 0, D
   //#0x42:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x01) === 0;
   },
   //BIT 0, E
   //#0x43:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x01) === 0;
   },
   //BIT 0, H
   //#0x44:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0100) === 0;
   },
   //BIT 0, L
   //#0x45:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0001) === 0;
   },
   //BIT 0, (HL)
   //#0x46:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x01) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x01) === 0;
   },
   //BIT 0, A
   //#0x47:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x01) === 0;
   },
   //BIT 1, B
   //#0x48:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x02) === 0;
   },
   //BIT 1, C
   //#0x49:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x02) === 0;
   },
   //BIT 1, D
   //#0x4A:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x02) === 0;
   },
   //BIT 1, E
   //#0x4B:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x02) === 0;
   },
   //BIT 1, H
   //#0x4C:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0200) === 0;
   },
   //BIT 1, L
   //#0x4D:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0002) === 0;
   },
   //BIT 1, (HL)
   //#0x4E:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x02) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x02) === 0;
   },
   //BIT 1, A
   //#0x4F:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x02) === 0;
   },
   //BIT 2, B
   //#0x50:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x04) === 0;
   },
   //BIT 2, C
   //#0x51:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x04) === 0;
   },
   //BIT 2, D
   //#0x52:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x04) === 0;
   },
   //BIT 2, E
   //#0x53:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x04) === 0;
   },
   //BIT 2, H
   //#0x54:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0400) === 0;
   },
   //BIT 2, L
   //#0x55:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0004) === 0;
   },
   //BIT 2, (HL)
   //#0x56:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x04) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x04) === 0;
   },
   //BIT 2, A
   //#0x57:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x04) === 0;
   },
   //BIT 3, B
   //#0x58:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x08) === 0;
   },
   //BIT 3, C
   //#0x59:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x08) === 0;
   },
   //BIT 3, D
   //#0x5A:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x08) === 0;
   },
   //BIT 3, E
   //#0x5B:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x08) === 0;
   },
   //BIT 3, H
   //#0x5C:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0800) === 0;
   },
   //BIT 3, L
   //#0x5D:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0008) === 0;
   },
   //BIT 3, (HL)
   //#0x5E:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x08) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x08) === 0;
   },
   //BIT 3, A
   //#0x5F:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x08) === 0;
   },
   //BIT 4, B
   //#0x60:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x10) === 0;
   },
   //BIT 4, C
   //#0x61:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x10) === 0;
   },
   //BIT 4, D
   //#0x62:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x10) === 0;
   },
   //BIT 4, E
   //#0x63:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x10) === 0;
   },
   //BIT 4, H
   //#0x64:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x1000) === 0;
   },
   //BIT 4, L
   //#0x65:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0010) === 0;
   },
   //BIT 4, (HL)
   //#0x66:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x10) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x10) === 0;
   },
   //BIT 4, A
   //#0x67:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x10) === 0;
   },
   //BIT 5, B
   //#0x68:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x20) === 0;
   },
   //BIT 5, C
   //#0x69:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x20) === 0;
   },
   //BIT 5, D
   //#0x6A:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x20) === 0;
   },
   //BIT 5, E
   //#0x6B:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x20) === 0;
   },
   //BIT 5, H
   //#0x6C:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x2000) === 0;
   },
   //BIT 5, L
   //#0x6D:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0020) === 0;
   },
   //BIT 5, (HL)
   //#0x6E:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x20) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x20) === 0;
   },
   //BIT 5, A
   //#0x6F:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x20) === 0;
   },
   //BIT 6, B
   //#0x70:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x40) === 0;
   },
   //BIT 6, C
   //#0x71:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x40) === 0;
   },
   //BIT 6, D
   //#0x72:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x40) === 0;
   },
   //BIT 6, E
   //#0x73:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x40) === 0;
   },
   //BIT 6, H
   //#0x74:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x4000) === 0;
   },
   //BIT 6, L
   //#0x75:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0040) === 0;
   },
   //BIT 6, (HL)
   //#0x76:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x40) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x40) === 0;
   },
   //BIT 6, A
   //#0x77:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x40) === 0;
   },
   //BIT 7, B
   //#0x78:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerB & 0x80) === 0;
   },
   //BIT 7, C
   //#0x79:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerC & 0x80) === 0;
   },
   //BIT 7, D
   //#0x7A:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerD & 0x80) === 0;
   },
   //BIT 7, E
   //#0x7B:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerE & 0x80) === 0;
   },
   //BIT 7, H
   //#0x7C:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x8000) === 0;
   },
   //BIT 7, L
   //#0x7D:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registersHL & 0x0080) === 0;
   },
   //BIT 7, (HL)
   //#0x7E:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryReader[this.registersHL](this.registersHL) &
-      0x80) ===
-      0;
+    this.FZero = (this.memoryRead(this.registersHL) & 0x80) === 0;
   },
   //BIT 7, A
   //#0x7F:
-  function() {
+  function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
     this.FZero = (this.registerA & 0x80) === 0;
   },
   //RES 0, B
   //#0x80:
-  function() {
+  function () {
     this.registerB &= 0xfe;
   },
   //RES 0, C
   //#0x81:
-  function() {
+  function () {
     this.registerC &= 0xfe;
   },
   //RES 0, D
   //#0x82:
-  function() {
+  function () {
     this.registerD &= 0xfe;
   },
   //RES 0, E
   //#0x83:
-  function() {
+  function () {
     this.registerE &= 0xfe;
   },
   //RES 0, H
   //#0x84:
-  function() {
+  function () {
     this.registersHL &= 0xfeff;
   },
   //RES 0, L
   //#0x85:
-  function() {
+  function () {
     this.registersHL &= 0xfffe;
   },
   //RES 0, (HL)
   //#0x86:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0xfe
-    );
+      this.memoryRead(this.registersHL) & 0xfe);
   },
   //RES 0, A
   //#0x87:
-  function() {
+  function () {
     this.registerA &= 0xfe;
   },
   //RES 1, B
   //#0x88:
-  function() {
+  function () {
     this.registerB &= 0xfd;
   },
   //RES 1, C
   //#0x89:
-  function() {
+  function () {
     this.registerC &= 0xfd;
   },
   //RES 1, D
   //#0x8A:
-  function() {
+  function () {
     this.registerD &= 0xfd;
   },
   //RES 1, E
   //#0x8B:
-  function() {
+  function () {
     this.registerE &= 0xfd;
   },
   //RES 1, H
   //#0x8C:
-  function() {
+  function () {
     this.registersHL &= 0xfdff;
   },
   //RES 1, L
   //#0x8D:
-  function() {
+  function () {
     this.registersHL &= 0xfffd;
   },
   //RES 1, (HL)
   //#0x8E:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0xfd
+      this.memoryRead(this.registersHL) & 0xfd
     );
   },
   //RES 1, A
   //#0x8F:
-  function() {
+  function () {
     this.registerA &= 0xfd;
   },
   //RES 2, B
   //#0x90:
-  function() {
+  function () {
     this.registerB &= 0xfb;
   },
   //RES 2, C
   //#0x91:
-  function() {
+  function () {
     this.registerC &= 0xfb;
   },
   //RES 2, D
   //#0x92:
-  function() {
+  function () {
     this.registerD &= 0xfb;
   },
   //RES 2, E
   //#0x93:
-  function() {
+  function () {
     this.registerE &= 0xfb;
   },
   //RES 2, H
   //#0x94:
-  function() {
+  function () {
     this.registersHL &= 0xfbff;
   },
   //RES 2, L
   //#0x95:
-  function() {
+  function () {
     this.registersHL &= 0xfffb;
   },
   //RES 2, (HL)
   //#0x96:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0xfb
+      this.memoryRead(this.registersHL) & 0xfb
     );
   },
   //RES 2, A
   //#0x97:
-  function() {
+  function () {
     this.registerA &= 0xfb;
   },
   //RES 3, B
   //#0x98:
-  function() {
+  function () {
     this.registerB &= 0xf7;
   },
   //RES 3, C
   //#0x99:
-  function() {
+  function () {
     this.registerC &= 0xf7;
   },
   //RES 3, D
   //#0x9A:
-  function() {
+  function () {
     this.registerD &= 0xf7;
   },
   //RES 3, E
   //#0x9B:
-  function() {
+  function () {
     this.registerE &= 0xf7;
   },
   //RES 3, H
   //#0x9C:
-  function() {
+  function () {
     this.registersHL &= 0xf7ff;
   },
   //RES 3, L
   //#0x9D:
-  function() {
+  function () {
     this.registersHL &= 0xfff7;
   },
   //RES 3, (HL)
   //#0x9E:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0xf7
+      this.memoryRead(this.registersHL) & 0xf7
     );
   },
   //RES 3, A
   //#0x9F:
-  function() {
+  function () {
     this.registerA &= 0xf7;
   },
   //RES 3, B
   //#0xA0:
-  function() {
+  function () {
     this.registerB &= 0xef;
   },
   //RES 4, C
   //#0xA1:
-  function() {
+  function () {
     this.registerC &= 0xef;
   },
   //RES 4, D
   //#0xA2:
-  function() {
+  function () {
     this.registerD &= 0xef;
   },
   //RES 4, E
   //#0xA3:
-  function() {
+  function () {
     this.registerE &= 0xef;
   },
   //RES 4, H
   //#0xA4:
-  function() {
+  function () {
     this.registersHL &= 0xefff;
   },
   //RES 4, L
   //#0xA5:
-  function() {
+  function () {
     this.registersHL &= 0xffef;
   },
   //RES 4, (HL)
   //#0xA6:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0xef
+      this.memoryRead(this.registersHL) & 0xef
     );
   },
   //RES 4, A
   //#0xA7:
-  function() {
+  function () {
     this.registerA &= 0xef;
   },
   //RES 5, B
   //#0xA8:
-  function() {
+  function () {
     this.registerB &= 0xdf;
   },
   //RES 5, C
   //#0xA9:
-  function() {
+  function () {
     this.registerC &= 0xdf;
   },
   //RES 5, D
   //#0xAA:
-  function() {
+  function () {
     this.registerD &= 0xdf;
   },
   //RES 5, E
   //#0xAB:
-  function() {
+  function () {
     this.registerE &= 0xdf;
   },
   //RES 5, H
   //#0xAC:
-  function() {
+  function () {
     this.registersHL &= 0xdfff;
   },
   //RES 5, L
   //#0xAD:
-  function() {
+  function () {
     this.registersHL &= 0xffdf;
   },
   //RES 5, (HL)
   //#0xAE:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0xdf
+      this.memoryRead(this.registersHL) & 0xdf
     );
   },
   //RES 5, A
   //#0xAF:
-  function() {
+  function () {
     this.registerA &= 0xdf;
   },
   //RES 6, B
   //#0xB0:
-  function() {
+  function () {
     this.registerB &= 0xbf;
   },
   //RES 6, C
   //#0xB1:
-  function() {
+  function () {
     this.registerC &= 0xbf;
   },
   //RES 6, D
   //#0xB2:
-  function() {
+  function () {
     this.registerD &= 0xbf;
   },
   //RES 6, E
   //#0xB3:
-  function() {
+  function () {
     this.registerE &= 0xbf;
   },
   //RES 6, H
   //#0xB4:
-  function() {
+  function () {
     this.registersHL &= 0xbfff;
   },
   //RES 6, L
   //#0xB5:
-  function() {
+  function () {
     this.registersHL &= 0xffbf;
   },
   //RES 6, (HL)
   //#0xB6:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0xbf
+      this.memoryRead(this.registersHL) & 0xbf
     );
   },
   //RES 6, A
   //#0xB7:
-  function() {
+  function () {
     this.registerA &= 0xbf;
   },
   //RES 7, B
   //#0xB8:
-  function() {
+  function () {
     this.registerB &= 0x7f;
   },
   //RES 7, C
   //#0xB9:
-  function() {
+  function () {
     this.registerC &= 0x7f;
   },
   //RES 7, D
   //#0xBA:
-  function() {
+  function () {
     this.registerD &= 0x7f;
   },
   //RES 7, E
   //#0xBB:
-  function() {
+  function () {
     this.registerE &= 0x7f;
   },
   //RES 7, H
   //#0xBC:
-  function() {
+  function () {
     this.registersHL &= 0x7fff;
   },
   //RES 7, L
   //#0xBD:
-  function() {
+  function () {
     this.registersHL &= 0xff7f;
   },
   //RES 7, (HL)
   //#0xBE:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) & 0x7f
+      this.memoryRead(this.registersHL) & 0x7f
     );
   },
   //RES 7, A
   //#0xBF:
-  function() {
+  function () {
     this.registerA &= 0x7f;
   },
   //SET 0, B
   //#0xC0:
-  function() {
+  function () {
     this.registerB |= 0x01;
   },
   //SET 0, C
   //#0xC1:
-  function() {
+  function () {
     this.registerC |= 0x01;
   },
   //SET 0, D
   //#0xC2:
-  function() {
+  function () {
     this.registerD |= 0x01;
   },
   //SET 0, E
   //#0xC3:
-  function() {
+  function () {
     this.registerE |= 0x01;
   },
   //SET 0, H
   //#0xC4:
-  function() {
+  function () {
     this.registersHL |= 0x0100;
   },
   //SET 0, L
   //#0xC5:
-  function() {
+  function () {
     this.registersHL |= 0x01;
   },
   //SET 0, (HL)
   //#0xC6:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x01
+      this.memoryRead(this.registersHL) | 0x01
     );
   },
   //SET 0, A
   //#0xC7:
-  function() {
+  function () {
     this.registerA |= 0x01;
   },
   //SET 1, B
   //#0xC8:
-  function() {
+  function () {
     this.registerB |= 0x02;
   },
   //SET 1, C
   //#0xC9:
-  function() {
+  function () {
     this.registerC |= 0x02;
   },
   //SET 1, D
   //#0xCA:
-  function() {
+  function () {
     this.registerD |= 0x02;
   },
   //SET 1, E
   //#0xCB:
-  function() {
+  function () {
     this.registerE |= 0x02;
   },
   //SET 1, H
   //#0xCC:
-  function() {
+  function () {
     this.registersHL |= 0x0200;
   },
   //SET 1, L
   //#0xCD:
-  function() {
+  function () {
     this.registersHL |= 0x02;
   },
   //SET 1, (HL)
   //#0xCE:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x02
+      this.memoryRead(this.registersHL) | 0x02
     );
   },
   //SET 1, A
   //#0xCF:
-  function() {
+  function () {
     this.registerA |= 0x02;
   },
   //SET 2, B
   //#0xD0:
-  function() {
+  function () {
     this.registerB |= 0x04;
   },
   //SET 2, C
   //#0xD1:
-  function() {
+  function () {
     this.registerC |= 0x04;
   },
   //SET 2, D
   //#0xD2:
-  function() {
+  function () {
     this.registerD |= 0x04;
   },
   //SET 2, E
   //#0xD3:
-  function() {
+  function () {
     this.registerE |= 0x04;
   },
   //SET 2, H
   //#0xD4:
-  function() {
+  function () {
     this.registersHL |= 0x0400;
   },
   //SET 2, L
   //#0xD5:
-  function() {
+  function () {
     this.registersHL |= 0x04;
   },
   //SET 2, (HL)
   //#0xD6:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x04
+      this.memoryRead(this.registersHL) | 0x04
     );
   },
   //SET 2, A
   //#0xD7:
-  function() {
+  function () {
     this.registerA |= 0x04;
   },
   //SET 3, B
   //#0xD8:
-  function() {
+  function () {
     this.registerB |= 0x08;
   },
   //SET 3, C
   //#0xD9:
-  function() {
+  function () {
     this.registerC |= 0x08;
   },
   //SET 3, D
   //#0xDA:
-  function() {
+  function () {
     this.registerD |= 0x08;
   },
   //SET 3, E
   //#0xDB:
-  function() {
+  function () {
     this.registerE |= 0x08;
   },
   //SET 3, H
   //#0xDC:
-  function() {
+  function () {
     this.registersHL |= 0x0800;
   },
   //SET 3, L
   //#0xDD:
-  function() {
+  function () {
     this.registersHL |= 0x08;
   },
   //SET 3, (HL)
   //#0xDE:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x08
+      this.memoryRead(this.registersHL) | 0x08
     );
   },
   //SET 3, A
   //#0xDF:
-  function() {
+  function () {
     this.registerA |= 0x08;
   },
   //SET 4, B
   //#0xE0:
-  function() {
+  function () {
     this.registerB |= 0x10;
   },
   //SET 4, C
   //#0xE1:
-  function() {
+  function () {
     this.registerC |= 0x10;
   },
   //SET 4, D
   //#0xE2:
-  function() {
+  function () {
     this.registerD |= 0x10;
   },
   //SET 4, E
   //#0xE3:
-  function() {
+  function () {
     this.registerE |= 0x10;
   },
   //SET 4, H
   //#0xE4:
-  function() {
+  function () {
     this.registersHL |= 0x1000;
   },
   //SET 4, L
   //#0xE5:
-  function() {
+  function () {
     this.registersHL |= 0x10;
   },
   //SET 4, (HL)
   //#0xE6:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x10
+      this.memoryRead(this.registersHL) | 0x10
     );
   },
   //SET 4, A
   //#0xE7:
-  function() {
+  function () {
     this.registerA |= 0x10;
   },
   //SET 5, B
   //#0xE8:
-  function() {
+  function () {
     this.registerB |= 0x20;
   },
   //SET 5, C
   //#0xE9:
-  function() {
+  function () {
     this.registerC |= 0x20;
   },
   //SET 5, D
   //#0xEA:
-  function() {
+  function () {
     this.registerD |= 0x20;
   },
   //SET 5, E
   //#0xEB:
-  function() {
+  function () {
     this.registerE |= 0x20;
   },
   //SET 5, H
   //#0xEC:
-  function() {
+  function () {
     this.registersHL |= 0x2000;
   },
   //SET 5, L
   //#0xED:
-  function() {
+  function () {
     this.registersHL |= 0x20;
   },
   //SET 5, (HL)
   //#0xEE:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x20
+      this.memoryRead(this.registersHL) | 0x20
     );
   },
   //SET 5, A
   //#0xEF:
-  function() {
+  function () {
     this.registerA |= 0x20;
   },
   //SET 6, B
   //#0xF0:
-  function() {
+  function () {
     this.registerB |= 0x40;
   },
   //SET 6, C
   //#0xF1:
-  function() {
+  function () {
     this.registerC |= 0x40;
   },
   //SET 6, D
   //#0xF2:
-  function() {
+  function () {
     this.registerD |= 0x40;
   },
   //SET 6, E
   //#0xF3:
-  function() {
+  function () {
     this.registerE |= 0x40;
   },
   //SET 6, H
   //#0xF4:
-  function() {
+  function () {
     this.registersHL |= 0x4000;
   },
   //SET 6, L
   //#0xF5:
-  function() {
+  function () {
     this.registersHL |= 0x40;
   },
   //SET 6, (HL)
   //#0xF6:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x40
+      this.memoryRead(this.registersHL) | 0x40
     );
   },
   //SET 6, A
   //#0xF7:
-  function() {
+  function () {
     this.registerA |= 0x40;
   },
   //SET 7, B
   //#0xF8:
-  function() {
+  function () {
     this.registerB |= 0x80;
   },
   //SET 7, C
   //#0xF9:
-  function() {
+  function () {
     this.registerC |= 0x80;
   },
   //SET 7, D
   //#0xFA:
-  function() {
+  function () {
     this.registerD |= 0x80;
   },
   //SET 7, E
   //#0xFB:
-  function() {
+  function () {
     this.registerE |= 0x80;
   },
   //SET 7, H
   //#0xFC:
-  function() {
+  function () {
     this.registersHL |= 0x8000;
   },
   //SET 7, L
   //#0xFD:
-  function() {
+  function () {
     this.registersHL |= 0x80;
   },
   //SET 7, (HL)
   //#0xFE:
-  function() {
+  function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryReader[this.registersHL](this.registersHL) | 0x80
+      this.memoryRead(this.registersHL) | 0x80
     );
   },
   //SET 7, A
   //#0xFF:
-  function() {
+  function () {
     this.registerA |= 0x80;
   }
 ];
