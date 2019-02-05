@@ -42,7 +42,7 @@
     "typescript": "^2.8.3",
     "web-audio-api": "^0.2.2",
     "webpack": "^4.10.1",
-    "webpack-cli": "^3.0.4",
+    "webpack-cli": "^3.2.3",
     "webpack-dev-server": "^3.1.4",
     "webpack-merge": "^4.1.2",
     "webpack-node-externals": "^1.7.2",
