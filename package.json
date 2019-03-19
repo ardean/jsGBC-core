@@ -33,7 +33,7 @@
     "jszip": "^3.1.5"
   },
   "devDependencies": {
-    "canvas": "^1.6.9",
+    "canvas": "^2.4.1",
     "clean-webpack-plugin": "^0.1.19",
     "cpy-cli": "^2.0.0",
     "del-cli": "^1.1.0",
