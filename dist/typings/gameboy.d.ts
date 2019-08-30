@@ -17,6 +17,7 @@ export default class GameBoy extends EventEmitter {
     constructor({ audio, isPaused, lcd, isSoundEnabled, bootRom }?: any);
     isPaused(): boolean;
     setStorage(storage: any): void;
+    transferSerial(data: number): number;
     registerActions(): void;
     handleSpeed(options: any): void;
     turnOn(): void;

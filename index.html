@@ -8,7 +8,7 @@
 </head>
 
 <body>
-  <div class="loading">
+  <div class="overlay">
     <h1>Loading...</h1>
   </div>
 
@@ -18,7 +18,25 @@
       <input type="file" class="rom-select" accept=".gb,.gbc,.zip" />
     </span> to select a ROM</p>
 
-  <canvas class="lcd pixelated"></canvas>
+  <div>
+    <canvas class="lcd pixelated lcd1"></canvas>
+  </div>
+
+  <br />
+
+  <div>
+    <select class="switch-gameboy">
+      <option value="gameboy1">Control Gameboy 1</option>
+      <option value="gameboy2">Control Gameboy 2</option>
+      <option value="both">Control Both</option>
+    </select>
+  </div>
+
+  <br />
+
+  <div>
+    <canvas class="lcd pixelated lcd2"></canvas>
+  </div>
 
   <div>
     <span class="download-battery-file-text">Download Battery File</span>

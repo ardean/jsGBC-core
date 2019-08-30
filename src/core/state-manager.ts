@@ -80,19 +80,19 @@ export default class StateManager {
     //   gameboy.audioController.channel1FrequencyTracker,
     //   gameboy.channel1FrequencyCounter,
     //   gameboy.channel1totalLength,
-    //   gameboy.channel1envelopeVolume,
-    //   gameboy.channel1envelopeType,
-    //   gameboy.channel1envelopeSweeps,
-    //   gameboy.channel1envelopeSweepsLast,
-    //   gameboy.channel1consecutive,
-    //   gameboy.channel1frequency,
+    //   gameboy.channel1EnvelopeVolume,
+    //   gameboy.channel1EnvelopeType,
+    //   gameboy.channel1EnvelopeSweeps,
+    //   gameboy.channel1EnvelopeSweepsLast,
+    //   gameboy.channel1Consecutive,
+    //   gameboy.channel1Frequency,
     //   gameboy.channel1SweepFault,
     //   gameboy.channel1ShadowFrequency,
-    //   gameboy.channel1timeSweep,
-    //   gameboy.channel1lastTimeSweep,
+    //   gameboy.channel1TimeSweep,
+    //   gameboy.channel1LastTimeSweep,
     //   gameboy.channel1Swept,
-    //   gameboy.channel1frequencySweepDivider,
-    //   gameboy.channel1decreaseSweep,
+    //   gameboy.channel1FrequencySweepDivider,
+    //   gameboy.channel1DecreaseSweep,
     //   gameboy.channel2FrequencyTracker,
     //   gameboy.channel2FrequencyCounter,
     //   gameboy.channel2totalLength,
@@ -101,7 +101,7 @@ export default class StateManager {
     //   gameboy.channel2envelopeSweeps,
     //   gameboy.channel2envelopeSweepsLast,
     //   gameboy.channel2consecutive,
-    //   gameboy.channel2frequency,
+    //   gameboy.channel2Frequency,
     //   gameboy.channel3canPlay,
     //   gameboy.channel3totalLength,
     //   gameboy.channel3patternType,
@@ -298,19 +298,19 @@ export default class StateManager {
     gameboy.audioController.channel1FrequencyTracker = state[index++];
     gameboy.channel1FrequencyCounter = state[index++];
     gameboy.channel1totalLength = state[index++];
-    gameboy.channel1envelopeVolume = state[index++];
-    gameboy.channel1envelopeType = state[index++];
-    gameboy.channel1envelopeSweeps = state[index++];
-    gameboy.channel1envelopeSweepsLast = state[index++];
-    gameboy.channel1consecutive = state[index++];
-    gameboy.channel1frequency = state[index++];
+    gameboy.channel1EnvelopeVolume = state[index++];
+    gameboy.channel1EnvelopeType = state[index++];
+    gameboy.channel1EnvelopeSweeps = state[index++];
+    gameboy.channel1EnvelopeSweepsLast = state[index++];
+    gameboy.channel1Consecutive = state[index++];
+    gameboy.channel1Frequency = state[index++];
     gameboy.channel1SweepFault = state[index++];
     gameboy.channel1ShadowFrequency = state[index++];
-    gameboy.channel1timeSweep = state[index++];
-    gameboy.channel1lastTimeSweep = state[index++];
+    gameboy.channel1TimeSweep = state[index++];
+    gameboy.channel1LastTimeSweep = state[index++];
     gameboy.channel1Swept = state[index++];
-    gameboy.channel1frequencySweepDivider = state[index++];
-    gameboy.channel1decreaseSweep = state[index++];
+    gameboy.channel1FrequencySweepDivider = state[index++];
+    gameboy.channel1DecreaseSweep = state[index++];
     gameboy.channel2FrequencyTracker = state[index++];
     gameboy.channel2FrequencyCounter = state[index++];
     gameboy.channel2totalLength = state[index++];
@@ -319,7 +319,7 @@ export default class StateManager {
     gameboy.channel2envelopeSweeps = state[index++];
     gameboy.channel2envelopeSweepsLast = state[index++];
     gameboy.channel2consecutive = state[index++];
-    gameboy.channel2frequency = state[index++];
+    gameboy.channel2Frequency = state[index++];
     gameboy.channel3canPlay = state[index++];
     gameboy.channel3totalLength = state[index++];
     gameboy.channel3patternType = state[index++];

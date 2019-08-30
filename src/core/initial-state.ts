@@ -2,6 +2,7 @@ import dutyLookup from "./duty-lookup";
 
 export default [
   true, // Whether we're in the GBC boot ROM.
+
   // CPU Registers and Flags:
   0x01, // Register A (Accumulator)
   true, // Register F  - Result was zero
@@ -15,6 +16,7 @@ export default [
   0x014d, // Registers H and L combined
   0xfffe, // Stack Pointer
   0x0100, // Program Counter
+
   // Some CPU Emulation State Variables:
   false, // Has the CPU been suspended until the next interrupt?
   true, // Are interrupts enabled?
@@ -59,19 +61,19 @@ export default [
   0x2000, // channel1FrequencyTracker
   0x200, // channel1FrequencyCounter
   0, // channel1totalLength
-  0, // channel1envelopeVolume
-  false, // channel1envelopeType
-  0, // channel1envelopeSweeps
-  0, // channel1envelopeSweepsLast
-  true, // channel1consecutive
-  0, // channel1frequency
+  0, // channel1EnvelopeVolume
+  false, // channel1EnvelopeType
+  0, // channel1EnvelopeSweeps
+  0, // channel1EnvelopeSweepsLast
+  true, // channel1Consecutive
+  0, // channel1Frequency
   false, // channel1SweepFault
   0, // channel1ShadowFrequency
-  1, // channel1timeSweep
-  0, // channel1lastTimeSweep
+  1, // channel1TimeSweep
+  0, // channel1LastTimeSweep
   false, // channel1Swept
-  0, // channel1frequencySweepDivider
-  false, // channel1decreaseSweep
+  0, // channel1FrequencySweepDivider
+  false, // channel1DecreaseSweep
   0x2000, // channel2FrequencyTracker
   0x200, // channel2FrequencyCounter
   0, // channel2totalLength
@@ -80,7 +82,7 @@ export default [
   0, // channel2envelopeSweeps
   0, // channel2envelopeSweepsLast
   true, // channel2consecutive
-  0, // channel2frequency
+  0, // channel2Frequency
   false, // channel3canPlay
   0, // channel3totalLength
   4, // channel3patternType
@@ -98,9 +100,11 @@ export default [
   true, // channel4consecutive
   0x7fff, // channel4BitRange
   false, // As its name implies
+
   // Vin Shit:
   8, // Computed post-mixing volume.
   8, // Computed post-mixing volume.
+
   // Channel paths enabled:
   false, // leftChannel1
   false, // leftChannel2
@@ -110,6 +114,7 @@ export default [
   false, // rightChannel2
   false, // rightChannel3
   false, // rightChannel4
+
   // Channel output level caches:
   0, // channel1currentSampleLeft
   0, // channel1currentSampleRight
@@ -151,6 +156,7 @@ export default [
   144, // Actual scan line...
   0, // Last rendered scan line...
   0, // queuedScanLines
+
   // RTC (Real Time Clock for MBC3):
   false, // RTCisLatched
   0, // RTC latched seconds.
@@ -180,6 +186,7 @@ export default [
   null, // gbOBJColorizedPalette
   null, // cachedBGPaletteConversion
   null, // cachedOBJPaletteConversion
+
   // BG Tile Pointer Caches:
   null, // BGCHRBank1
   null, // BGCHRBank2

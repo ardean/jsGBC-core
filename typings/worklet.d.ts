@@ -3,14 +3,14 @@ declare module "*.worklet" {
   export default exportString;
 }
 
-declare class AudioWorkletProcessor {
-  constructor(options: any);
+interface AudioWorkletProcessor {
+  readonly port: MessagePort;
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Map<string, Float32Array>): void;
+}
+
+declare var AudioWorkletProcessor: {
+  prototype: AudioWorkletProcessor;
+  new(options?: AudioWorkletNodeOptions): AudioWorkletProcessor;
 }
 
 declare var registerProcessor;
-
-declare class AudioWorkletNode extends AudioNode {
-  parameters: any;
-
-  constructor(context: AudioContext, workletName: string);
-}

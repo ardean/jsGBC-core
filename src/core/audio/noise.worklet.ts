@@ -5,12 +5,13 @@ class NoiseGeneratorWorklet extends AudioWorkletProcessor {
     ];
   }
 
-  process(inputs, outputs, parameters) {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Map<string, Float32Array>) {
     let output = outputs[0];
-    let amplitude = parameters.amplitude;
+    let amplitude = parameters["amplitude"];
 
-    for (let channel = 0; channel < output.length; ++channel) {
-      let outputChannel = output[channel];
+    console.log(amplitude);
+
+    for (const outputChannel of output) {
       for (let i = 0; i < outputChannel.length; ++i) {
         outputChannel[i] = Math.sin(i);
       }

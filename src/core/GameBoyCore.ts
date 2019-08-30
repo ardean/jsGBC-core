@@ -23,19 +23,19 @@ export default class GameBoyCore {
   BGPriorityEnabled: any;
   channel1FrequencyCounter: any;
   channel1totalLength: any;
-  channel1envelopeVolume: any;
-  channel1envelopeType: any;
-  channel1envelopeSweeps: any;
-  channel1envelopeSweepsLast: any;
-  channel1consecutive: any;
-  channel1frequency: any;
+  channel1EnvelopeVolume: any;
+  channel1EnvelopeType: any;
+  channel1EnvelopeSweeps: any;
+  channel1EnvelopeSweepsLast: any;
+  channel1Consecutive: any;
+  channel1Frequency: any;
   channel1SweepFault: any;
   channel1ShadowFrequency: any;
-  channel1timeSweep: any;
-  channel1lastTimeSweep: any;
+  channel1TimeSweep: any;
+  channel1LastTimeSweep: any;
   channel1Swept: any;
-  channel1frequencySweepDivider: any;
-  channel1decreaseSweep: any;
+  channel1FrequencySweepDivider: any;
+  channel1DecreaseSweep: any;
   channel2FrequencyTracker: any;
   channel2FrequencyCounter: any;
   channel2totalLength: any;
@@ -44,7 +44,7 @@ export default class GameBoyCore {
   channel2envelopeSweeps: any;
   channel2envelopeSweepsLast: any;
   channel2consecutive: any;
-  channel2frequency: any;
+  channel2Frequency: any;
   channel3canPlay: any;
   channel3totalLength: any;
   channel3patternType: any;
@@ -116,7 +116,7 @@ export default class GameBoyCore {
   inBootstrap: boolean;
   VRAM: util.TypedArray;
   GBCMemory: util.TypedArray;
-  frameBuffer: util.TypedArray;
+  frameBuffer: Int32Array;
   BGCHRBank1: util.TypedArray;
   registerA: number;
   registerB: number;
@@ -210,6 +210,9 @@ export default class GameBoyCore {
   memoryNew: Memory;
   events: EventEmitter;
   api: GameBoy;
+  serialTransferRequested: boolean;
+  internalSerialClock: boolean;
+  fastSerialClockSpeed: boolean;
 
   constructor({
     audio: audioOptions = {},
@@ -484,19 +487,19 @@ export default class GameBoyCore {
     this.audioController.channel1DutyTracker = 0;
     this.audioController.channel1CachedDuty = dutyLookup[2];
     this.audioController.channel1totalLength = 0;
-    this.audioController.channel1envelopeVolume = 0;
-    this.audioController.channel1envelopeType = false;
-    this.audioController.channel1envelopeSweeps = 0;
-    this.audioController.channel1envelopeSweepsLast = 0;
-    this.audioController.channel1consecutive = true;
-    this.audioController.channel1frequency = 1985;
+    this.audioController.channel1EnvelopeVolume = 0;
+    this.audioController.channel1EnvelopeType = false;
+    this.audioController.channel1EnvelopeSweeps = 0;
+    this.audioController.channel1EnvelopeSweepsLast = 0;
+    this.audioController.channel1Consecutive = true;
+    this.audioController.channel1Frequency = 1985;
     this.audioController.channel1SweepFault = true;
     this.audioController.channel1ShadowFrequency = 1985;
-    this.audioController.channel1timeSweep = 1;
-    this.audioController.channel1lastTimeSweep = 0;
+    this.audioController.channel1TimeSweep = 1;
+    this.audioController.channel1LastTimeSweep = 0;
     this.audioController.channel1Swept = false;
-    this.audioController.channel1frequencySweepDivider = 0;
-    this.audioController.channel1decreaseSweep = false;
+    this.audioController.channel1FrequencySweepDivider = 0;
+    this.audioController.channel1DecreaseSweep = false;
     this.audioController.channel2FrequencyTracker = 0x2000;
     this.audioController.channel2DutyTracker = 0;
     this.audioController.channel2CachedDuty = dutyLookup[2];
@@ -506,7 +509,7 @@ export default class GameBoyCore {
     this.audioController.channel2envelopeSweeps = 0;
     this.audioController.channel2envelopeSweepsLast = 0;
     this.audioController.channel2consecutive = true;
-    this.audioController.channel2frequency = 0;
+    this.audioController.channel2Frequency = 0;
     this.audioController.channel3canPlay = false;
     this.audioController.channel3totalLength = 0;
     this.audioController.channel3patternType = 4;
@@ -589,8 +592,8 @@ export default class GameBoyCore {
     this.audioController.rightChannel2 = false;
     this.audioController.rightChannel3 = false;
     this.audioController.rightChannel4 = false;
-    this.audioController.channel2frequency = this.audioController.channel1frequency = 0;
-    this.audioController.channel4consecutive = this.audioController.channel2consecutive = this.audioController.channel1consecutive = false;
+    this.audioController.channel2Frequency = this.audioController.channel1Frequency = 0;
+    this.audioController.channel4consecutive = this.audioController.channel2consecutive = this.audioController.channel1Consecutive = false;
     this.audioController.VinLeftChannelMasterVolume = 8;
     this.audioController.VinRightChannelMasterVolume = 8;
     this.memory[MemoryLayout.JOYPAD_REG] = this.joypad.initialValue;
@@ -636,8 +639,8 @@ export default class GameBoyCore {
 
   run() {
     // The preprocessing before the actual iteration loop:
-    if ((this.stopEmulator & 2) === 0) {
-      if ((this.stopEmulator & 1) === 1) {
+    if ((this.stopEmulator & 0x2) === 0x0) {
+      if ((this.stopEmulator & 0x1) === 0x1) {
         if (!this.CPUStopped) {
           this.stopEmulator = 0;
 
@@ -736,29 +739,57 @@ export default class GameBoyCore {
         }
       }
 
-      if (this.serialTimer > 0) {
-        // Serial Timing
-        // IRQ Counter:
-        this.serialTimer -= this.CPUTicks;
-        if (this.serialTimer <= 0) {
-          this.interruptsRequested |= 0x8;
-          this.checkIRQMatching();
-        }
-
-        // Bit Shift Counter:
-        this.serialShiftTimer -= this.CPUTicks;
-        if (this.serialShiftTimer <= 0) {
-          this.serialShiftTimer = this.serialShiftTimerAllocated;
-          // We could shift in actual link data here if we were to implement such!!!
-          this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01;
-        }
-      }
+      if (this.serialTimer > 0) this.updateSerialTimer();
 
       // End of iteration routine:
       if (this.cpu.ticks >= this.cpu.cyclesTotal) {
         this.iterationEndRoutine();
       }
     }
+  }
+
+  updateSerialTimer() {
+    // Serial Timing
+    // IRQ Counter:
+    this.serialTimer -= this.CPUTicks;
+    if (this.serialTimer <= 0) {
+      this.interruptsRequested |= 0x8;
+      this.checkIRQMatching();
+    }
+
+    // bit shift counter:
+    this.serialShiftTimer -= this.CPUTicks;
+    if (this.serialShiftTimer <= 0) {
+      this.serialShiftTimer = this.serialShiftTimerAllocated;
+
+      if (this.serialTransferRequested) {
+        const serialControlData = this.memoryNew.read(MemoryLayout.SERIAL_CONTROL_REG);
+        const serialData = this.memoryNew.read(MemoryLayout.SERIAL_DATA_REG);
+
+        console.log("start transfer!", "Control: " + serialControlData.toString(2) + " (0x" + serialControlData.toString(16) + ")", "Data: " + serialData.toString(2) + " (0x" + serialData.toString(16) + ")");
+
+        if (this.fastSerialClockSpeed) {
+          console.log("double serial speed!");
+        }
+
+        if (this.internalSerialClock) {
+          console.log("internal serial clock!");
+          console.log("sending");
+          this.events.emit("serialData", serialData);
+        } else {
+          console.log("external serial clock!");
+        }
+      }
+
+      this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01;
+    }
+  }
+
+  transferSerial(data: number): number {
+    const currentData = this.memoryReadNormal(MemoryLayout.SERIAL_DATA_REG);
+    this.memoryWriteNormal(MemoryLayout.SERIAL_DATA_REG, data);
+
+    return currentData;
   }
 
   iterationEndRoutine() {
@@ -925,21 +956,8 @@ export default class GameBoyCore {
         }
       }
     }
-    if (this.serialTimer > 0) {
-      //Serial Timing
-      //IRQ Counter:
-      this.serialTimer -= this.CPUTicks;
-      if (this.serialTimer <= 0) {
-        this.interruptsRequested |= 0x8;
-        this.checkIRQMatching();
-      }
-      //Bit Shit Counter:
-      this.serialShiftTimer -= this.CPUTicks;
-      if (this.serialShiftTimer <= 0) {
-        this.serialShiftTimer = this.serialShiftTimerAllocated;
-        this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
-      }
-    }
+
+    if (this.serialTimer > 0) this.updateSerialTimer();
   }
 
   updateCoreFull() {
@@ -952,7 +970,7 @@ export default class GameBoyCore {
   }
 
   initializeLCDController() {
-    //Display on hanlding:
+    // display on handling:
     var line = 0;
     while (line < 154) {
       if (line < 143) {
@@ -2348,6 +2366,7 @@ export default class GameBoyCore {
     } else {
       currentClocks = this.remainingClocks;
     }
+
     var maxClocks = this.cpu.cyclesTotal - this.cpu.ticks << this.doubleSpeedShifter;
     if (currentClocks >= 0) {
       if (currentClocks <= maxClocks) {
@@ -2369,13 +2388,13 @@ export default class GameBoyCore {
   }
 
   //Memory Reading:
-  memoryRead(address) {
+  memoryRead(address: number) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
     if (this.memoryNew.hasReader(address)) return this.memoryNew.read(address);
     return this.memoryReader[address].apply(this, [address]);
   }
 
-  memoryHighRead(address) {
+  memoryHighRead(address: number) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
     if (this.memoryNew.hasHighReader(address)) return this.memoryNew.readHigh(address);
     return this.memoryHighReader[address].apply(this, [address]);
@@ -2675,7 +2694,7 @@ export default class GameBoyCore {
             //Undocumented realtime PCM amplitude readback:
             this.memoryHighReader[0x76] = this.memoryReader[0xff76] = address => {
               this.audioController.runJIT();
-              return this.audioController.channel2envelopeVolume << 4 | this.audioController.channel1envelopeVolume;
+              return this.audioController.channel2envelopeVolume << 4 | this.audioController.channel1EnvelopeVolume;
             };
             break;
           case 0xff77:
@@ -3184,14 +3203,12 @@ export default class GameBoyCore {
         ((data & 0x20) === 0 ? this.joypad.value >> 4 : 0xf) &
         ((data & 0x10) === 0 ? this.joypad.value & 0xf : 0xf);
     };
-    //SB (Serial Transfer Data)
     this.memoryHighWriter[0x1] = this.memoryWriter[MemoryLayout.SERIAL_DATA_REG] = (address, data) => {
       if (this.memory[MemoryLayout.SERIAL_CONTROL_REG] < 0x80) {
         //Cannot write while a serial transfer is active.
         this.memory[MemoryLayout.SERIAL_DATA_REG] = data;
       }
     };
-    //SC (Serial Transfer Control):
     this.memoryHighWriter[0x2] = this.memoryHighWriteNormal;
     this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = this.memoryWriteNormal;
     //Unmapped I/O:
@@ -3232,14 +3249,14 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x10] = this.memoryWriter[0xff10] = (address, data) => {
       if (this.soundMasterEnabled) {
         this.audioController.runJIT();
-        if (this.audioController.channel1decreaseSweep && (data & 0x08) === 0) {
+        if (this.audioController.channel1DecreaseSweep && (data & 0x08) === 0) {
           if (this.audioController.channel1Swept) {
             this.audioController.channel1SweepFault = true;
           }
         }
-        this.audioController.channel1lastTimeSweep = (data & 0x70) >> 4;
-        this.audioController.channel1frequencySweepDivider = data & 0x07;
-        this.audioController.channel1decreaseSweep = (data & 0x08) === 0x08;
+        this.audioController.channel1LastTimeSweep = (data & 0x70) >> 4;
+        this.audioController.channel1FrequencySweepDivider = data & 0x07;
+        this.audioController.channel1DecreaseSweep = (data & 0x08) === 0x08;
         this.memory[0xff10] = data;
         this.audioController.checkChannel1Enable();
       }
@@ -3262,23 +3279,23 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x12] = this.memoryWriter[0xff12] = (address, data) => {
       if (this.soundMasterEnabled) {
         this.audioController.runJIT();
-        if (this.audioController.channel1Enabled && this.audioController.channel1envelopeSweeps === 0) {
+        if (this.audioController.channel1Enabled && this.audioController.channel1EnvelopeSweeps === 0) {
           //Zombie Volume PAPU Bug:
           if (((this.memory[0xff12] ^ data) & 0x8) === 0x8) {
             if ((this.memory[0xff12] & 0x8) === 0) {
               if ((this.memory[0xff12] & 0x7) === 0x7) {
-                this.audioController.channel1envelopeVolume += 2;
+                this.audioController.channel1EnvelopeVolume += 2;
               } else {
-                ++this.audioController.channel1envelopeVolume;
+                ++this.audioController.channel1EnvelopeVolume;
               }
             }
-            this.audioController.channel1envelopeVolume = 16 - this.audioController.channel1envelopeVolume & 0xf;
+            this.audioController.channel1EnvelopeVolume = 16 - this.audioController.channel1EnvelopeVolume & 0xf;
           } else if ((this.memory[0xff12] & 0xf) === 0x8) {
-            this.audioController.channel1envelopeVolume = 1 + this.audioController.channel1envelopeVolume & 0xf;
+            this.audioController.channel1EnvelopeVolume = 1 + this.audioController.channel1EnvelopeVolume & 0xf;
           }
           this.audioController.cacheChannel1OutputLevel();
         }
-        this.audioController.channel1envelopeType = (data & 0x08) === 0x08;
+        this.audioController.channel1EnvelopeType = (data & 0x08) === 0x08;
         this.memory[0xff12] = data;
         this.audioController.checkChannel1VolumeEnable();
       }
@@ -3287,32 +3304,32 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x13] = this.memoryWriter[0xff13] = (address, data) => {
       if (this.soundMasterEnabled) {
         this.audioController.runJIT();
-        this.audioController.channel1frequency = this.audioController.channel1frequency & 0x700 | data;
-        this.audioController.channel1FrequencyTracker = 0x800 - this.audioController.channel1frequency << 2;
+        this.audioController.channel1Frequency = this.audioController.channel1Frequency & 0b11100000000 | data;
+        this.audioController.channel1FrequencyTracker = 0x800 - this.audioController.channel1Frequency << 2;
       }
     };
     //NR14:
     this.memoryHighWriter[0x14] = this.memoryWriter[0xff14] = (address, data) => {
       if (this.soundMasterEnabled) {
         this.audioController.runJIT();
-        this.audioController.channel1consecutive = (data & 0x40) === 0x0;
-        this.audioController.channel1frequency = (data & 0x7) << 8 | this.audioController.channel1frequency & 0xff;
-        this.audioController.channel1FrequencyTracker = 0x800 - this.audioController.channel1frequency << 2;
+        this.audioController.channel1Consecutive = (data & 0x40) === 0x0;
+        this.audioController.channel1Frequency = (data & 0x7) << 8 | this.audioController.channel1Frequency & 0xff;
+        this.audioController.channel1FrequencyTracker = 0x800 - this.audioController.channel1Frequency << 2;
         if (data > 0x7f) {
           //Reload 0xFF10:
-          this.audioController.channel1timeSweep = this.audioController.channel1lastTimeSweep;
+          this.audioController.channel1TimeSweep = this.audioController.channel1LastTimeSweep;
           this.audioController.channel1Swept = false;
           //Reload 0xFF12:
           var nr12 = this.memory[0xff12];
-          this.audioController.channel1envelopeVolume = nr12 >> 4;
+          this.audioController.channel1EnvelopeVolume = nr12 >> 4;
           this.audioController.cacheChannel1OutputLevel();
-          this.audioController.channel1envelopeSweepsLast = (nr12 & 0x7) - 1;
+          this.audioController.channel1EnvelopeSweepsLast = (nr12 & 0x7) - 1;
           if (this.audioController.channel1totalLength === 0) {
             this.audioController.channel1totalLength = 0x40;
           }
           if (
-            this.audioController.channel1lastTimeSweep > 0 ||
-            this.audioController.channel1frequencySweepDivider > 0
+            this.audioController.channel1LastTimeSweep > 0 ||
+            this.audioController.channel1FrequencySweepDivider > 0
           ) {
             this.memory[0xff26] |= 0x1;
           } else {
@@ -3321,7 +3338,7 @@ export default class GameBoyCore {
           if ((data & 0x40) === 0x40) {
             this.memory[0xff26] |= 0x1;
           }
-          this.audioController.channel1ShadowFrequency = this.audioController.channel1frequency;
+          this.audioController.channel1ShadowFrequency = this.audioController.channel1Frequency;
           //Reset frequency overflow check + frequency sweep type check:
           this.audioController.channel1SweepFault = false;
           //Supposed to run immediately:
@@ -3376,8 +3393,8 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x18] = this.memoryWriter[0xff18] = (address, data) => {
       if (this.soundMasterEnabled) {
         this.audioController.runJIT();
-        this.audioController.channel2frequency = this.audioController.channel2frequency & 0x700 | data;
-        this.audioController.channel2FrequencyTracker = 0x800 - this.audioController.channel2frequency << 2;
+        this.audioController.channel2Frequency = this.audioController.channel2Frequency & 0x700 | data;
+        this.audioController.channel2FrequencyTracker = 0x800 - this.audioController.channel2Frequency << 2;
       }
     };
     //NR24:
@@ -3398,8 +3415,8 @@ export default class GameBoyCore {
           }
         }
         this.audioController.channel2consecutive = (data & 0x40) === 0x0;
-        this.audioController.channel2frequency = (data & 0x7) << 8 | this.audioController.channel2frequency & 0xff;
-        this.audioController.channel2FrequencyTracker = 0x800 - this.audioController.channel2frequency << 2;
+        this.audioController.channel2Frequency = (data & 0x7) << 8 | this.audioController.channel2Frequency & 0xff;
+        this.audioController.channel2FrequencyTracker = 0x800 - this.audioController.channel2Frequency << 2;
         this.memory[0xff19] = data;
         this.audioController.checkChannel2Enable();
       }
@@ -3722,12 +3739,12 @@ export default class GameBoyCore {
         if ((data & 0x1) === 0x1) {
           // Internal clock:
           this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data & 0x7f;
-          this.serialTimer = (data & 0x2) === 0 ? 4096 : 128; //Set the Serial IRQ counter.
-          this.serialShiftTimer = this.serialShiftTimerAllocated = (data & 0x2) === 0 ? 512 : 16; //Set the transfer data shift counter.
+          this.serialTimer = (data & 0x2) === 0 ? 0x1000 : 0x80; // Set the Serial IRQ counter.
+          this.serialShiftTimer = this.serialShiftTimerAllocated = (data & 0x2) === 0 ? 0x200 : 0x10; // Set the transfer data shift counter.
         } else {
           // External clock:
           this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data;
-          this.serialShiftTimer = this.serialShiftTimerAllocated = this.serialTimer = 0; //Zero the timers, since we're emulating as if nothing is connected.
+          this.serialShiftTimer = this.serialShiftTimerAllocated = this.serialTimer = 0; // Zero the timers, since we're emulating as if nothing is connected.
         }
       };
       this.memoryHighWriter[0x40] = this.memoryWriter[0xff40] = (address, data) => {
@@ -3896,18 +3913,29 @@ export default class GameBoyCore {
         this.memory[0xff74] = data;
       };
     } else {
-      //Fill in the GameBoy Color I/O registers as normal RAM for GameBoy compatibility:
-      //SC (Serial Transfer Control Register)
-      this.memoryHighWriter[0x2] = this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = (address, data) => {
-        if ((data & 0x1) === 0x1) {
-          //Internal clock:
-          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data & 0x7f;
-          this.serialTimer = 4096; //Set the Serial IRQ counter.
-          this.serialShiftTimer = this.serialShiftTimerAllocated = 512; //Set the transfer data shift counter.
+      // Fill in the GameBoy Color I/O registers as normal RAM for GameBoy compatibility:
+      // SC (Serial Transfer Control Register)
+      this.memoryHighWriter[0x2] = this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = (address, serialControlData) => {
+        if ((serialControlData & 0x80) === 0x80) {
+          this.serialTransferRequested = true;
+          this.fastSerialClockSpeed = (serialControlData & 0x2) === 0x2;
+          this.internalSerialClock = (serialControlData & 0x1) === 0x1;
         } else {
-          //External clock:
-          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = data;
-          this.serialShiftTimer = this.serialShiftTimerAllocated = this.serialTimer = 0; //Zero the timers, since we're emulating as if nothing is connected.
+          this.serialTransferRequested = false;
+        }
+
+        if (this.internalSerialClock) {
+          // Internal clock:
+          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = serialControlData & 0x7f;
+          this.serialTimer = 0x1000; // Set the Serial IRQ counter.
+          this.serialShiftTimer = this.serialShiftTimerAllocated = 0x400; // Set the transfer data shift counter.
+        } else {
+          // this.serialTimer = 0x1000; // Set the Serial IRQ counter.
+          // this.serialShiftTimer = this.serialShiftTimerAllocated = 0x400; // Set the transfer data shift counter.
+
+          // External clock:
+          this.memory[MemoryLayout.SERIAL_CONTROL_REG] = serialControlData;
+          this.serialShiftTimer = this.serialShiftTimerAllocated = this.serialTimer = 0; // zero the timers, since we're emulating as if nothing is connected.
         }
       };
       this.memoryHighWriter[0x40] = this.memoryWriter[0xff40] = (address, data) => {

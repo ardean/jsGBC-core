@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>jsGBC Core</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="./demoV2/index.css" />
+</head>
+
+<body>
+  <div class="overlay">
+    <h1>Loading...</h1>
+  </div>
+
+  <div>
+    <input type="file" class="bios-select" accept=".rom,.bios" />
+  </div>
+
+  <div>
+    <input type="file" class="rom-select" accept=".gb,.gbc,.zip" />
+  </div>
+
+  <div>
+    <button class="start-button">Turn on</button>
+  </div>
+
+  <div>
+    <canvas class="lcd pixelated"></canvas>
+  </div>
+
+  <div>
+    <label>A Register</label>
+    <input type="text" class="a-register-input" disabled />
+  </div>
+
+  <div>
+    <label>Zero Flag</label>
+    <input type="checkbox" class="zero-flag-checkbox" disabled />
+  </div>
+
+  <script src="jsgbc-core.js"></script>
+</body>
+
+</html>

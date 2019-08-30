@@ -184,9 +184,9 @@ export default class LcdDevice {
     let bufferIndex = 0;
     let canvasIndex = 0;
     while (canvasIndex < this.offscreenRGBCount) {
-      swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 16 & 0xff; // red
-      swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 8 & 0xff; // green
-      swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] & 0xff; // blue
+      swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 16 & 0xFF; // red
+      swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 8 & 0xFF;  // green
+      swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] & 0xFF;       // blue
       ++bufferIndex;
     }
   }

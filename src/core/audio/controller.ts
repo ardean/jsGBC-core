@@ -1,28 +1,30 @@
+import CPU from "../cpu";
 import * as util from "../../util";
+import AudioDevice from "./device";
 import settings from "../../settings";
 import dutyLookup from "../duty-lookup";
-import CPU from "../cpu";
 import GameBoyCore from "../GameBoyCore";
 
 export default class AudioController {
-  channel3envelopeVolume: number;
   channel1FrequencyTracker: number;
   channel1DutyTracker: number;
   channel1CachedDuty: boolean[];
   channel1totalLength: number;
-  channel1envelopeVolume: number;
-  channel1envelopeType: boolean;
-  channel1envelopeSweeps: number;
-  channel1envelopeSweepsLast: number;
-  channel1consecutive: boolean;
-  channel1frequency: number;
+  channel1EnvelopeVolume: number;
+  channel1EnvelopeType: boolean;
+  channel1EnvelopeSweeps: number;
+  channel1EnvelopeSweepsLast: number;
+  channel1Consecutive: boolean;
+  channel1Frequency: number;
   channel1SweepFault: boolean;
   channel1ShadowFrequency: number;
-  channel1timeSweep: number;
-  channel1lastTimeSweep: number;
+  channel1TimeSweep: number;
+  channel1LastTimeSweep: number;
   channel1Swept: boolean;
-  channel1frequencySweepDivider: number;
-  channel1decreaseSweep: boolean;
+  channel1FrequencySweepDivider: number;
+  channel1DecreaseSweep: boolean;
+  channel1FrequencyCounter: number;
+
   channel2FrequencyTracker: number;
   channel2DutyTracker: number;
   channel2CachedDuty: boolean[];
@@ -32,13 +34,19 @@ export default class AudioController {
   channel2envelopeSweeps: number;
   channel2envelopeSweepsLast: number;
   channel2consecutive: boolean;
-  channel2frequency: number;
+  channel2Frequency: number;
+  channel2FrequencyCounter: number;
+
   channel3canPlay: boolean;
   channel3totalLength: number;
   channel3patternType: number;
   channel3frequency: number;
   channel3consecutive: boolean;
   channel3Counter: number;
+  channel3envelopeVolume: number;
+  channel3FrequencyPeriod: number;
+  channel3lastSampleLookup: number;
+
   channel4FrequencyPeriod: number;
   channel4totalLength: number;
   channel4envelopeVolume: number;
@@ -49,11 +57,8 @@ export default class AudioController {
   channel4consecutive: boolean;
   channel4BitRange: number;
   channel4VolumeShifter: number;
-  channel1FrequencyCounter: number;
-  channel2FrequencyCounter: number;
-  channel3FrequencyPeriod: number;
-  channel3lastSampleLookup: number;
   channel4lastSampleLookup: number;
+
   VinLeftChannelMasterVolume: number;
   VinRightChannelMasterVolume: number;
   mixerOutputCache: number;
@@ -137,19 +142,19 @@ export default class AudioController {
     this.channel1DutyTracker = 0;
     this.channel1CachedDuty = dutyLookup[2];
     this.channel1totalLength = 0;
-    this.channel1envelopeVolume = 0;
-    this.channel1envelopeType = false;
-    this.channel1envelopeSweeps = 0;
-    this.channel1envelopeSweepsLast = 0;
-    this.channel1consecutive = true;
-    this.channel1frequency = 0;
+    this.channel1EnvelopeVolume = 0;
+    this.channel1EnvelopeType = false;
+    this.channel1EnvelopeSweeps = 0;
+    this.channel1EnvelopeSweepsLast = 0;
+    this.channel1Consecutive = true;
+    this.channel1Frequency = 0;
     this.channel1SweepFault = false;
     this.channel1ShadowFrequency = 0;
-    this.channel1timeSweep = 1;
-    this.channel1lastTimeSweep = 0;
+    this.channel1TimeSweep = 1;
+    this.channel1LastTimeSweep = 0;
     this.channel1Swept = false;
-    this.channel1frequencySweepDivider = 0;
-    this.channel1decreaseSweep = false;
+    this.channel1FrequencySweepDivider = 0;
+    this.channel1DecreaseSweep = false;
     this.channel2FrequencyTracker = 0x2000;
     this.channel2DutyTracker = 0;
     this.channel2CachedDuty = dutyLookup[2];
@@ -159,7 +164,7 @@ export default class AudioController {
     this.channel2envelopeSweeps = 0;
     this.channel2envelopeSweepsLast = 0;
     this.channel2consecutive = true;
-    this.channel2frequency = 0;
+    this.channel2Frequency = 0;
     this.channel3canPlay = false;
     this.channel3totalLength = 0;
     this.channel3patternType = 4;
@@ -208,7 +213,7 @@ export default class AudioController {
   }
 
   // Below are the audio generation functions timed against the CPU:
-  generate(numSamples) {
+  generate(numSamples: number) {
     if (this.gameboy.soundMasterEnabled && !this.gameboy.CPUStopped) {
       for (let clockUpTo = 0; numSamples > 0;) {
         clockUpTo = Math.min(this.audioClocksUntilNextEventCounter, this.sequencerClocks, numSamples);
@@ -220,6 +225,7 @@ export default class AudioController {
           clockUpTo -= multiplier;
           this.audioIndex += multiplier;
           this.downsampleInput += this.mixerOutputCache * multiplier;
+
           if (this.audioIndex === this.resamplerFirstPassFactor) {
             this.audioIndex = 0;
             this.outputAudio();
@@ -279,24 +285,24 @@ export default class AudioController {
 
   clockAudioEnvelope() {
     // Channel 1:
-    if (this.channel1envelopeSweepsLast > -1) {
-      if (this.channel1envelopeSweeps > 0) {
-        --this.channel1envelopeSweeps;
+    if (this.channel1EnvelopeSweepsLast > -1) {
+      if (this.channel1EnvelopeSweeps > 0) {
+        --this.channel1EnvelopeSweeps;
       } else {
-        if (!this.channel1envelopeType) {
-          if (this.channel1envelopeVolume > 0) {
-            --this.channel1envelopeVolume;
-            this.channel1envelopeSweeps = this.channel1envelopeSweepsLast;
+        if (!this.channel1EnvelopeType) {
+          if (this.channel1EnvelopeVolume > 0) {
+            --this.channel1EnvelopeVolume;
+            this.channel1EnvelopeSweeps = this.channel1EnvelopeSweepsLast;
             this.cacheChannel1OutputLevel();
           } else {
-            this.channel1envelopeSweepsLast = -1;
+            this.channel1EnvelopeSweepsLast = -1;
           }
-        } else if (this.channel1envelopeVolume < 0xf) {
-          ++this.channel1envelopeVolume;
-          this.channel1envelopeSweeps = this.channel1envelopeSweepsLast;
+        } else if (this.channel1EnvelopeVolume < 0xf) {
+          ++this.channel1EnvelopeVolume;
+          this.channel1EnvelopeSweeps = this.channel1EnvelopeSweepsLast;
           this.cacheChannel1OutputLevel();
         } else {
-          this.channel1envelopeSweepsLast = -1;
+          this.channel1EnvelopeSweepsLast = -1;
         }
       }
     }
@@ -348,12 +354,12 @@ export default class AudioController {
 
   performChannel1AudioSweepDummy() {
     // Channel 1:
-    if (this.channel1frequencySweepDivider > 0) {
-      if (!this.channel1decreaseSweep) {
-        const channel1ShadowFrequency = this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider);
+    if (this.channel1FrequencySweepDivider > 0) {
+      if (!this.channel1DecreaseSweep) {
+        const channel1ShadowFrequency = this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1FrequencySweepDivider);
         if (channel1ShadowFrequency <= 0x7ff) {
           // Run overflow check twice:
-          if (channel1ShadowFrequency + (channel1ShadowFrequency >> this.channel1frequencySweepDivider) > 0x7ff) {
+          if (channel1ShadowFrequency + (channel1ShadowFrequency >> this.channel1FrequencySweepDivider) > 0x7ff) {
             this.channel1SweepFault = true;
             this.checkChannel1Enable();
             this.memory[0xff26] &= 0xfe; // Channel #1 On Flag Off
@@ -426,8 +432,8 @@ export default class AudioController {
 
   clockAudioSweep() {
     //Channel 1:
-    if (!this.channel1SweepFault && this.channel1timeSweep > 0) {
-      if (--this.channel1timeSweep === 0) {
+    if (!this.channel1SweepFault && this.channel1TimeSweep > 0) {
+      if (--this.channel1TimeSweep === 0) {
         this.runAudioSweep();
       }
     }
@@ -435,32 +441,32 @@ export default class AudioController {
 
   runAudioSweep() {
     //Channel 1:
-    if (this.channel1lastTimeSweep > 0) {
-      if (this.channel1frequencySweepDivider > 0) {
+    if (this.channel1LastTimeSweep > 0) {
+      if (this.channel1FrequencySweepDivider > 0) {
         this.channel1Swept = true;
-        if (this.channel1decreaseSweep) {
-          this.channel1ShadowFrequency -= this.channel1ShadowFrequency >> this.channel1frequencySweepDivider;
-          this.channel1frequency = this.channel1ShadowFrequency & 0x7ff;
-          this.channel1FrequencyTracker = 0x800 - this.channel1frequency << 2;
+        if (this.channel1DecreaseSweep) {
+          this.channel1ShadowFrequency -= this.channel1ShadowFrequency >> this.channel1FrequencySweepDivider;
+          this.channel1Frequency = this.channel1ShadowFrequency & 0x7ff;
+          this.channel1FrequencyTracker = 0x800 - this.channel1Frequency << 2;
         } else {
-          this.channel1ShadowFrequency += this.channel1ShadowFrequency >> this.channel1frequencySweepDivider;
-          this.channel1frequency = this.channel1ShadowFrequency;
+          this.channel1ShadowFrequency += this.channel1ShadowFrequency >> this.channel1FrequencySweepDivider;
+          this.channel1Frequency = this.channel1ShadowFrequency;
           if (this.channel1ShadowFrequency <= 0x7ff) {
-            this.channel1FrequencyTracker = 0x800 - this.channel1frequency << 2;
+            this.channel1FrequencyTracker = 0x800 - this.channel1Frequency << 2;
             //Run overflow check twice:
-            if (this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider) > 0x7ff) {
+            if (this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1FrequencySweepDivider) > 0x7ff) {
               this.channel1SweepFault = true;
               this.checkChannel1Enable();
               this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
             }
           } else {
-            this.channel1frequency &= 0x7ff;
+            this.channel1Frequency &= 0x7ff;
             this.channel1SweepFault = true;
             this.checkChannel1Enable();
             this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
           }
         }
-        this.channel1timeSweep = this.channel1lastTimeSweep;
+        this.channel1TimeSweep = this.channel1LastTimeSweep;
       } else {
         //Channel has sweep disabled and timer becomes a length counter:
         this.channel1SweepFault = true;
@@ -506,13 +512,13 @@ export default class AudioController {
   }
 
   checkChannel1Enable() {
-    this.channel1Enabled = (this.channel1consecutive || this.channel1totalLength > 0) && !this.channel1SweepFault && this.channel1canPlay;
+    this.channel1Enabled = (this.channel1Consecutive || this.channel1totalLength > 0) && !this.channel1SweepFault && this.channel1canPlay;
     this.cacheChannel1OutputLevelSecondary();
   }
 
   cacheChannel1OutputLevel() {
-    this.channel1currentSampleLeft = this.leftChannel1 ? this.channel1envelopeVolume : 0;
-    this.channel1currentSampleRight = this.rightChannel1 ? this.channel1envelopeVolume : 0;
+    this.channel1currentSampleLeft = this.leftChannel1 ? this.channel1EnvelopeVolume : 0;
+    this.channel1currentSampleRight = this.rightChannel1 ? this.channel1EnvelopeVolume : 0;
     this.cacheChannel1OutputLevelSecondary();
   }
 
@@ -649,8 +655,14 @@ export default class AudioController {
     this.mixerOutputCache = currentLeftSample * this.VinLeftChannelMasterVolume << 16 | currentRightSample * this.VinRightChannelMasterVolume;
   }
 
-  connectDevice(device) {
-    this.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
+  connectDevice(device: AudioDevice) {
+    this.resamplerFirstPassFactor = Math.max(
+      Math.min(
+        Math.floor(this.cpu.clocksPerSecond / 44100),
+        Math.floor(0xffff / 0x1e0)
+      ),
+      1
+    );
     this.downSampleInputDivider = 1 / (this.resamplerFirstPassFactor * 0xf0);
 
     const sampleRate = this.cpu.clocksPerSecond / this.resamplerFirstPassFactor;
@@ -662,7 +674,7 @@ export default class AudioController {
     this.device = device;
   }
 
-  setVolume(volume) {
+  setVolume(volume: number) {
     if (this.device) this.device.setVolume(volume);
   }
 

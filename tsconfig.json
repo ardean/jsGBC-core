@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "declarationDir": "./typings",
     "noImplicitAny": false,
     "moduleResolution": "node",
-    "module": "es6",
+    "outDir": "./dist",
+    "target": "es2017",
+    "module": "commonjs",
     "lib": [
       "dom",
-      "es6"
-    ],
-    "target": "es6"
+      "es2017"
+    ]
   },
-  "files": [
-    "typings/index.d.ts",
-    "src/index.ts"
+  "include": [
+    "src",
+    "typings"
   ]
 }

@@ -51,7 +51,7 @@ export function fromTypedArray(baseArray) { // TODO: remove
 
 export type TypedArray = Int8Array | Uint8Array | Int32Array | Float32Array;
 
-export function getTypedArray(length, defaultValue, numberType): TypedArray { // TODO: remove and use fillTypedArray
+export function getTypedArray(length, defaultValue, numberType: "int8" | "uint8" | "int32" | "float32") { // TODO: remove and use fillTypedArray
   let arrayHandle;
   switch (numberType) {
     case "int8":
@@ -123,7 +123,7 @@ export function saveAs(file: Blob | ArrayBuffer | Uint8Array, filename?: string)
     file = new Blob([file], { type: "application/octet-binary" });
   }
 
-  FileSaver.saveAs(file, filename);
+  FileSaver.saveAs(file as Blob, filename);
 }
 
 export type Debounced = (() => any) & { clear?(), flush?() };
@@ -133,8 +133,8 @@ export async function readBlob(file: Blob): Promise<ArrayBuffer> {
     if (file) {
       const binaryHandle = new FileReader();
       binaryHandle.addEventListener("load", function () {
-        if (this.readyState === 2) {
-          resolve(this.result);
+        if (binaryHandle.readyState === 2) {
+          resolve(binaryHandle.result as ArrayBuffer);
         }
       });
       binaryHandle.readAsArrayBuffer(file);

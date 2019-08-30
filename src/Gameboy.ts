@@ -1,5 +1,5 @@
 import settings from "./settings";
-import { stringToArrayBuffer, concatArrayBuffers, debounce, Debounced } from "./util";
+import { concatArrayBuffers, debounce, Debounced } from "./util";
 import LocalStorage from "./storages/LocalStorage";
 import Cartridge from "./core/cartridge/index";
 import Actions from "./actions";
@@ -42,6 +42,10 @@ export default class GameBoy extends EventEmitter {
       this.debouncedAutoSave();
     });
 
+    this.core.events.on("serialData", serialDataByte => {
+      this.emit("serialData", serialDataByte);
+    });
+
     this.isOn = false;
     this.actions = new Actions();
     this.registerActions();
@@ -58,6 +62,10 @@ export default class GameBoy extends EventEmitter {
     this.storage = storage;
   }
 
+  transferSerial(data: number): number {
+    return this.core.transferSerial(data);
+  }
+
   registerActions() {
     this.buttons.forEach((button, index) => {
       this.actions
@@ -72,14 +80,14 @@ export default class GameBoy extends EventEmitter {
 
     this.actions
       .register("speed")
-      .on("down-speed", options => this.handleSpeed(options))
-      .on("change-speed", options => this.handleSpeed(options))
+      .on("down-speed", options => this.changeSpeed(options))
+      .on("change-speed", options => this.changeSpeed(options))
       .on("up-speed", () => {
         this.setSpeed(1);
       });
   }
 
-  handleSpeed(options) {
+  changeSpeed(options: { value: number }) {
     let multiplier = 2;
     if (options && typeof options.value === "number") {
       multiplier = options.value * 2 + 1;
@@ -93,7 +101,7 @@ export default class GameBoy extends EventEmitter {
     this.isOn = true;
 
     this.core.start(this.cartridge);
-    this.core.stopEmulator &= 1;
+    this.core.stopEmulator &= 0x1;
 
     const frameHandler = (now: number) => {
       if (this.isPaused()) return;

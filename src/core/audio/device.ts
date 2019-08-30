@@ -1,10 +1,15 @@
+import "audioworklet-polyfill";
 import Resampler from "./resampler";
-// import NoiseGeneratorWorklet from "worklet-loader!./noise.worklet";
-// import NoiseGeneratorNode from "./NoiseGeneratorNode";
+import NoiseGeneratorNode from "./NoiseGeneratorNode";
+import NoiseGeneratorWorklet from "worklet-loader!./noise.worklet";
 
-
-
-const AudioContextClass = typeof window !== "undefined" ? (typeof AudioContext !== "undefined" ? AudioContext : (window as any).webkitAudioContext) : null;
+const AudioContextClass = typeof window !== "undefined" ?
+  (
+    typeof AudioContext !== "undefined" ?
+      AudioContext :
+      (window as any).webkitAudioContext
+  ) :
+  null;
 
 export default class AudioDevice {
   audioContextSampleBuffer: Float32Array;
@@ -15,9 +20,9 @@ export default class AudioDevice {
   resampleBufferEnd: number;
   volume: number;
   audioBufferSize: number;
-  audioNode: any;
+  audioNode: AudioNode;
   context: AudioContext;
-  audioWorkletSupport: boolean;
+  audioWorkletSupport: boolean = false;
   samplesPerCallback: number = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
   channelsAllocated: number;
   bufferSize: number;
@@ -34,15 +39,15 @@ export default class AudioDevice {
     this.setVolume(volume);
   }
 
-  setSampleRate(sampleRate) {
+  setSampleRate(sampleRate: number) {
     this.sampleRate = Math.abs(sampleRate);
   }
 
-  setMaxBufferSize(maxBufferSize) {
+  setMaxBufferSize(maxBufferSize: number) {
     this.maxBufferSize = Math.floor(maxBufferSize) > this.minBufferSize + this.channelsAllocated ? maxBufferSize & -this.channelsAllocated : this.minBufferSize * this.channelsAllocated;
   }
 
-  writeAudio(buffer) {
+  writeAudio(buffer: Float32Array) {
     let bufferCounter = 0;
     while (bufferCounter < buffer.length && this.audioBufferSize < this.maxBufferSize) {
       this.audioContextSampleBuffer[this.audioBufferSize++] = buffer[bufferCounter++];
@@ -55,29 +60,29 @@ export default class AudioDevice {
 
   async initializeAudio() {
     if (!this.audioNode) {
-      // if (this.audioWorkletSupport) {
-      //   this.resetAudioBuffer(this.context.sampleRate);
-      //   await this.context.audioWorklet.addModule(NoiseGeneratorWorklet);
+      if (this.audioWorkletSupport) {
+        this.resetAudioBuffer(this.context.sampleRate);
+        await this.context.audioWorklet.addModule(NoiseGeneratorWorklet);
 
-      //   let modulator = this.context.createOscillator();
-      //   let modGain = this.context.createGain();
-      //   let noiseGenerator = new NoiseGeneratorNode(this.context);
-      //   noiseGenerator.connect(this.context.destination);
+        let modulator = this.context.createOscillator();
+        let modGain = this.context.createGain();
+        let noiseGenerator = new NoiseGeneratorNode(this.context);
+        noiseGenerator.connect(this.context.destination);
 
-      //   modulator.connect(modGain).connect(noiseGenerator);
-      //   modulator.start();
-      // } else {
-      this.audioNode = this.context.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
+        modulator.connect(modGain).connect(noiseGenerator);
+        modulator.start();
+      } else {
+        this.audioNode = this.context.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
 
-      this.audioNode.onaudioprocess = e => this.processAudio(e);
-      this.audioNode.connect(this.context.destination);
-      this.resetAudioBuffer(this.context.sampleRate);
-      // }
+        this.audioNode.addEventListener("audioprocess", this.processAudio);
+        this.audioNode.connect(this.context.destination);
+        this.resetAudioBuffer(this.context.sampleRate);
+      }
     }
   }
 
-  processAudio(e) {
-    const channels = [];
+  processAudio = (e: AudioProcessingEvent) => {
+    const channels: Float32Array[] = [];
     let channel = 0;
 
     while (channel < this.channelsAllocated) {
@@ -114,11 +119,11 @@ export default class AudioDevice {
     }
   }
 
-  setVolume(volume) {
+  setVolume(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
   }
 
-  resetAudioBuffer(sampleRate) {
+  resetAudioBuffer(sampleRate: number) {
     this.audioBufferSize = this.resampleBufferEnd = this.resampleBufferStart = 0;
     this.initializeResampler(sampleRate);
     this.resampledBuffer = new Float32Array(this.resampleBufferSize);
@@ -148,7 +153,7 @@ export default class AudioDevice {
     }
   }
 
-  initializeResampler(sampleRate) {
+  initializeResampler(sampleRate: number) {
     this.audioContextSampleBuffer = new Float32Array(this.maxBufferSize);
     this.resampleBufferSize = Math.max(
       this.maxBufferSize * Math.ceil(sampleRate / this.sampleRate) + this.channelsAllocated,

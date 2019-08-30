@@ -1,63 +1,117 @@
+import keyMap from "./keyMap";
 import { GameBoy, util } from "../src";
+import * as MemoryLayout from "../src/core/memory/Layout";
 
-const keyMap = {
-  13: "start",
-  16: "select",
-  38: "up",
-  87: "up",
-  39: "right",
-  68: "right",
-  40: "down",
-  83: "down",
-  37: "left",
-  65: "left",
-  76: "a",
-  86: "a",
-  88: "b",
-  75: "b",
-  49: "save",
-  48: "load",
-  80: "speed"
-};
+window.addEventListener("load", () => {
+  const overlay = document.querySelector<HTMLDivElement>(".overlay");
+  const overlayTitle = overlay.querySelector<HTMLHeadingElement>("h1");
+  overlayTitle.textContent = "Click to start";
 
-const canvas = document.querySelector(".lcd");
+  const onInteract = () => {
+    overlay.style.display = "none";
+    window.removeEventListener("click", onInteract);
+    init();
+  };
 
-const gameboy = new GameBoy({
-  lcd: { canvas }
+  window.addEventListener("click", onInteract);
 });
 
-(window as any).gameboy = gameboy;
+const init = () => {
+  const canvas1 = document.querySelector(".lcd1");
+  const canvas2 = document.querySelector(".lcd2");
 
-window.addEventListener("keydown", ({ keyCode }) => {
-  if (keyMap[keyCode]) {
-    gameboy.actionDown(keyMap[keyCode]);
-  }
-});
-window.addEventListener("keyup", ({ keyCode }) => {
-  if (keyMap[keyCode]) {
-    gameboy.actionUp(keyMap[keyCode]);
-  }
-});
-
-const selectRomElement = document.querySelector<HTMLInputElement>(".rom-select");
-selectRomElement.addEventListener("change", async () => {
-  const file = selectRomElement.files[0];
-  const rom = await util.readCartridgeROM(file, file.name);
-  if (rom) {
-    gameboy.replaceCartridge(rom);
-  }
-});
-
-document
-  .querySelector(".download-battery-file-text")
-  .addEventListener("click", () => {
-    util.saveAs(gameboy.getBatteryFileArrayBuffer(), gameboy.core.cartridge.name + ".sav");
+  const gameboy1 = new GameBoy({
+    lcd: { canvas: canvas1 }
   });
 
-const uploadBatteryFileElement = document.querySelector<HTMLInputElement>(".upload-battery-file");
-uploadBatteryFileElement.addEventListener("change", async () => {
-  const battery = await util.readBlob(uploadBatteryFileElement.files[0]);
-  await gameboy.loadBatteryFileArrayBuffer(battery);
-});
+  const gameboy2 = new GameBoy({
+    lcd: { canvas: canvas2 }
+  });
 
-document.querySelector<HTMLElement>(".loading").style.display = "none";
+  (window as any).gameboy1 = gameboy1;
+  (window as any).gameboy2 = gameboy2;
+
+  gameboy1.on("serialData", data => {
+    console.log("send", data);
+    const response = gameboy2.transferSerial(data);
+    console.log("retrieve", response);
+    gameboy1.core.memoryWrite(MemoryLayout.SERIAL_DATA_REG, response);
+  });
+
+  let activeGameboy = gameboy1;
+  let both = false;
+
+  window.addEventListener("keydown", ({ keyCode }) => {
+    if (keyMap[keyCode]) {
+      if (both) {
+        gameboy1.actionDown(keyMap[keyCode]);
+        gameboy2.actionDown(keyMap[keyCode]);
+      } else activeGameboy.actionDown(keyMap[keyCode]);
+    }
+  });
+  window.addEventListener("keyup", ({ keyCode }) => {
+    if (keyMap[keyCode]) {
+      if (both) {
+        gameboy1.actionUp(keyMap[keyCode]);
+        gameboy2.actionUp(keyMap[keyCode]);
+      } else activeGameboy.actionUp(keyMap[keyCode]);
+    }
+  });
+
+  const selectRomElement = document.querySelector<HTMLInputElement>(".rom-select");
+  selectRomElement.addEventListener("change", async () => {
+    const file = selectRomElement.files[0];
+    if (!file) return;
+
+    const rom = await util.readCartridgeROM(file, file.name);
+    if (rom) {
+      if (both) {
+        gameboy1.replaceCartridge(rom);
+        gameboy2.replaceCartridge(rom);
+      } else activeGameboy.replaceCartridge(rom);
+    }
+
+    selectRomElement.value = "";
+  });
+
+  document
+    .querySelector(".download-battery-file-text")
+    .addEventListener("click", () => {
+      if (both) {
+        util.saveAs(gameboy1.getBatteryFileArrayBuffer(), gameboy1.core.cartridge.name + ".sav");
+        util.saveAs(gameboy2.getBatteryFileArrayBuffer(), gameboy2.core.cartridge.name + ".sav");
+      } else util.saveAs(activeGameboy.getBatteryFileArrayBuffer(), activeGameboy.core.cartridge.name + ".sav");
+    });
+
+  const uploadBatteryFileElement = document.querySelector<HTMLInputElement>(".upload-battery-file");
+  uploadBatteryFileElement.addEventListener("change", async () => {
+    const file = uploadBatteryFileElement.files[0];
+    if (!file) return;
+
+    const battery = await util.readBlob(file);
+
+    if (both) {
+      await gameboy1.loadBatteryFileArrayBuffer(battery);
+      await gameboy2.loadBatteryFileArrayBuffer(battery);
+    } else await activeGameboy.loadBatteryFileArrayBuffer(battery);
+
+    uploadBatteryFileElement.value = "";
+  });
+
+  const switchGameboy = document.querySelector<HTMLInputElement>(".switch-gameboy");
+  switchGameboy.addEventListener("change", () => {
+    switch (switchGameboy.value) {
+      case "gameboy1":
+        activeGameboy = gameboy1;
+        both = false;
+        break;
+      case "gameboy2":
+        activeGameboy = gameboy2;
+        both = false;
+        break;
+      case "both":
+        both = true;
+        break;
+    }
+  });
+};

@@ -203,6 +203,9 @@ export default class GameBoyCore {
     memoryNew: Memory;
     events: EventEmitter;
     api: GameBoy;
+    serialTransferRequested: boolean;
+    internalSerialClock: boolean;
+    fastSerialClockSpeed: boolean;
     constructor({ audio: audioOptions, api, lcd: lcdOptions }: any);
     loadState(state: any): void;
     jumpCompile(): void;
@@ -222,6 +225,8 @@ export default class GameBoyCore {
     writeChannel3RAM(address: any, data: any): void;
     run(): void;
     executeIteration(): void;
+    updateSerialTimer(): void;
+    transferSerial(data: number): number;
     iterationEndRoutine(): void;
     handleSTOP(): void;
     recalculateIterationClockLimit(): void;

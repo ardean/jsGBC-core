@@ -10,8 +10,8 @@ export default [
   // 0x01:
   function () {
     this.registerC = this.memoryRead(this.programCounter);
-    this.registerB = this.memoryRead(this.programCounter + 1 & 0xffff);
-    this.programCounter = this.programCounter + 2 & 0xffff;
+    this.registerB = this.memoryRead(this.programCounter + 1 & 0xFFFF);
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
   },
 
   // LD (BC), A
@@ -46,7 +46,7 @@ export default [
   //#0x06:
   function () {
     this.registerB = this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //RLCA
   //#0x07:
@@ -58,18 +58,18 @@ export default [
   //LD (nn), SP
   //#0x08:
   function () {
-    var temp_var = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 2 & 0xffff;
+    var temp_var = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 | this.memoryRead(this.programCounter);
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
     this.memoryWrite(temp_var, this.stackPointer & 0xff);
-    this.memoryWrite(temp_var + 1 & 0xffff, this.stackPointer >> 8);
+    this.memoryWrite(temp_var + 1 & 0xFFFF, this.stackPointer >> 8);
   },
   //ADD HL, BC
   //#0x09:
   function () {
     var dirtySum = this.registersHL + (this.registerB << 8 | this.registerC);
     this.FHalfCarry = (this.registersHL & 0xfff) > (dirtySum & 0xfff);
-    this.FCarry = dirtySum > 0xffff;
-    this.registersHL = dirtySum & 0xffff;
+    this.FCarry = dirtySum > 0xFFFF;
+    this.registersHL = dirtySum & 0xFFFF;
     this.FSubtract = false;
   },
   //LD A, (BC)
@@ -80,7 +80,7 @@ export default [
   //DEC BC
   //#0x0B:
   function () {
-    var temp_var = (this.registerB << 8 | this.registerC) - 1 & 0xffff;
+    var temp_var = (this.registerB << 8 | this.registerC) - 1 & 0xFFFF;
     this.registerB = temp_var >> 8;
     this.registerC = temp_var & 0xff;
   },
@@ -104,7 +104,7 @@ export default [
   //#0x0E:
   function () {
     this.registerC = this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //RRCA
   //#0x0F:
@@ -142,8 +142,8 @@ export default [
   //#0x11:
   function () {
     this.registerE = this.memoryRead(this.programCounter);
-    this.registerD = this.memoryRead(this.programCounter + 1 & 0xffff);
-    this.programCounter = this.programCounter + 2 & 0xffff;
+    this.registerD = this.memoryRead(this.programCounter + 1 & 0xFFFF);
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
   },
   //LD (DE), A
   //#0x12:
@@ -177,7 +177,7 @@ export default [
   //#0x16:
   function () {
     this.registerD = this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //RLA
   //#0x17:
@@ -190,15 +190,15 @@ export default [
   //JR n
   //#0x18:
   function () {
-    this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
+    this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xFFFF;
   },
   //ADD HL, DE
   //#0x19:
   function () {
     var dirtySum = this.registersHL + (this.registerD << 8 | this.registerE);
     this.FHalfCarry = (this.registersHL & 0xfff) > (dirtySum & 0xfff);
-    this.FCarry = dirtySum > 0xffff;
-    this.registersHL = dirtySum & 0xffff;
+    this.FCarry = dirtySum > 0xFFFF;
+    this.registersHL = dirtySum & 0xFFFF;
     this.FSubtract = false;
   },
   //LD A, (DE)
@@ -209,7 +209,7 @@ export default [
   //DEC DE
   //#0x1B:
   function () {
-    var temp_var = (this.registerD << 8 | this.registerE) - 1 & 0xffff;
+    var temp_var = (this.registerD << 8 | this.registerE) - 1 & 0xFFFF;
     this.registerD = temp_var >> 8;
     this.registerE = temp_var & 0xff;
   },
@@ -233,7 +233,7 @@ export default [
   //#0x1E:
   function () {
     this.registerE = this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //RRA
   //#0x1F:
@@ -247,17 +247,17 @@ export default [
   //#0x20:
   function () {
     if (!this.FZero) {
-      this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
+      this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xFFFF;
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 1 & 0xffff;
+      this.programCounter = this.programCounter + 1 & 0xFFFF;
     }
   },
   //LD HL, nn
   //#0x21:
   function () {
-    this.registersHL = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 2 & 0xffff;
+    this.registersHL = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 | this.memoryRead(this.programCounter);
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
   },
   //LDI (HL), A
   //#0x22:
@@ -266,12 +266,12 @@ export default [
       this.registersHL,
       this.registerA
     ]);
-    this.registersHL = this.registersHL + 1 & 0xffff;
+    this.registersHL = this.registersHL + 1 & 0xFFFF;
   },
   //INC HL
   //#0x23:
   function () {
-    this.registersHL = this.registersHL + 1 & 0xffff;
+    this.registersHL = this.registersHL + 1 & 0xFFFF;
   },
   //INC H
   //#0x24:
@@ -295,7 +295,7 @@ export default [
   //#0x26:
   function () {
     this.registersHL = this.memoryRead(this.programCounter) << 8 | this.registersHL & 0xff;
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //DAA
   //#0x27:
@@ -324,10 +324,10 @@ export default [
   //#0x28:
   function () {
     if (this.FZero) {
-      this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
+      this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xFFFF;
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 1 & 0xffff;
+      this.programCounter = this.programCounter + 1 & 0xFFFF;
     }
   },
   //ADD HL, HL
@@ -335,19 +335,19 @@ export default [
   function () {
     this.FHalfCarry = (this.registersHL & 0xfff) > 0x7ff;
     this.FCarry = this.registersHL > 0x7fff;
-    this.registersHL = this.registersHL << 1 & 0xffff;
+    this.registersHL = this.registersHL << 1 & 0xFFFF;
     this.FSubtract = false;
   },
   //LDI A, (HL)
   //#0x2A:
   function () {
     this.registerA = this.memoryRead(this.registersHL);
-    this.registersHL = this.registersHL + 1 & 0xffff;
+    this.registersHL = this.registersHL + 1 & 0xFFFF;
   },
   //DEC HL
   //#0x2B:
   function () {
-    this.registersHL = this.registersHL - 1 & 0xffff;
+    this.registersHL = this.registersHL - 1 & 0xFFFF;
   },
   //INC L
   //#0x2C:
@@ -371,7 +371,7 @@ export default [
   //#0x2E:
   function () {
     this.registersHL = this.registersHL & 0xff00 | this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //CPL
   //#0x2F:
@@ -383,17 +383,17 @@ export default [
   //#0x30:
   function () {
     if (!this.FCarry) {
-      this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
+      this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xFFFF;
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 1 & 0xffff;
+      this.programCounter = this.programCounter + 1 & 0xFFFF;
     }
   },
   //LD SP, nn
   //#0x31:
   function () {
-    this.stackPointer = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 2 & 0xffff;
+    this.stackPointer = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 | this.memoryRead(this.programCounter);
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
   },
   //LDD (HL), A
   //#0x32:
@@ -402,12 +402,12 @@ export default [
       this.registersHL,
       this.registerA
     ]);
-    this.registersHL = this.registersHL - 1 & 0xffff;
+    this.registersHL = this.registersHL - 1 & 0xFFFF;
   },
   //INC SP
   //#0x33:
   function () {
-    this.stackPointer = this.stackPointer + 1 & 0xffff;
+    this.stackPointer = this.stackPointer + 1 & 0xFFFF;
   },
   //INC (HL)
   //#0x34:
@@ -440,7 +440,7 @@ export default [
       this.registersHL,
       this.memoryRead(this.programCounter)
     ]);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //SCF
   //#0x37:
@@ -453,10 +453,10 @@ export default [
   function () {
     if (this.FCarry) {
       this.programCounter = this.programCounter +
-        (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
+        (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xFFFF;
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 1 & 0xffff;
+      this.programCounter = this.programCounter + 1 & 0xFFFF;
     }
   },
   //ADD HL, SP
@@ -464,20 +464,20 @@ export default [
   function () {
     var dirtySum = this.registersHL + this.stackPointer;
     this.FHalfCarry = (this.registersHL & 0xfff) > (dirtySum & 0xfff);
-    this.FCarry = dirtySum > 0xffff;
-    this.registersHL = dirtySum & 0xffff;
+    this.FCarry = dirtySum > 0xFFFF;
+    this.registersHL = dirtySum & 0xFFFF;
     this.FSubtract = false;
   },
   //LDD A, (HL)
   //#0x3A:
   function () {
     this.registerA = this.memoryRead(this.registersHL);
-    this.registersHL = this.registersHL - 1 & 0xffff;
+    this.registersHL = this.registersHL - 1 & 0xFFFF;
   },
   //DEC SP
   //#0x3B:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
   },
   //INC A
   //#0x3C:
@@ -499,7 +499,7 @@ export default [
   //#0x3E:
   function () {
     this.registerA = this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //CCF
   //#0x3F:
@@ -1482,8 +1482,8 @@ export default [
   //#0xC0:
   function () {
     if (!this.FZero) {
-      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
-      this.stackPointer = this.stackPointer + 2 & 0xffff;
+      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xFFFF) << 8 | this.memoryRead(this.stackPointer);
+      this.stackPointer = this.stackPointer + 2 & 0xFFFF;
       this.CPUTicks += 12;
     }
   },
@@ -1491,25 +1491,25 @@ export default [
   //#0xC1:
   function () {
     this.registerC = this.memoryRead(this.stackPointer);
-    this.registerB = this.memoryRead(this.stackPointer + 1 & 0xffff);
-    this.stackPointer = this.stackPointer + 2 & 0xffff;
+    this.registerB = this.memoryRead(this.stackPointer + 1 & 0xFFFF);
+    this.stackPointer = this.stackPointer + 2 & 0xFFFF;
   },
   //JP !FZ, nn
   //#0xC2:
   function () {
     if (!this.FZero) {
-      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) <<
+      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xFFFF) <<
         8 |
         this.memoryRead(this.programCounter);
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //JP nn
   //#0xC3:
   function () {
-    this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) <<
+    this.programCounter = this.memoryRead(this.programCounter + 1 & 0xFFFF) <<
       8 |
       this.memoryRead(this.programCounter);
   },
@@ -1517,15 +1517,15 @@ export default [
   //#0xC4:
   function () {
     if (!this.FZero) {
-      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 |
+      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 |
         this.memoryRead(this.programCounter);
-      this.programCounter = this.programCounter + 2 & 0xffff;
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter >> 8
       ]);
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter & 0xff
@@ -1533,18 +1533,18 @@ export default [
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //PUSH BC
   //#0xC5:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.registerB
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.registerC
@@ -1555,7 +1555,7 @@ export default [
   function () {
     var dirtySum = this.registerA +
       this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     this.FHalfCarry = (dirtySum & 0xf) < (this.registerA & 0xf);
     this.FCarry = dirtySum > 0xff;
     this.registerA = dirtySum & 0xff;
@@ -1565,12 +1565,12 @@ export default [
   //RST 0
   //#0xC7:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -1581,25 +1581,25 @@ export default [
   //#0xC8:
   function () {
     if (this.FZero) {
-      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
-      this.stackPointer = this.stackPointer + 2 & 0xffff;
+      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xFFFF) << 8 | this.memoryRead(this.stackPointer);
+      this.stackPointer = this.stackPointer + 2 & 0xFFFF;
       this.CPUTicks += 12;
     }
   },
   //RET
   //#0xC9:
   function () {
-    this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
-    this.stackPointer = this.stackPointer + 2 & 0xffff;
+    this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xFFFF) << 8 | this.memoryRead(this.stackPointer);
+    this.stackPointer = this.stackPointer + 2 & 0xFFFF;
   },
   //JP FZ, nn
   //#0xCA:
   function () {
     if (this.FZero) {
-      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
+      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 | this.memoryRead(this.programCounter);
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //Secondary OP Code Set:
@@ -1607,7 +1607,7 @@ export default [
   function () {
     const operationCode = this.memoryRead(this.programCounter);
     //Increment the program counter to the next instruction:
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     //Get how many CPU cycles the current 0xCBXX op code counts for:
     this.CPUTicks += SecondaryTickTable[operationCode];
     //Execute secondary OP codes for the 0xCB OP code call.
@@ -1617,14 +1617,14 @@ export default [
   //#0xCC:
   function () {
     if (this.FZero) {
-      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
-      this.programCounter = this.programCounter + 2 & 0xffff;
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 | this.memoryRead(this.programCounter);
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter >> 8
       ]);
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter & 0xff
@@ -1632,21 +1632,21 @@ export default [
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //CALL nn
   //#0xCD:
   function () {
-    var temp_pc = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 |
+    var temp_pc = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 |
       this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 2 & 0xffff;
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -1657,7 +1657,7 @@ export default [
   //#0xCE:
   function () {
     var tempValue = this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     var dirtySum = this.registerA + tempValue + (this.FCarry ? 1 : 0);
     this.FHalfCarry = (this.registerA & 0xf) +
       (tempValue & 0xf) +
@@ -1671,12 +1671,12 @@ export default [
   //RST 0x8
   //#0xCF:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -1687,8 +1687,8 @@ export default [
   //#0xD0:
   function () {
     if (!this.FCarry) {
-      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
-      this.stackPointer = this.stackPointer + 2 & 0xffff;
+      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xFFFF) << 8 | this.memoryRead(this.stackPointer);
+      this.stackPointer = this.stackPointer + 2 & 0xFFFF;
       this.CPUTicks += 12;
     }
   },
@@ -1696,19 +1696,19 @@ export default [
   //#0xD1:
   function () {
     this.registerE = this.memoryRead(this.stackPointer);
-    this.registerD = this.memoryRead(this.stackPointer + 1 & 0xffff);
-    this.stackPointer = this.stackPointer + 2 & 0xffff;
+    this.registerD = this.memoryRead(this.stackPointer + 1 & 0xFFFF);
+    this.stackPointer = this.stackPointer + 2 & 0xFFFF;
   },
   //JP !FC, nn
   //#0xD2:
   function () {
     if (!this.FCarry) {
-      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) <<
+      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xFFFF) <<
         8 |
         this.memoryRead(this.programCounter);
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //0xD3 - Illegal
@@ -1720,14 +1720,14 @@ export default [
   //#0xD4:
   function () {
     if (!this.FCarry) {
-      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
-      this.programCounter = this.programCounter + 2 & 0xffff;
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 | this.memoryRead(this.programCounter);
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter >> 8
       ]);
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter & 0xff
@@ -1735,18 +1735,18 @@ export default [
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //PUSH DE
   //#0xD5:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.registerD
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.registerE
@@ -1756,7 +1756,7 @@ export default [
   //#0xD6:
   function () {
     var dirtySum = this.registerA - this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     this.FHalfCarry = (this.registerA & 0xf) < (dirtySum & 0xf);
     this.FCarry = dirtySum < 0;
     this.registerA = dirtySum & 0xff;
@@ -1766,12 +1766,12 @@ export default [
   //RST 0x10
   //#0xD7:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -1782,16 +1782,16 @@ export default [
   //#0xD8:
   function () {
     if (this.FCarry) {
-      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
-      this.stackPointer = this.stackPointer + 2 & 0xffff;
+      this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xFFFF) << 8 | this.memoryRead(this.stackPointer);
+      this.stackPointer = this.stackPointer + 2 & 0xFFFF;
       this.CPUTicks += 12;
     }
   },
   //RETI
   //#0xD9:
   function () {
-    this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
-    this.stackPointer = this.stackPointer + 2 & 0xffff;
+    this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xFFFF) << 8 | this.memoryRead(this.stackPointer);
+    this.stackPointer = this.stackPointer + 2 & 0xFFFF;
     //Immediate for HALT:
     this.IRQEnableDelay = this.IRQEnableDelay === 2 || this.memoryRead(this.programCounter) === 0x76 ? 1 : 2;
   },
@@ -1799,12 +1799,12 @@ export default [
   //#0xDA:
   function () {
     if (this.FCarry) {
-      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) <<
+      this.programCounter = this.memoryRead(this.programCounter + 1 & 0xFFFF) <<
         8 |
         this.memoryRead(this.programCounter);
       this.CPUTicks += 4;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //0xDB - Illegal
@@ -1816,15 +1816,15 @@ export default [
   //#0xDC:
   function () {
     if (this.FCarry) {
-      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 |
+      var temp_pc = this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 |
         this.memoryRead(this.programCounter);
-      this.programCounter = this.programCounter + 2 & 0xffff;
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter >> 8
       ]);
-      this.stackPointer = this.stackPointer - 1 & 0xffff;
+      this.stackPointer = this.stackPointer - 1 & 0xFFFF;
       this.memoryWriter[this.stackPointer].apply(this, [
         this.stackPointer,
         this.programCounter & 0xff
@@ -1832,7 +1832,7 @@ export default [
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
-      this.programCounter = this.programCounter + 2 & 0xffff;
+      this.programCounter = this.programCounter + 2 & 0xFFFF;
     }
   },
   //0xDD - Illegal
@@ -1844,7 +1844,7 @@ export default [
   //#0xDE:
   function () {
     var temp_var = this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     var dirtySum = this.registerA - temp_var - (this.FCarry ? 1 : 0);
     this.FHalfCarry = (this.registerA & 0xf) -
       (temp_var & 0xf) -
@@ -1858,12 +1858,12 @@ export default [
   //RST 0x18
   //#0xDF:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -1874,13 +1874,13 @@ export default [
   //#0xE0:
   function () {
     this.memoryHighWrite(this.memoryRead(this.programCounter), this.registerA);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //POP HL
   //#0xE1:
   function () {
-    this.registersHL = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
-    this.stackPointer = this.stackPointer + 2 & 0xffff;
+    this.registersHL = this.memoryRead(this.stackPointer + 1 & 0xFFFF) << 8 | this.memoryRead(this.stackPointer);
+    this.stackPointer = this.stackPointer + 2 & 0xFFFF;
   },
   //LD (0xFF00 + C), A
   //#0xE2:
@@ -1893,22 +1893,22 @@ export default [
   //0xE3 - Illegal
   //#0xE3:
   function () {
-    console.log("Illegal op code 0xE3 called, pausing emulation.");
+    console.error("Illegal op code 0xE3 called, pausing emulation.");
   },
   //0xE4 - Illegal
   //#0xE4:
   function () {
-    console.log("Illegal op code 0xE4 called, pausing emulation.");
+    console.error("Illegal op code 0xE4 called, pausing emulation.");
   },
   //PUSH HL
   //#0xE5:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.registersHL >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.registersHL & 0xff
@@ -1918,7 +1918,7 @@ export default [
   //#0xE6:
   function () {
     this.registerA &= this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     this.FZero = this.registerA === 0;
     this.FHalfCarry = true;
     this.FSubtract = this.FCarry = false;
@@ -1926,12 +1926,12 @@ export default [
   //RST 0x20
   //#0xE7:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -1942,8 +1942,8 @@ export default [
   //#0xE8:
   function () {
     var temp_value2 = this.memoryRead(this.programCounter) << 24 >> 24;
-    this.programCounter = this.programCounter + 1 & 0xffff;
-    var temp_value = this.stackPointer + temp_value2 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
+    var temp_value = this.stackPointer + temp_value2 & 0xFFFF;
     temp_value2 = this.stackPointer ^ temp_value2 ^ temp_value;
     this.stackPointer = temp_value;
     this.FCarry = (temp_value2 & 0x100) === 0x100;
@@ -1959,11 +1959,11 @@ export default [
   //#0xEA:
   function () {
     this.memoryWrite(
-      this.memoryRead(this.programCounter + 1 & 0xffff) << 8 |
+      this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 |
       this.memoryRead(this.programCounter),
       this.registerA
     );
-    this.programCounter = this.programCounter + 2 & 0xffff;
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
   },
   //0xEB - Illegal
   //#0xEB:
@@ -1984,19 +1984,19 @@ export default [
   //#0xEE:
   function () {
     this.registerA ^= this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     this.FZero = this.registerA === 0;
     this.FSubtract = this.FHalfCarry = this.FCarry = false;
   },
   //RST 0x28
   //#0xEF:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -2007,7 +2007,7 @@ export default [
   //#0xF0:
   function () {
     this.registerA = this.memoryHighRead(this.memoryRead(this.programCounter));
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
   },
   //POP AF
   //#0xF1:
@@ -2017,8 +2017,8 @@ export default [
     this.FSubtract = (temp_var & 0x40) === 0x40;
     this.FHalfCarry = (temp_var & 0x20) === 0x20;
     this.FCarry = (temp_var & 0x10) === 0x10;
-    this.registerA = this.memoryRead(this.stackPointer + 1 & 0xffff);
-    this.stackPointer = this.stackPointer + 2 & 0xffff;
+    this.registerA = this.memoryRead(this.stackPointer + 1 & 0xFFFF);
+    this.stackPointer = this.stackPointer + 2 & 0xFFFF;
   },
   //LD A, (0xFF00 + C)
   //#0xF2:
@@ -2041,12 +2041,12 @@ export default [
   //PUSH AF
   //#0xF5:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.registerA
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       (this.FZero ? 0x80 : 0) |
@@ -2060,18 +2060,18 @@ export default [
   function () {
     this.registerA |= this.memoryRead(this.programCounter);
     this.FZero = this.registerA === 0;
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     this.FSubtract = this.FCarry = this.FHalfCarry = false;
   },
   //RST 0x30
   //#0xF7:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
@@ -2082,8 +2082,8 @@ export default [
   //#0xF8:
   function () {
     var temp_var = this.memoryRead(this.programCounter) << 24 >> 24;
-    this.programCounter = this.programCounter + 1 & 0xffff;
-    this.registersHL = this.stackPointer + temp_var & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
+    this.registersHL = this.stackPointer + temp_var & 0xFFFF;
     temp_var = this.stackPointer ^ temp_var ^ this.registersHL;
     this.FCarry = (temp_var & 0x100) === 0x100;
     this.FHalfCarry = (temp_var & 0x10) === 0x10;
@@ -2098,10 +2098,10 @@ export default [
   //#0xFA:
   function () {
     this.registerA = this.memoryRead(
-      this.memoryRead(this.programCounter + 1 & 0xffff) << 8 |
+      this.memoryRead(this.programCounter + 1 & 0xFFFF) << 8 |
       this.memoryRead(this.programCounter)
     );
-    this.programCounter = this.programCounter + 2 & 0xffff;
+    this.programCounter = this.programCounter + 2 & 0xFFFF;
   },
   //EI
   //#0xFB:
@@ -2120,7 +2120,7 @@ export default [
   //#0xFE:
   function () {
     var dirtySum = this.registerA - this.memoryRead(this.programCounter);
-    this.programCounter = this.programCounter + 1 & 0xffff;
+    this.programCounter = this.programCounter + 1 & 0xFFFF;
     this.FHalfCarry = (dirtySum & 0xf) > (this.registerA & 0xf);
     this.FCarry = dirtySum < 0;
     this.FZero = dirtySum === 0;
@@ -2129,12 +2129,12 @@ export default [
   //RST 0x38
   //#0xFF:
   function () {
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter >> 8
     ]);
-    this.stackPointer = this.stackPointer - 1 & 0xffff;
+    this.stackPointer = this.stackPointer - 1 & 0xFFFF;
     this.memoryWriter[this.stackPointer].apply(this, [
       this.stackPointer,
       this.programCounter & 0xff
