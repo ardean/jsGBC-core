@@ -37,7 +37,7 @@
     "clean-webpack-plugin": "^0.1.19",
     "cpy-cli": "^2.0.0",
     "del-cli": "^1.1.0",
-    "speaker": "^0.4.0",
+    "speaker": "^0.5.1",
     "ts-loader": "^4.3.0",
     "typescript": "^2.8.3",
     "web-audio-api": "^0.2.2",
