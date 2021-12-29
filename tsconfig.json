@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "declarationDir": "./types",
+    "declarationDir": "./dist/types",
     "noImplicitAny": false,
     "moduleResolution": "node",
     "esModuleInterop": true,

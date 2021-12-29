@@ -1,7 +1,7 @@
 const path = require("path");
 const webpack = require("webpack");
 const WorkerUrlPlugin = require("worker-url/plugin");
-const CleanWebpackPlugin = require("clean-webpack-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
   entry: "./src/index.ts",
@@ -31,7 +31,7 @@ module.exports = {
     }
   },
   plugins: [
-    new CleanWebpackPlugin(["dist"]),
+    new CleanWebpackPlugin(),
     new WorkerUrlPlugin(),
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV)
