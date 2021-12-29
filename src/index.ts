@@ -1,3 +1,4 @@
+import "./types";
 import GameBoy from "./Gameboy";
 import Storage from "./storages/Storage";
 import LocalStorage from "./storages/LocalStorage";
