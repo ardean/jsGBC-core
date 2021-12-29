@@ -1,4 +1,4 @@
-import Resampler from "./resampler";
+import Resampler from "./Resampler_";
 
 const AudioContextClass = typeof window !== "undefined" ?
   (typeof AudioContext !== "undefined" ? AudioContext : (window as any).webkitAudioContext) :
