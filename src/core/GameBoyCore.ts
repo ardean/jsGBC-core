@@ -1,4 +1,5 @@
 import CPU from "./cpu";
+import ROM from "./ROM";
 import { GameBoy } from "..";
 import Memory from "./memory";
 import Joypad from "./Joypad";
@@ -42,8 +43,7 @@ export default class GameBoyCore {
   pixelStart: number;
   cartridge: Cartridge;
   memory: Uint8Array;
-  usedBootROM: boolean;
-  inBootstrap: boolean;
+  inBootstrap: boolean = true;
   VRAM: Uint8Array;
   GBCMemory: Uint8Array;
   frameBuffer: util.TypedArray;
@@ -94,7 +94,6 @@ export default class GameBoyCore {
   drewBlank: number;
   programCounter: number;
   stackPointer: number;
-  usedGBCBootROM: boolean;
   halt: any;
   skipPCIncrement: any;
   doubleSpeedShifter: number;
@@ -126,8 +125,6 @@ export default class GameBoyCore {
   memoryReader: any[];
   IRQLineMatched: number;
   stopEmulator: number;
-  GBCBOOTROM: any[];
-  GBBOOTROM: any[];
   lcdController: LcdController;
   stateManager: StateManager;
   lcdDevice: LcdDevice;
@@ -139,11 +136,19 @@ export default class GameBoyCore {
   events: EventEmitter;
   api: GameBoy;
 
-  constructor({
-    audio: audioOptions = {},
-    api,
-    lcd: lcdOptions = {}
-  }: any) {
+  usedBootRom: boolean;
+
+  gbBootRom?: ROM;
+  gbcBootRom?: ROM;
+  usedGbcBootRom: boolean;
+
+  constructor(
+    {
+      api,
+      audio: audioOptions = {},
+      lcd: lcdOptions = {}
+    }: any
+  ) {
     this.api = api;
 
     this.events = new EventEmitter(); // TODO: use as super
@@ -164,14 +169,6 @@ export default class GameBoyCore {
     this.lcdController = new LcdController();
     this.stateManager = new StateManager(this);
     this.stateManager.init();
-
-    //GB BOOT ROM
-    //Add 256 byte boot rom here if you are going to use it.
-    this.GBBOOTROM = [];
-
-    //GBC BOOT ROM
-    //Add 2048 byte boot rom here if you are going to use it.
-    this.GBCBOOTROM = [];
 
     this.stopEmulator = 3; // Has the emulation been paused or a frame has ended?
     this.IRQLineMatched = 0; // CPU IRQ assertion.
@@ -234,6 +231,8 @@ export default class GameBoyCore {
     this.cartridge = cartridge;
 
     this.loadCartridgeRomIntoMemory();
+    if (this.gbcBootRom) this.loadGbcBootRomIntoMemory();
+    else if (this.gbBootRom) this.loadGbBootRomIntoMemory();
 
     this.cartridge.interpret();
 
@@ -249,9 +248,36 @@ export default class GameBoyCore {
     }
   }
 
+  loadGbcBootRomIntoMemory() {
+    let address = 0;
+    while (address < 0x100) {
+      this.memory[address] = this.gbcBootRom.getByte(address);
+      ++address;
+    }
+    while (address < 0x200) {
+      this.memory[address] = this.cartridge.rom.getByte(address);
+      ++address;
+    }
+    while (address < 0x900) {
+      this.memory[address] = this.gbcBootRom.getByte(address);
+      ++address;
+    }
+    this.usedBootRom = true;
+    this.usedGbcBootRom = true;
+  }
+
+  loadGbBootRomIntoMemory() {
+    let address = 0;
+    while (address < 0x100) {
+      this.memory[address] = this.gbBootRom.getByte(address);
+      ++address;
+    }
+    this.usedBootRom = true;
+  }
+
   loadCartridgeRomIntoMemory() {
-    for (let index = 0; index < 0x4000; index++) {
-      this.memory[index] = this.cartridge.rom.getByte(index);
+    for (let address = 0; address < 0x4000; address++) {
+      this.memory[address] = this.cartridge.rom.getByte(address);
     }
   }
 
@@ -266,7 +292,7 @@ export default class GameBoyCore {
       });
     }
 
-    if (!this.usedBootROM) {
+    if (!this.usedBootRom) {
       this.inBootstrap = false;
       this.setupRAM();
       this.initSkipBootstrap();
@@ -487,10 +513,9 @@ export default class GameBoyCore {
   }
 
   disableBootROM() {
-    // Remove any traces of the boot ROM from ROM memory.
     this.loadCartridgeRomIntoMemory();
 
-    if (this.usedGBCBootROM) {
+    if (this.usedGbcBootRom) {
       if (!this.cartridge.useGBCMode) {
         // Clean up the post-boot (GB mode only) state:
         this.adjustGBCtoGBMode();
@@ -593,7 +618,9 @@ export default class GameBoyCore {
       //Update the clocking for the LCD emulation:
       const timedTicks = this.CPUTicks >> this.doubleSpeedShifter;
       this.LCDTicks += timedTicks; //LCD Timing
-      this.LCDCONTROL[this.actualScanLine](this); //Scan Line and STAT Mode Control
+
+      const scanLineProcessor = this.LCDCONTROL[this.actualScanLine] || (() => { });
+      scanLineProcessor(this); // Scan Line and STAT Mode Control
 
       //Single-speed relative timing for A/V emulation:
       this.audioController.audioTicks += timedTicks; //Audio Timing
@@ -2447,7 +2474,7 @@ export default class GameBoyCore {
               return this.currVRAMBank;
             };
             break;
-          case 0xff50:
+          case MemoryLayout.disableBootRomAddress:
           case 0xff51:
           case 0xff52:
           case 0xff53:
@@ -2619,9 +2646,9 @@ export default class GameBoyCore {
     return this.GBCMemory[address + this.gbcRamBankPosition];
   };
 
-  memoryReadOAM(address: number) {
+  memoryReadOAM = (address: number) => {
     return this.modeSTAT > 1 ? 0xff : this.memory[address];
-  }
+  };
 
   memoryReadECHOGBCMemory = (address: number) => {
     return this.GBCMemory[address + this.gbcRamBankPositionECHO];
@@ -2631,9 +2658,9 @@ export default class GameBoyCore {
     return this.memory[address - 0x2000];
   };
 
-  badMemoryRead() {
+  badMemoryRead = () => {
     return 0xff;
-  }
+  };
 
   VRAMDATAReadCGBCPU = (address) => {
     // CPU Side Reading The VRAM (Optimized for GameBoy Color)
@@ -3209,12 +3236,12 @@ export default class GameBoyCore {
         }
       };
       this.highMemoryWriter[0x40] = this.memoryWriter[0xff40] = (address, data) => {
-        if (this.memory[0xff40] != data) {
+        if (this.memory[0xff40] !== data) {
           this.midScanLineJIT();
-          var temp_var = data > 0x7f;
-          if (temp_var != this.LCDisOn) {
+          const isLcdOn = data > 0x7f;
+          if (isLcdOn !== this.LCDisOn) {
             // When the display mode changes...
-            this.LCDisOn = temp_var;
+            this.LCDisOn = isLcdOn;
             this.memory[0xff41] &= 0x78;
             this.midScanlineOffset = -1;
             this.cpu.totalLinesPassed = this.currentX = this.queuedScanLines = this.lastUnrenderedLine = this.STATTracker = this.LCDTicks = this.actualScanLine = this.memory[0xff44] = 0;
@@ -3425,7 +3452,7 @@ export default class GameBoyCore {
         this.mode1TriggerSTAT = (data & 0x10) === 0x10;
         this.mode0TriggerSTAT = (data & 0x08) === 0x08;
         this.memory[0xff41] = data & 0x78;
-        if ((!this.usedBootROM || !this.usedGBCBootROM) && this.LCDisOn && this.modeSTAT < 2) {
+        if ((!this.usedBootRom || !this.usedGbcBootRom) && this.LCDisOn && this.modeSTAT < 2) {
           this.interruptsRequested |= 0x2;
           this.checkIRQMatching();
         }
@@ -3500,11 +3527,12 @@ export default class GameBoyCore {
   recompileBootIOWriteHandling() {
     // Boot I/O Registers:
     if (this.inBootstrap) {
-      this.highMemoryWriter[0x50] = this.memoryWriter[0xff50] = (address: number, data: number) => {
-        console.log("Boot ROM reads blocked: Bootstrap process has ended.", 0);
+      this.highMemoryWriter[0x50] = this.memoryWriter[MemoryLayout.disableBootRomAddress] = (address: number, data: number) => {
+        console.log("Bootstrap process has ended");
+
         this.inBootstrap = false;
-        this.disableBootROM(); //Fill in the boot ROM ranges with ROM  bank 0 ROM ranges
-        this.memory[0xff50] = data; //Bits are sustained in memory?
+        this.disableBootROM(); // Fill in the boot ROM ranges with ROM bank 0 ROM ranges
+        this.memory[MemoryLayout.disableBootRomAddress] = data;
       };
       if (this.cartridge.useGBCMode) {
         this.highMemoryWriter[0x6c] = this.memoryWriter[0xff6c] = (address: number, data: number) => {
@@ -3516,7 +3544,7 @@ export default class GameBoyCore {
       }
     } else {
       // Lockout the ROMs from accessing the BOOT ROM control register:
-      this.highMemoryWriter[0x50] = this.memoryWriter[0xff50] = this.onIllegalWrite;
+      this.highMemoryWriter[0x50] = this.memoryWriter[MemoryLayout.disableBootRomAddress] = this.onIllegalWrite;
     }
   };
 }

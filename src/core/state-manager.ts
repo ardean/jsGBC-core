@@ -401,7 +401,7 @@ export default class StateManager {
     } else {
       index += 12;
     }
-    gameboy.usedBootROM = state[index++];
+    gameboy.usedBootRom = state[index++];
     gameboy.skipPCIncrement = state[index++];
     gameboy.STATTracker = state[index++];
     gameboy.gbcRamBankPositionECHO = state[index++];

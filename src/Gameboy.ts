@@ -1,3 +1,4 @@
+import ROM from "./core/ROM";
 import Actions from "./actions";
 import settings from "./settings";
 import { EventEmitter } from "events";
@@ -119,6 +120,22 @@ export default class GameBoy extends EventEmitter {
   restart() {
     this.turnOff();
     this.turnOn();
+  }
+
+  setGbBootRom(rom: ROM | ArrayBuffer | Uint8Array) {
+    if (!(rom instanceof ROM)) {
+      rom = new ROM(rom);
+    }
+
+    this.core.gbBootRom = rom;
+  }
+
+  setGbcBootRom(rom: ROM | ArrayBuffer | Uint8Array) {
+    if (!(rom instanceof ROM)) {
+      rom = new ROM(rom);
+    }
+
+    this.core.gbcBootRom = rom;
   }
 
   replaceCartridge(cartridge: Cartridge | ArrayBuffer | Uint8Array) {

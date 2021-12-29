@@ -144,17 +144,24 @@ export async function readBlob(file: Blob): Promise<ArrayBuffer> {
   });
 }
 
-export async function readCartridgeROM(blob: Blob, filename: string = ""): Promise<ArrayBuffer> {
+export async function readFirstMatchingExtension(
+  blob: Blob,
+  filename: string = "",
+  extensions: string[]
+): Promise<ArrayBuffer> {
   let buffer = await readBlob(blob);
 
-  if (hasExtension(filename, "zip")) {
+  if (
+    !extensions.includes("zip") &&
+    hasExtension(filename, "zip")
+  ) {
     const decodedZip = await JSZip.loadAsync(buffer);
     const filenames = Object.keys(decodedZip.files);
-    const validFilenames = filenames.filter(x => hasExtension(x, "gbc") || hasExtension(x, "gb"));
+    const validFilenames = filenames.filter(x => extensions.find(extension => hasExtension(x, extension)));
     if (validFilenames.length > 0) {
       buffer = await decodedZip.file(validFilenames[0]).async("arraybuffer");
     } else {
-      buffer = null;
+      buffer = undefined;
     }
   }
 
