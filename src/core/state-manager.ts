@@ -118,7 +118,7 @@ export default class StateManager {
     //   gameboy.channel4envelopeSweepsLast,
     //   gameboy.channel4consecutive,
     //   gameboy.channel4BitRange,
-    //   gameboy.soundMasterEnabled,
+    //   gameboy.audioController.enabled,
     //   gameboy.audioController.VinLeftChannelMasterVolume,
     //   gameboy.audioController.VinRightChannelMasterVolume,
     //   gameboy.leftChannel1,
@@ -336,7 +336,7 @@ export default class StateManager {
     gameboy.channel4envelopeSweepsLast = state[index++];
     gameboy.channel4consecutive = state[index++];
     gameboy.channel4BitRange = state[index++];
-    gameboy.soundMasterEnabled = state[index++];
+    gameboy.audioController.enabled = state[index++];
     gameboy.audioController.VinLeftChannelMasterVolume = state[index++];
     gameboy.audioController.VinRightChannelMasterVolume = state[index++];
     gameboy.leftChannel1 = state[index++];

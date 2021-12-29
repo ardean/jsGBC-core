@@ -56,4 +56,20 @@ export default class Joypad {
     );
     this.gameboy.cpu.stopped = false;
   }
+
+  registerMemoryWriters() {
+    this.gameboy.highMemoryWriter[0] = this.gameboy.memoryWriter[JOYPAD_REG] = (address: number, data: number) => {
+      this.gameboy.memory[JOYPAD_REG] = data & 0x30 |
+        (
+          (data & 0x20) === 0 ?
+            this.value >> 4 :
+            0xf
+        ) &
+        (
+          (data & 0x10) === 0 ?
+            this.value & 0xf :
+            0xf
+        );
+    };
+  }
 }

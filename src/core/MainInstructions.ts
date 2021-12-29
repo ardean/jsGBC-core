@@ -1885,7 +1885,7 @@ export default [
   //LD (0xFF00 + C), A
   //#0xE2:
   function () {
-    this.memoryHighWriter[this.registerC].apply(this, [
+    this.highMemoryWriter[this.registerC].apply(this, [
       this.registerC,
       this.registerA
     ]);

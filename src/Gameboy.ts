@@ -40,6 +40,7 @@ export default class GameBoy extends EventEmitter {
     this.isOn = false;
     this.actions = new Actions();
     this.registerActions();
+
     if (typeof document !== "undefined") {
       this.storage = new LocalStorage();
     }
@@ -89,7 +90,7 @@ export default class GameBoy extends EventEmitter {
     this.isOn = true;
 
     this.core.start(this.cartridge);
-    this.core.stopEmulator &= 1;
+    this.core.stopEmulator = 1;
 
     const frameHandler = (now: number) => {
       if (this.isPaused()) return;
