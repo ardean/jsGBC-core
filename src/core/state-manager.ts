@@ -45,7 +45,6 @@ export default class StateManager {
     //   // fromTypedArray(gameboy.VRAM),
     //   gameboy.currVRAMBank,
     //   fromTypedArray(gameboy.GBCMemory),
-    //   gameboy.useGBCMode,
     //   gameboy.gbcRamBank,
     //   gameboy.gbcRamBankPosition,
     //   gameboy.ROMBank1Offset,
@@ -256,7 +255,6 @@ export default class StateManager {
     gameboy.VRAM = toTypedArray(state[index++], "uint8");
     gameboy.currVRAMBank = state[index++];
     gameboy.GBCMemory = toTypedArray(state[index++], "uint8");
-    gameboy.useGBCMode = state[index++];
     gameboy.gbcRamBank = state[index++];
     gameboy.gbcRamBankPosition = state[index++];
     gameboy.ROMBank1Offset = state[index++];

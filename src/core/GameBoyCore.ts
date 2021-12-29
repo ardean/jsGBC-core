@@ -18,7 +18,6 @@ import AudioController from "./audio/AudioController";
 import postBootRegisterState from "./postBootRegisterState";
 
 export default class GameBoyCore {
-  useGBCMode: any;
   ROMBank1Offset: any;
   BGPriorityEnabled: any;
   haltPostClocks: any;

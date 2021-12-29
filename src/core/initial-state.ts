@@ -25,7 +25,6 @@ export default [
   [], // Extra VRAM bank for GBC.
   0, // Current VRAM bank for GBC.
   [], // GBC main RAM Banks
-  false, // GameBoy Color detection.
   1, // Currently Switched GameBoy Color ram bank
   -0xd000, // GBC RAM offset from address start.
   0, // Offset of the ROM bank switching.
