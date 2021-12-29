@@ -1,16 +1,22 @@
-// declare module "*.worklet" {
-//   const exportString: string;
-//   export default exportString;
-// }
+interface AudioWorkletProcessor {
+  readonly port: MessagePort;
+  process(
+    inputs: Float32Array[][],
+    outputs: Float32Array[][],
+    parameters: Record<string, Float32Array>
+  ): boolean;
+}
 
-// declare class AudioWorkletProcessor {
-//   constructor(options: any);
-// }
+declare var AudioWorkletProcessor: {
+  prototype: AudioWorkletProcessor;
+  new(options?: AudioWorkletNodeOptions): AudioWorkletProcessor;
+};
 
-// declare var registerProcessor;
-
-// declare class AudioWorkletNode extends AudioNode {
-//   parameters: any;
-
-//   constructor(context: AudioContext, workletName: string);
-// }
+declare function registerProcessor(
+  name: string,
+  processorCtor: (
+    new (
+      options?: AudioWorkletNodeOptions
+    ) => AudioWorkletProcessor
+  )
+): undefined;

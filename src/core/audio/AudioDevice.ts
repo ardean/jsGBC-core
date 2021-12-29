@@ -1,39 +1,43 @@
 import Resampler from "./Resampler";
+import { WorkerUrl } from "worker-url";
 
 const AudioContextClass = typeof window !== "undefined" ?
   (typeof AudioContext !== "undefined" ? AudioContext : (window as any).webkitAudioContext) :
   null;
 
 export default class AudioDevice {
-  audioContextSampleBuffer: Float32Array;
-  resampleControl: Resampler;
-  resampleBufferSize: any;
-  resampledBuffer: Float32Array;
-  resampleBufferStart: number;
-  resampleBufferEnd: number;
-  volume: number;
-  audioBufferSize: number;
-  audioNode: ScriptProcessorNode;
+  inputBuffer: Float32Array;
+  inputBufferSize: number;
+
+  resampler: Resampler;
+
+  outputBuffer: Float32Array;
+  outputBufferSize: number;
+  outputBufferStart: number;
+  outputBufferEnd: number;
+
+  volume: number = 1;
   context: AudioContext;
   audioWorkletSupport: boolean;
   samplesPerCallback: number = 2048; // Has to be between 2048 and 4096 (If over, then samples are ignored, if under then silence is added).
   channelsAllocated: number;
+  sampleRate: number;
   bufferSize: number;
   minBufferSize: number;
-  sampleRate: number;
   maxBufferSize: number;
 
-  constructor({ context, channels, minBufferSize, volume }: any) {
+  gainNode: GainNode;
+  audioNode: AudioNode;
+
+  constructor({ context, channels, minBufferSize }: any) {
     this.context = context;
-    this.audioWorkletSupport = !!this.context?.audioWorklet;
     this.channelsAllocated = Math.max(channels, 1);
     this.bufferSize = this.samplesPerCallback * this.channelsAllocated;
     this.minBufferSize = minBufferSize || this.bufferSize;
-    this.setVolume(volume);
   }
 
   setSampleRate(sampleRate: number) {
-    this.sampleRate = Math.abs(sampleRate);
+    this.sampleRate = sampleRate;
   }
 
   setMaxBufferSize(maxBufferSize: number) {
@@ -41,9 +45,9 @@ export default class AudioDevice {
   }
 
   writeAudio(buffer: Float32Array) {
-    let bufferCounter = 0;
-    while (bufferCounter < buffer.length && this.audioBufferSize < this.maxBufferSize) {
-      this.audioContextSampleBuffer[this.audioBufferSize++] = buffer[bufferCounter++];
+    let bufferIndex = 0;
+    while (bufferIndex < buffer.length && this.inputBufferSize < this.maxBufferSize) {
+      this.inputBuffer[this.inputBufferSize++] = buffer[bufferIndex++];
     }
   }
 
@@ -51,35 +55,37 @@ export default class AudioDevice {
     return (
       Math.floor(
         this.resampledSamplesLeft() *
-        this.resampleControl.ratioWeight /
+        this.resampler?.ratioWeight /
         this.channelsAllocated
       ) *
       this.channelsAllocated
-    ) + this.audioBufferSize;
+    ) + this.inputBufferSize;
   }
 
   async init() {
     if (!this.context) this.context = new AudioContextClass();
 
     if (!this.audioNode) {
-      // if (this.audioWorkletSupport) {
-      //   this.resetAudioBuffer(this.context.sampleRate);
-      //   await this.context.audioWorklet.addModule(NoiseGeneratorWorklet);
+      this.gainNode = this.context.createGain();
 
-      //   let modulator = this.context.createOscillator();
-      //   let modGain = this.context.createGain();
-      //   let noiseGenerator = new NoiseGeneratorNode(this.context);
-      //   noiseGenerator.connect(this.context.destination);
+      if (!this.context?.audioWorklet) {
+        const workletUrl = new WorkerUrl(
+          new URL("./noise.worklet.ts", import.meta.url),
+          {
+            name: "worklet"
+          }
+        );
+        await this.context.audioWorklet.addModule(workletUrl);
 
-      //   modulator.connect(modGain).connect(noiseGenerator);
-      //   modulator.start();
-      // } else {
-      this.audioNode = this.context.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
+        this.audioNode = new AudioWorkletNode(this.context, "noise-generator");
+      } else {
+        const scriptProcessorNode = this.audioNode = this.context.createScriptProcessor(this.samplesPerCallback, 0, this.channelsAllocated);
+        scriptProcessorNode.onaudioprocess = e => this.processAudio(e);
+      }
 
-      this.audioNode.onaudioprocess = e => this.processAudio(e);
-      this.audioNode.connect(this.context.destination);
+      this.audioNode.connect(this.gainNode);
+      this.gainNode.connect(this.context.destination);
       this.resetAudioBuffer(this.context.sampleRate);
-      // }
     }
   }
 
@@ -97,17 +103,17 @@ export default class AudioDevice {
     let index = 0;
     while (
       index < this.samplesPerCallback &&
-      this.resampleBufferStart !== this.resampleBufferEnd
+      this.outputBufferStart !== this.outputBufferEnd
     ) {
       channel = 0;
       while (channel < this.channelsAllocated) {
-        channels[channel][index] = this.resampledBuffer[this.resampleBufferStart++] * this.volume;
+        channels[channel][index] = this.outputBuffer[this.outputBufferStart++];
 
         ++channel;
       }
 
-      if (this.resampleBufferStart === this.resampleBufferSize) {
-        this.resampleBufferStart = 0;
+      if (this.outputBufferStart === this.outputBufferSize) {
+        this.outputBufferStart = 0;
       }
 
       ++index;
@@ -123,61 +129,63 @@ export default class AudioDevice {
 
   setVolume(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
+    this.gainNode.gain.setTargetAtTime(this.volume, this.context.currentTime, 0);
   }
 
-  resetAudioBuffer(sampleRate) {
-    this.audioBufferSize = this.resampleBufferEnd = this.resampleBufferStart = 0;
-    this.initializeResampler(sampleRate);
-    this.resampledBuffer = new Float32Array(this.resampleBufferSize);
+  resetAudioBuffer(targetSampleRate: number) {
+    this.inputBufferSize = this.outputBufferEnd = this.outputBufferStart = 0;
+    this.initializeResampler(targetSampleRate);
+    this.outputBuffer = new Float32Array(this.outputBufferSize);
   }
 
   refillResampledBuffer() {
-    if (this.audioBufferSize > 0) {
-      const resampleLength = this.resampleControl.resampler(this.getBufferSamples());
-      const resampledResult = this.resampleControl.outputBuffer;
+    if (this.inputBufferSize > 0) {
+      const resampleLength = this.resampler.resample(this.getBufferSamples());
+      const resampledResult = this.resampler.outputBuffer;
 
       for (let i = 0; i < resampleLength;) {
-        this.resampledBuffer[this.resampleBufferEnd++] = resampledResult[i++];
+        this.outputBuffer[this.outputBufferEnd++] = resampledResult[i++];
 
-        if (this.resampleBufferEnd === this.resampleBufferSize) {
-          this.resampleBufferEnd = 0;
+        if (this.outputBufferEnd === this.outputBufferSize) {
+          this.outputBufferEnd = 0;
         }
 
-        if (this.resampleBufferStart === this.resampleBufferEnd) {
-          this.resampleBufferStart += this.channelsAllocated;
+        if (this.outputBufferStart === this.outputBufferEnd) {
+          this.outputBufferStart += this.channelsAllocated;
 
-          if (this.resampleBufferStart === this.resampleBufferSize) {
-            this.resampleBufferStart = 0;
+          if (this.outputBufferStart === this.outputBufferSize) {
+            this.outputBufferStart = 0;
           }
         }
       }
-      this.audioBufferSize = 0;
+      this.inputBufferSize = 0;
     }
   }
 
-  initializeResampler(sampleRate) {
-    this.audioContextSampleBuffer = new Float32Array(this.maxBufferSize);
-    this.resampleBufferSize = Math.max(
-      this.maxBufferSize * Math.ceil(sampleRate / this.sampleRate) + this.channelsAllocated,
+  initializeResampler(targetSampleRate: number) {
+    this.inputBuffer = new Float32Array(this.maxBufferSize);
+    this.outputBufferSize = Math.max(
+      this.maxBufferSize * Math.ceil(targetSampleRate / this.sampleRate) + this.channelsAllocated,
       this.bufferSize
     );
 
-    this.resampleControl = new Resampler(
+    this.resampler = new Resampler(
       this.sampleRate,
-      sampleRate,
+      targetSampleRate,
       this.channelsAllocated,
-      this.resampleBufferSize,
-      true
+      this.outputBufferSize
     );
   }
 
   resampledSamplesLeft() {
-    return (this.resampleBufferStart <= this.resampleBufferEnd ? 0 : this.resampleBufferSize) +
-      this.resampleBufferEnd -
-      this.resampleBufferStart;
+    return (
+      this.outputBufferStart <= this.outputBufferEnd ?
+        0 :
+        this.outputBufferSize
+    ) + this.outputBufferEnd - this.outputBufferStart;
   }
 
   getBufferSamples() {
-    return this.audioContextSampleBuffer.subarray(0, this.audioBufferSize);
+    return this.inputBuffer.subarray(0, this.inputBufferSize);
   }
 }

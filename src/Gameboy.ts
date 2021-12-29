@@ -21,12 +21,10 @@ export default class GameBoy extends EventEmitter {
     audio,
     isPaused,
     lcd,
-    isSoundEnabled,
     bootRom
   }: any = {}) {
     super();
 
-    if (typeof isSoundEnabled === "boolean") settings.soundOn = isSoundEnabled;
     if (isPaused) this.isPaused = isPaused;
 
     this.core = new GameBoyCore({

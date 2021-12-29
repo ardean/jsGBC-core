@@ -269,12 +269,7 @@ export default class AudioController {
   }
 
   runJIT() {
-    // Audio Sample Generation Timing:
-    if (settings.soundOn) {
-      this.generate(this.audioTicks);
-    } else {
-      this.generateFake(this.audioTicks);
-    }
+    this.generate(this.audioTicks);
     this.audioTicks = 0;
   }
 
@@ -655,7 +650,14 @@ export default class AudioController {
     this.downSampleInputDivider = 1 / (this.resamplerFirstPassFactor * 0xf0);
 
     const sampleRate = this.cpu.clocksPerSecond / this.resamplerFirstPassFactor;
-    const maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 8192) << 1;
+    const maxBufferSize = Math.max(
+      (
+        this.cpu.baseCyclesPerIteration *
+        settings.maxAudioBufferSpanAmountOverXInterpreterIterations /
+        this.resamplerFirstPassFactor
+      ),
+      8192
+    ) << 1;
     device.setSampleRate(sampleRate);
     device.setMaxBufferSize(maxBufferSize);
     device.init();
@@ -663,12 +665,11 @@ export default class AudioController {
     this.device = device;
   }
 
-  setVolume(volume) {
-    if (this.device) this.device.setVolume(volume);
+  setVolume(volume: number) {
+    this.device?.setVolume(volume);
   }
 
   adjustUnderrun() {
-    if (!settings.soundOn) return;
     let underrunAmount = this.device.remainingBuffer();
     if (typeof underrunAmount === "number") {
       underrunAmount = this.bufferContainAmount - Math.max(underrunAmount, 0);
@@ -702,7 +703,7 @@ export default class AudioController {
     this.downsampleInput = 0;
     this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 4096) << 1;
     this.bufferLength = this.cpu.baseCyclesPerIteration / this.resamplerFirstPassFactor << 1;
-    this.buffer = util.getTypedArray(this.bufferLength, 0, "float32") as Float32Array;
+    this.buffer = new Float32Array(this.bufferLength);
   }
 
   generateWhiteNoise() {

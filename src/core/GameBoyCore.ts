@@ -1,21 +1,21 @@
-import * as util from "../util";
-import settings from "../settings";
-import TickTable from "./tick-table";
-import AudioDevice from "./audio/AudioDevice";
-import AudioController from "./audio/controller";
-import LcdDevice from "./lcd/device";
-import LcdController from "./lcd/controller";
-import mainInstructions from "./MainInstructions";
-import PostBootRegisterState from "./post-boot-register-state";
-import StateManager from "./state-manager";
-import dutyLookup from "./duty-lookup";
-import Joypad from "./Joypad";
-import { EventEmitter } from "events";
-import Memory from "./memory/index";
 import CPU from "./cpu";
 import { GameBoy } from "..";
+import Memory from "./memory";
+import Joypad from "./Joypad";
+import * as util from "../util";
+import settings from "../settings";
 import Cartridge from "./cartridge";
+import TickTable from "./tick-table";
+import LcdDevice from "./lcd/device";
+import { EventEmitter } from "events";
+import dutyLookup from "./duty-lookup";
+import StateManager from "./state-manager";
+import LcdController from "./lcd/controller";
+import AudioDevice from "./audio/AudioDevice";
 import * as MemoryLayout from "./memory/Layout";
+import mainInstructions from "./MainInstructions";
+import AudioController from "./audio/AudioController";
+import PostBootRegisterState from "./post-boot-register-state";
 
 export default class GameBoyCore {
   useGBCMode: any;
@@ -225,8 +225,7 @@ export default class GameBoyCore {
     this.cpu = new CPU();
     this.audioDevice = new AudioDevice({
       context: audioOptions.context,
-      channels: 2,
-      volume: settings.soundVolume
+      channels: 2
     });
     this.audioController = new AudioController({
       cpu: this.cpu,
@@ -619,7 +618,6 @@ export default class GameBoyCore {
 
   initSound() {
     this.audioController.connectDevice(this.audioDevice);
-    this.audioController.setVolume(settings.soundOn ? settings.soundVolume : 0);
     this.audioController.initBuffer();
   }
 
