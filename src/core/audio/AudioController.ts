@@ -544,7 +544,10 @@ export default class AudioController {
   }
 
   cacheChannel1OutputLevelTrimary() {
-    if (this.channel1CachedDuty[this.channel1DutyTracker] && settings.enabledChannels[0]) {
+    if (
+      this.channel1CachedDuty[this.channel1DutyTracker] &&
+      settings.enabledAudioChannels[0]
+    ) {
       this.channel1currentSampleLeftTrimary = this.channel1currentSampleLeftSecondary;
       this.channel1currentSampleRightTrimary = this.channel1currentSampleRightSecondary;
     } else {
@@ -583,7 +586,10 @@ export default class AudioController {
   }
 
   cacheChannel2OutputLevelTrimary() {
-    if (this.channel2CachedDuty[this.channel2DutyTracker] && settings.enabledChannels[1]) {
+    if (
+      this.channel2CachedDuty[this.channel2DutyTracker] &&
+      settings.enabledAudioChannels[1]
+    ) {
       this.channel2currentSampleLeftTrimary = this.channel2currentSampleLeftSecondary;
       this.channel2currentSampleRightTrimary = this.channel2currentSampleRightSecondary;
     } else {
@@ -610,7 +616,10 @@ export default class AudioController {
   }
 
   channel3OutputLevelSecondaryCache() {
-    if (this.channel3Enabled && settings.enabledChannels[2]) {
+    if (
+      this.channel3Enabled &&
+      settings.enabledAudioChannels[2]
+    ) {
       this.channel3currentSampleLeftSecondary = this.channel3currentSampleLeft;
       this.channel3currentSampleRightSecondary = this.channel3currentSampleRight;
     } else {
@@ -643,7 +652,10 @@ export default class AudioController {
   }
 
   cacheChannel4OutputLevelSecondary() {
-    if (this.channel4Enabled && settings.enabledChannels[3]) {
+    if (
+      this.channel4Enabled &&
+      settings.enabledAudioChannels[3]
+    ) {
       this.channel4currentSampleLeftSecondary = this.channel4currentSampleLeft;
       this.channel4currentSampleRightSecondary = this.channel4currentSampleRight;
     } else {

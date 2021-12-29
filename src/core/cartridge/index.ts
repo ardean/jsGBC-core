@@ -97,10 +97,10 @@ export default class Cartridge {
             this.useGBCMode = false;
           }
           break;
-        case 0x80: //Both GB + GBC modes
+        case 0x80: // Both GB + GBC modes
           this.useGBCMode = !settings.gbHasPriority;
           break;
-        case 0xc0: //Only GBC mode
+        case 0xc0: // Only GBC mode
           this.useGBCMode = true;
           break;
         default:
