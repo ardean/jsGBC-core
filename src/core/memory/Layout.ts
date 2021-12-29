@@ -124,6 +124,8 @@ export const OBP1_REG = 0xFF49; /*  Object Palette 1 Data */
 export const WY_REG = 0xFF4A; /*  Window Y Position; 0 <= WY <= 143*/
 export const WX_REG = 0xFF4B; /*  Window X Position; 0 <= WX <= 166 */
 
+export const disableBootRomAddress = 0xFF50;
+
 /* DMA transfer for Gameboy Color */
 export const HDMA1_REG = 0xFF51;
 export const HDMA2_REG = 0xFF52;

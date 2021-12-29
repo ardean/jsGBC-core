@@ -1,34 +1,12 @@
-export default class LocalStorage {
-  findState(name) {
-    return this.find("state-" + name);
-  }
+import Storage from "./Storage";
 
-  findSRAM(name) {
-    return this.find("sram-" + name);
-  }
-
-  findRTC(name) {
-    return this.find("rtc-" + name);
-  }
-
-  async setState(name, buffer) {
-    return await this.set("state-" + name, buffer);
-  }
-
-  async setSRAM(name, buffer) {
-    return await this.set("sram-" + name, buffer);
-  }
-
-  async setRTC(name, buffer) {
-    return await this.set("rtc-" + name, buffer);
-  }
-
-  find(name) {
+export default class LocalStorage extends Storage {
+  get(name: string) {
     const data = window.localStorage.getItem(name);
     return base64ToArrayBuffer(data);
   }
 
-  set(name, buffer) {
+  set(name: string, buffer) {
     const data = arrayBufferToBase64(buffer);
     window.localStorage.setItem(name, data);
   }

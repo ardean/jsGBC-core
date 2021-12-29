@@ -39,13 +39,37 @@ window.addEventListener("keyup", ({ keyCode }) => {
   }
 });
 
+const selectGbcBootRomElement = document.querySelector<HTMLInputElement>(".gbc-boot-rom-select");
+selectGbcBootRomElement.addEventListener("change", async () => {
+  const file = selectGbcBootRomElement.files[0];
+  if (!file) return;
+
+  const rom = await util.readFirstMatchingExtension(file, file.name, ["bin"]);
+  if (!rom) return;
+
+  gameboy.setGbcBootRom(rom);
+});
+
+const selectGbBootRomElement = document.querySelector<HTMLInputElement>(".gb-boot-rom-select");
+selectGbBootRomElement.addEventListener("change", async () => {
+  const file = selectGbBootRomElement.files[0];
+  if (!file) return;
+
+  const rom = await util.readFirstMatchingExtension(file, file.name, ["bin"]);
+  if (!rom) return;
+
+  gameboy.setGbBootRom(rom);
+});
+
 const selectRomElement = document.querySelector<HTMLInputElement>(".rom-select");
 selectRomElement.addEventListener("change", async () => {
   const file = selectRomElement.files[0];
-  const rom = await util.readCartridgeROM(file, file.name);
-  if (rom) {
-    gameboy.replaceCartridge(rom);
-  }
+  if (!file) return;
+
+  const rom = await util.readFirstMatchingExtension(file, file.name, ["gbc", "gb"]);
+  if (!rom) return;
+
+  gameboy.replaceCartridge(rom);
 });
 
 document

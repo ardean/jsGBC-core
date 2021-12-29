@@ -1,10 +1,12 @@
-import settings from "./settings";
-import { stringToArrayBuffer, concatArrayBuffers, debounce, Debounced } from "./util";
-import LocalStorage from "./storages/LocalStorage";
-import Cartridge from "./core/cartridge/index";
+import ROM from "./core/ROM";
 import Actions from "./actions";
+import settings from "./settings";
 import { EventEmitter } from "events";
+import Cartridge from "./core/cartridge";
+import Storage from "./storages/Storage";
 import GameBoyCore from "./core/GameBoyCore";
+import LocalStorage from "./storages/LocalStorage";
+import { concatArrayBuffers, debounce, Debounced } from "./util";
 
 export default class GameBoy extends EventEmitter {
   interval: number;
@@ -13,27 +15,21 @@ export default class GameBoy extends EventEmitter {
   core: GameBoyCore;
   isOn: boolean;
   actions: Actions;
-  storage: LocalStorage;
+  storage: Storage = new Storage();
   cartridge: Cartridge;
   lastRun: number;
 
-  constructor({
-    audio,
-    isPaused,
-    lcd,
-    isSoundEnabled,
-    bootRom
-  }: any = {}) {
+  constructor(options: {
+    audio?: any;
+    lcd?: any;
+    bootRom?: ArrayBuffer;
+  } = {}) {
     super();
 
-    if (typeof isSoundEnabled === "boolean") settings.soundOn = isSoundEnabled;
-    if (isPaused) this.isPaused = isPaused;
-
     this.core = new GameBoyCore({
-      audio,
+      audio: options.audio,
       api: this,
-      lcd,
-      bootRom
+      lcd: options.lcd
     });
 
     this.debouncedAutoSave = debounce(this.autoSave.bind(this), 100);
@@ -45,6 +41,7 @@ export default class GameBoy extends EventEmitter {
     this.isOn = false;
     this.actions = new Actions();
     this.registerActions();
+
     if (typeof document !== "undefined") {
       this.storage = new LocalStorage();
     }
@@ -54,12 +51,13 @@ export default class GameBoy extends EventEmitter {
     return typeof document !== "undefined" && document.hidden;
   }
 
-  setStorage(storage) {
+  setStorage(storage: Storage) {
     this.storage = storage;
   }
 
   registerActions() {
-    this.buttons.forEach((button, index) => {
+    for (const button of this.buttons) {
+      const index = this.buttons.indexOf(button);
       this.actions
         .register(button)
         .on("down-" + button, () => {
@@ -68,7 +66,7 @@ export default class GameBoy extends EventEmitter {
         .on("up-" + button, () => {
           this.core.joypad.up(index);
         });
-    });
+    }
 
     this.actions
       .register("speed")
@@ -93,7 +91,7 @@ export default class GameBoy extends EventEmitter {
     this.isOn = true;
 
     this.core.start(this.cartridge);
-    this.core.stopEmulator &= 1;
+    this.core.stopEmulator = 1;
 
     const frameHandler = (now: number) => {
       if (this.isPaused()) return;
@@ -122,6 +120,22 @@ export default class GameBoy extends EventEmitter {
   restart() {
     this.turnOff();
     this.turnOn();
+  }
+
+  setGbBootRom(rom: ROM | ArrayBuffer | Uint8Array) {
+    if (!(rom instanceof ROM)) {
+      rom = new ROM(rom);
+    }
+
+    this.core.gbBootRom = rom;
+  }
+
+  setGbcBootRom(rom: ROM | ArrayBuffer | Uint8Array) {
+    if (!(rom instanceof ROM)) {
+      rom = new ROM(rom);
+    }
+
+    this.core.gbcBootRom = rom;
   }
 
   replaceCartridge(cartridge: Cartridge | ArrayBuffer | Uint8Array) {
@@ -213,7 +227,7 @@ export default class GameBoy extends EventEmitter {
     const name = this.core.cartridge.name;
 
     if (!state) {
-      state = this.storage.findState(name);
+      state = this.storage.getState(name);
       if (!state) return false;
     }
 
@@ -227,7 +241,7 @@ export default class GameBoy extends EventEmitter {
     const name = this.core.cartridge.name;
 
     if (!sram) {
-      sram = this.storage.findSRAM(name);
+      sram = this.storage.getSRAM(name);
       if (!sram) return false;
       sram = new Uint8Array(sram);
     }
@@ -243,7 +257,7 @@ export default class GameBoy extends EventEmitter {
     const name = this.core.cartridge.name;
 
     if (!rtc) {
-      rtc = this.storage.findRTC(name);
+      rtc = this.storage.getRTC(name);
       if (!rtc) return false;
       rtc = new Uint32Array(rtc);
     }
@@ -286,10 +300,4 @@ export default class GameBoy extends EventEmitter {
       setTimeout(() => fn(now), 0);
     }
   }
-
-  // getStateFileArrayBuffer() {
-  //   let array = this.core.stateManager.save();
-  //   array = new Uint8Array(array);
-  //   return array;
-  // }
 }

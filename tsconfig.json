@@ -1,18 +1,14 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "declarationDir": "./typings",
+    "declarationDir": "./types",
     "noImplicitAny": false,
     "moduleResolution": "node",
-    "module": "es6",
-    "lib": [
-      "dom",
-      "es6"
-    ],
-    "target": "es6"
+    "esModuleInterop": true,
+    "module": "ES2020",
+    "target": "ES2021"
   },
-  "files": [
-    "typings/index.d.ts",
-    "src/index.ts"
+  "include": [
+    "src"
   ]
 }

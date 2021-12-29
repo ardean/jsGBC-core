@@ -132,10 +132,10 @@ export default [
         }
         this.memory[0xff4d] &= 0xfe; // Reset the request bit.
       } else {
-        this.handleSTOP();
+        this.stop();
       }
     } else {
-      this.handleSTOP();
+      this.stop();
     }
   },
   //LD DE, nn
@@ -1885,7 +1885,7 @@ export default [
   //LD (0xFF00 + C), A
   //#0xE2:
   function () {
-    this.memoryHighWriter[this.registerC].apply(this, [
+    this.highMemoryWriter[this.registerC].apply(this, [
       this.registerC,
       this.registerA
     ]);

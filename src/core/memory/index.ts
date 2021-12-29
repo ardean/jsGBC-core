@@ -116,7 +116,10 @@ export default class Memory {
     this.setReader(MemoryLayout.JOYPAD_REG, joypadReader);
     this.setHighReader(MemoryLayout.JOYPAD_REG, joypadReader);
 
-    const serialDataReader = () => this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_CONTROL_REG) < 0x80 ? this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_DATA_REG) : 0xff;
+    const serialDataReader = () =>
+      this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_CONTROL_REG) < 0x80 ?
+        this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_DATA_REG) :
+        0xff;
     this.setReader(MemoryLayout.SERIAL_DATA_REG, serialDataReader);
     this.setHighReader(MemoryLayout.SERIAL_DATA_REG, serialDataReader);
 

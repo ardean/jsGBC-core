@@ -1,10 +1,10 @@
 const { GameBoy } = require("../dist/jsgbc-core");
 const Canvas = require("canvas");
 const fs = require("fs");
-const { AudioContext } = require("web-audio-api");
+const { AudioContext: NewAudioContext } = require("web-audio-api");
 const Speaker = require("speaker");
 
-const context = new AudioContext();
+const context = new NewAudioContext();
 
 context.outStream = new Speaker({
   channels: context.format.numberOfChannels,

@@ -84,7 +84,7 @@ export default class Cartridge {
     this.ramSizeType = this.rom.getByte(0x149);
 
     // Check the GB/GBC mode byte:
-    if (!this.gameboy.usedBootROM) {
+    if (!this.gameboy.usedBootRom) {
       switch (this.colorCompatibilityByte) {
         case 0x00: // GB only
           this.useGBCMode = false;
@@ -97,10 +97,10 @@ export default class Cartridge {
             this.useGBCMode = false;
           }
           break;
-        case 0x80: //Both GB + GBC modes
+        case 0x80: // Both GB + GBC modes
           this.useGBCMode = !settings.gbHasPriority;
           break;
-        case 0xc0: //Only GBC mode
+        case 0xc0: // Only GBC mode
           this.useGBCMode = true;
           break;
         default:
@@ -109,7 +109,7 @@ export default class Cartridge {
       }
     } else {
       console.log("used boot rom");
-      this.useGBCMode = this.gameboy.usedGBCBootROM; // Allow the GBC boot ROM to run in GBC mode...
+      this.useGBCMode = this.gameboy.usedGbcBootRom; // Allow the GBC boot ROM to run in GBC mode...
     }
 
     const oldLicenseCode = this.rom.getByte(0x14b);
@@ -277,14 +277,15 @@ export default class Cartridge {
     if (this.hasMBC7) this.mbc7 = new MBC7(this);
     if (this.hasRUMBLE) this.mbc5 = this.rumble = new RUMBLE(this);
 
-    this.mbc =
+    this.mbc = (
       this.mbc1 ||
       this.mbc2 ||
       this.mbc3 ||
       this.mbc5 ||
       this.mbc7 ||
       this.rumble ||
-      null;
+      undefined
+    );
   }
 
   setupRAM() {
