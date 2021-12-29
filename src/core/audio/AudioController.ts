@@ -106,7 +106,7 @@ export default class AudioController {
   channel3PCM: util.TypedArray;
   memory: util.TypedArray;
   gameboy: GameBoyCore;
-  cpu: any;
+  cpu: CPU;
   LSFR15Table = null;
   LSFR7Table = null;
   noiseSampleTable = null;
@@ -118,7 +118,7 @@ export default class AudioController {
   downsampleInput = 0;
   buffer: Float32Array;
 
-  constructor({ cpu, gameboy }: { cpu: CPU, gameboy: GameBoyCore }) {
+  constructor({ cpu, gameboy }: { cpu: CPU; gameboy: GameBoyCore; }) {
     this.cpu = cpu;
     this.gameboy = gameboy;
     this.generateWhiteNoise();
@@ -209,13 +209,16 @@ export default class AudioController {
   }
 
   // Below are the audio generation functions timed against the CPU:
-  generate(numSamples) {
-    if (this.gameboy.soundMasterEnabled && !this.gameboy.CPUStopped) {
-      for (let clockUpTo = 0; numSamples > 0;) {
-        clockUpTo = Math.min(this.audioClocksUntilNextEventCounter, this.sequencerClocks, numSamples);
+  generate(sampleCount: number) {
+    if (
+      this.gameboy.soundMasterEnabled &&
+      !this.gameboy.cpu.stopped
+    ) {
+      for (let clockUpTo = 0; sampleCount > 0;) {
+        clockUpTo = Math.min(this.audioClocksUntilNextEventCounter, this.sequencerClocks, sampleCount);
         this.audioClocksUntilNextEventCounter -= clockUpTo;
         this.sequencerClocks -= clockUpTo;
-        numSamples -= clockUpTo;
+        sampleCount -= clockUpTo;
         while (clockUpTo > 0) {
           const multiplier = Math.min(clockUpTo, this.resamplerFirstPassFactor - this.audioIndex);
           clockUpTo -= multiplier;
@@ -236,9 +239,9 @@ export default class AudioController {
       }
     } else {
       // SILENT OUTPUT
-      while (numSamples > 0) {
-        const multiplier = Math.min(numSamples, this.resamplerFirstPassFactor - this.audioIndex);
-        numSamples -= multiplier;
+      while (sampleCount > 0) {
+        const multiplier = Math.min(sampleCount, this.resamplerFirstPassFactor - this.audioIndex);
+        sampleCount -= multiplier;
         this.audioIndex += multiplier;
         if (this.audioIndex === this.resamplerFirstPassFactor) {
           this.audioIndex = 0;
@@ -249,8 +252,11 @@ export default class AudioController {
   }
 
   // generate audio, but don't actually output it (Used for when sound is disabled by user/browser):
-  generateFake(numSamples) {
-    if (this.gameboy.soundMasterEnabled && !this.gameboy.CPUStopped) {
+  generateFake(numSamples: number) {
+    if (
+      this.gameboy.soundMasterEnabled &&
+      !this.gameboy.cpu.stopped
+    ) {
       let clockUpTo = 0;
       while (numSamples > 0) {
         clockUpTo = Math.min(this.audioClocksUntilNextEventCounter, this.sequencerClocks, numSamples);
@@ -268,7 +274,7 @@ export default class AudioController {
     }
   }
 
-  runJIT() {
+  run() {
     this.generate(this.audioTicks);
     this.audioTicks = 0;
   }
@@ -392,7 +398,7 @@ export default class AudioController {
     } else if (this.channel1totalLength === 1) {
       this.channel1totalLength = 0;
       this.checkChannel1Enable();
-      this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
+      this.memory[0xff26] &= 0xfe; // Channel #1 On Flag Off
     }
     // Channel 2:
     if (this.channel2totalLength > 1) {
@@ -400,7 +406,7 @@ export default class AudioController {
     } else if (this.channel2totalLength === 1) {
       this.channel2totalLength = 0;
       this.checkChannel2Enable();
-      this.memory[0xff26] &= 0xfd; //Channel #2 On Flag Off
+      this.memory[0xff26] &= 0xfd; // Channel #2 On Flag Off
     }
     // Channel 3:
     if (this.channel3totalLength > 1) {
@@ -408,7 +414,7 @@ export default class AudioController {
     } else if (this.channel3totalLength === 1) {
       this.channel3totalLength = 0;
       this.checkChannel3Enable();
-      this.memory[0xff26] &= 0xfb; //Channel #3 On Flag Off
+      this.memory[0xff26] &= 0xfb; // Channel #3 On Flag Off
     }
     // Channel 4:
     if (this.channel4totalLength > 1) {
@@ -416,12 +422,12 @@ export default class AudioController {
     } else if (this.channel4totalLength === 1) {
       this.channel4totalLength = 0;
       this.checkChannel4Enable();
-      this.memory[0xff26] &= 0xf7; //Channel #4 On Flag Off
+      this.memory[0xff26] &= 0xf7; // Channel #4 On Flag Off
     }
   }
 
   clockAudioSweep() {
-    //Channel 1:
+    // Channel 1:
     if (!this.channel1SweepFault && this.channel1timeSweep > 0) {
       if (--this.channel1timeSweep === 0) {
         this.runAudioSweep();
@@ -430,7 +436,7 @@ export default class AudioController {
   }
 
   runAudioSweep() {
-    //Channel 1:
+    // Channel 1:
     if (this.channel1lastTimeSweep > 0) {
       if (this.channel1frequencySweepDivider > 0) {
         this.channel1Swept = true;
@@ -447,18 +453,18 @@ export default class AudioController {
             if (this.channel1ShadowFrequency + (this.channel1ShadowFrequency >> this.channel1frequencySweepDivider) > 0x7ff) {
               this.channel1SweepFault = true;
               this.checkChannel1Enable();
-              this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
+              this.memory[0xff26] &= 0xfe; // Channel #1 On Flag Off
             }
           } else {
             this.channel1frequency &= 0x7ff;
             this.channel1SweepFault = true;
             this.checkChannel1Enable();
-            this.memory[0xff26] &= 0xfe; //Channel #1 On Flag Off
+            this.memory[0xff26] &= 0xfe; // Channel #1 On Flag Off
           }
         }
         this.channel1timeSweep = this.channel1lastTimeSweep;
       } else {
-        //Channel has sweep disabled and timer becomes a length counter:
+        // Channel has sweep disabled and timer becomes a length counter:
         this.channel1SweepFault = true;
         this.checkChannel1Enable();
       }
@@ -466,18 +472,18 @@ export default class AudioController {
   }
 
   computeChannels() {
-    //Clock down the four audio channels to the next closest audio event:
+    // Clock down the four audio channels to the next closest audio event:
     this.channel1FrequencyCounter -= this.audioClocksUntilNextEvent;
     this.channel2FrequencyCounter -= this.audioClocksUntilNextEvent;
     this.channel3Counter -= this.audioClocksUntilNextEvent;
     this.channel4Counter -= this.audioClocksUntilNextEvent;
-    //Channel 1 counter:
+    // Channel 1 counter:
     if (this.channel1FrequencyCounter === 0) {
       this.channel1FrequencyCounter = this.channel1FrequencyTracker;
       this.channel1DutyTracker = this.channel1DutyTracker + 1 & 0x7;
       this.cacheChannel1OutputLevelTrimary();
     }
-    //Channel 2 counter:
+    // Channel 2 counter:
     if (this.channel2FrequencyCounter === 0) {
       this.channel2FrequencyCounter = this.channel2FrequencyTracker;
       this.channel2DutyTracker = this.channel2DutyTracker + 1 & 0x7;
@@ -646,8 +652,16 @@ export default class AudioController {
   }
 
   connectDevice(device: AudioDevice) {
-    this.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
-    this.downSampleInputDivider = 1 / (this.resamplerFirstPassFactor * 0xf0);
+    this.resamplerFirstPassFactor = Math.max(
+      Math.min(
+        Math.floor(this.cpu.clocksPerSecond / 44100),
+        Math.floor(0xffff / 0x1e0)
+      ),
+      1
+    );
+    this.downSampleInputDivider = 1 / (
+      this.resamplerFirstPassFactor * 0xf0
+    );
 
     const sampleRate = this.cpu.clocksPerSecond / this.resamplerFirstPassFactor;
     const maxBufferSize = Math.max(
@@ -663,6 +677,13 @@ export default class AudioController {
     device.init();
 
     this.device = device;
+
+    this.audioIndex = 0;
+    this.bufferPosition = 0;
+    this.downsampleInput = 0;
+    this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 4096) << 1;
+    this.bufferLength = this.cpu.baseCyclesPerIteration / this.resamplerFirstPassFactor << 1;
+    this.buffer = new Float32Array(this.bufferLength);
   }
 
   setVolume(volume: number) {
@@ -695,15 +716,6 @@ export default class AudioController {
   fillBuffer() {
     this.buffer[this.bufferPosition++] = (this.downsampleInput >>> 16) * this.downSampleInputDivider - 1;
     this.buffer[this.bufferPosition++] = (this.downsampleInput & 0xffff) * this.downSampleInputDivider - 1;
-  }
-
-  initBuffer() {
-    this.audioIndex = 0;
-    this.bufferPosition = 0;
-    this.downsampleInput = 0;
-    this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 4096) << 1;
-    this.bufferLength = this.cpu.baseCyclesPerIteration / this.resamplerFirstPassFactor << 1;
-    this.buffer = new Float32Array(this.bufferLength);
   }
 
   generateWhiteNoise() {

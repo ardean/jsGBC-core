@@ -11,14 +11,6 @@ export default class Resampler {
     private channels: number,
     private outputBufferSize: number
   ) {
-    this.fromSampleRate = fromSampleRate;
-    this.toSampleRate = toSampleRate;
-    this.channels = channels;
-    this.outputBufferSize = outputBufferSize;
-    this.init();
-  }
-
-  init() {
     if (
       this.fromSampleRate <= 0 ||
       this.toSampleRate <= 0 ||

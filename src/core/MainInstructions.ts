@@ -132,10 +132,10 @@ export default [
         }
         this.memory[0xff4d] &= 0xfe; // Reset the request bit.
       } else {
-        this.handleSTOP();
+        this.stop();
       }
     } else {
-      this.handleSTOP();
+      this.stop();
     }
   },
   //LD DE, nn

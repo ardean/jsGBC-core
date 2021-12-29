@@ -6,11 +6,11 @@ export default class Joypad {
   value: number = 0xff; // Joypad State (two four-bit states actually)
   gameboy: GameBoyCore;
 
-  constructor(gameboy) {
+  constructor(gameboy: GameBoyCore) {
     this.gameboy = gameboy;
   }
 
-  down(key) {
+  down(key: number) {
     this.value &= 0xff ^ 1 << key;
     if (
       this.gameboy.cartridge &&
@@ -25,7 +25,7 @@ export default class Joypad {
     this.writeToMemory();
   }
 
-  up(key) {
+  up(key: number) {
     this.value |= 1 << key;
     this.writeToMemory();
   }
@@ -33,7 +33,27 @@ export default class Joypad {
   writeToMemory() {
     const currentValue = this.gameboy.memory[JOYPAD_REG];
 
-    this.gameboy.memory[JOYPAD_REG] = (currentValue & 0x30) + (((currentValue & 0x20) === 0 ? this.value >> 4 : 0xf) & ((currentValue & 0x10) === 0 ? this.value & 0xf : 0xf));
-    this.gameboy.CPUStopped = false;
+    this.gameboy.memory[JOYPAD_REG] = (
+      (
+        currentValue & 0x30
+      ) +
+      (
+        (
+          (
+            currentValue & 0x20
+          ) === 0 ?
+            this.value >> 4 :
+            0xf
+        ) &
+        (
+          (
+            currentValue & 0x10
+          ) === 0 ?
+            this.value & 0xf :
+            0xf
+        )
+      )
+    );
+    this.gameboy.cpu.stopped = false;
   }
 }

@@ -218,7 +218,7 @@ export default class StateManager {
     //   gameboy.colorizedGBPalettes,
     //   gameboy.backgroundY,
     //   gameboy.backgroundX,
-    //   gameboy.CPUStopped,
+    //   gameboy.cpu.stopped,
     //   gameboy.audioController.audioClocksUntilNextEvent,
     //   gameboy.audioController.audioClocksUntilNextEventCounter
     // ];
@@ -435,7 +435,7 @@ export default class StateManager {
     gameboy.colorizedGBPalettes = state[index++];
     gameboy.backgroundY = state[index++];
     gameboy.backgroundX = state[index++];
-    gameboy.CPUStopped = state[index++];
+    gameboy.cpu.stopped = state[index++];
     gameboy.audioController.audioClocksUntilNextEvent = state[index++];
     gameboy.audioController.audioClocksUntilNextEventCounter = state[index];
   }

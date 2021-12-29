@@ -10,6 +10,7 @@ export default class CPU {
   baseCyclesPerIteration = 0; // CPU clocks per iteration at 1x speed.
   totalLinesPassed = 0;
   clocksPerSecond: number;
+  stopped: boolean = false;
 
   constructor() {
     this.calculateTimings();
@@ -23,7 +24,7 @@ export default class CPU {
     this.cyclesTotalCurrent = 0;
   }
 
-  setSpeed(speed) {
+  setSpeed(speed: number) {
     this.speed = speed;
     this.calculateTimings();
   }

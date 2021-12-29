@@ -111,7 +111,7 @@ export default class GameBoyCore {
   renderSpriteLayer: any;
   pixelStart: number;
   cartridge: Cartridge;
-  memory: any;
+  memory: Uint8Array;
   usedBootROM: any;
   inBootstrap: boolean;
   VRAM: util.TypedArray;
@@ -166,10 +166,9 @@ export default class GameBoyCore {
   programCounter: number;
   stackPointer: number;
   usedGBCBootROM: any;
-  CPUStopped: any;
   halt: any;
   skipPCIncrement: any;
-  doubleSpeedShifter: any;
+  doubleSpeedShifter: number;
   colorizedGBPalettes: any;
   backgroundX: number;
   gbcOBJRawPalette: util.TypedArray;
@@ -245,34 +244,6 @@ export default class GameBoyCore {
     //Add 2048 byte boot rom here if you are going to use it.
     this.GBCBOOTROM = [];
 
-    this.memoryReadNormal = this.memoryReadNormal.bind(this);
-    this.memoryWriteNormal = this.memoryWriteNormal.bind(this);
-    this.memoryWriteGBCRAM = this.memoryWriteGBCRAM.bind(this);
-    this.memoryWriteMBCRAM = this.memoryWriteMBCRAM.bind(this);
-    this.memoryWriteMBC3RAM = this.memoryWriteMBC3RAM.bind(this);
-    this.memoryReadGBCMemory = this.memoryReadGBCMemory.bind(this);
-    this.memoryReadROM = this.memoryReadROM.bind(this);
-    this.memoryHighWriteNormal = this.memoryHighWriteNormal.bind(this);
-    this.memoryHighReadNormal = this.memoryHighReadNormal.bind(this);
-    this.MBC5WriteRAMBank = this.MBC5WriteRAMBank.bind(this);
-    this.MBCWriteEnable = this.MBCWriteEnable.bind(this);
-    this.RUMBLEWriteRAMBank = this.RUMBLEWriteRAMBank.bind(this);
-    this.onRUMBLE = this.onRUMBLE.bind(this);
-    this.memoryReadMBC = this.memoryReadMBC.bind(this);
-    this.memoryReadMBC3 = this.memoryReadMBC3.bind(this);
-    this.memoryReadMBC7 = this.memoryReadMBC7.bind(this);
-    this.memoryReadECHONormal = this.memoryReadECHONormal.bind(this);
-    this.memoryReadECHOGBCMemory = this.memoryReadECHOGBCMemory.bind(this);
-    this.memoryWriteECHONormal = this.memoryWriteECHONormal.bind(this);
-    this.VRAMDATAReadCGBCPU = this.VRAMDATAReadCGBCPU.bind(this);
-    this.VRAMDATAReadDMGCPU = this.VRAMDATAReadDMGCPU.bind(this);
-    this.VRAMCHRReadCGBCPU = this.VRAMCHRReadCGBCPU.bind(this);
-
-    this.renderBGGBLayer = this.renderBGGBLayer.bind(this);
-    this.renderWindowGBLayer = this.renderWindowGBLayer.bind(this);
-    this.renderSpriteGBLayer = this.renderSpriteGBLayer.bind(this);
-    this.renderSpriteGBCLayer = this.renderSpriteGBCLayer.bind(this);
-
     this.stopEmulator = 3; // Has the emulation been paused or a frame has ended?
     this.IRQLineMatched = 0; // CPU IRQ assertion.
 
@@ -328,7 +299,7 @@ export default class GameBoyCore {
   }
 
   connectCartridge(cartridge: Cartridge) {
-    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.removeListener("rumble", this.onRUMBLE);
+    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.removeListener("rumble", this.onRumble);
 
     cartridge.connect(this);
     this.cartridge = cartridge;
@@ -337,11 +308,14 @@ export default class GameBoyCore {
 
     this.cartridge.interpret();
 
-    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.on("rumble", this.onRUMBLE);
+    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.addListener("rumble", this.onRumble);
   }
 
-  onRUMBLE() {
-    if (typeof window !== "undefined" && "vibrate" in window.navigator) {
+  onRumble() {
+    if (
+      typeof window !== "undefined" &&
+      "vibrate" in window.navigator
+    ) {
       window.navigator.vibrate(200);
     }
   }
@@ -399,7 +373,7 @@ export default class GameBoyCore {
 
   initMemory() {
     // Initialize the RAM:
-    this.memory = util.getTypedArray(0x10000, 0, "uint8"); // TODO: replace with Memory Class
+    this.memory = util.getTypedArray(0x10000, 0, "uint8") as Uint8Array;
     this.audioController.setMemory(this.memory);
     this.frameBuffer = util.getTypedArray(23040, 0xf8f8f8, "int32");
     this.BGCHRBank1 = util.getTypedArray(0x800, 0, "uint8");
@@ -618,12 +592,11 @@ export default class GameBoyCore {
 
   initSound() {
     this.audioController.connectDevice(this.audioDevice);
-    this.audioController.initBuffer();
   }
 
   writeChannel3RAM(address, data) {
     if (this.audioController.channel3canPlay) {
-      this.audioController.runJIT();
+      this.audioController.run();
       //address = this.audioController.channel3lastSampleLookup >> 1;
     }
     this.memory[0xff30 | address] = data;
@@ -636,7 +609,7 @@ export default class GameBoyCore {
     // The preprocessing before the actual iteration loop:
     if ((this.stopEmulator & 2) === 0) {
       if ((this.stopEmulator & 1) === 1) {
-        if (!this.CPUStopped) {
+        if (!this.cpu.stopped) {
           this.stopEmulator = 0;
 
           this.audioController.adjustUnderrun();
@@ -664,7 +637,7 @@ export default class GameBoyCore {
         } else {
           this.audioController.adjustUnderrun();
           this.audioController.audioTicks += this.cpu.cyclesTotal;
-          this.audioController.runJIT();
+          this.audioController.run();
           this.stopEmulator |= 1; // End current loop.
         }
       } else {
@@ -761,7 +734,7 @@ export default class GameBoyCore {
 
   iterationEndRoutine() {
     if ((this.stopEmulator & 0x1) === 0) {
-      this.audioController.runJIT(); // make sure we at least output once per iteration.
+      this.audioController.run(); // make sure we at least output once per iteration.
       // update DIV Alignment (Integer overflow safety):
       this.memory[MemoryLayout.DIV_REG] = this.memory[MemoryLayout.DIV_REG] + (this.DIVTicks >> 8) & 0xff;
       this.DIVTicks &= 0xff;
@@ -773,12 +746,12 @@ export default class GameBoyCore {
     }
   }
 
-  handleSTOP() {
-    this.CPUStopped = true; //Stop CPU until joypad input changes.
+  stop() {
+    this.cpu.stopped = true; // Stop CPU until joypad input changes.
     this.iterationEndRoutine();
     if (this.cpu.ticks < 0) {
       this.audioController.audioTicks -= this.cpu.ticks;
-      this.audioController.runJIT();
+      this.audioController.run();
     }
   }
 
@@ -1390,7 +1363,7 @@ export default class GameBoyCore {
     }
   }
 
-  renderBGGBLayer(scanlineToRender) {
+  renderBGGBLayer = (scanlineToRender) => {
     var scrollYAdjusted = this.backgroundY + scanlineToRender & 0xff; //The line of the BG we're at.
     var tileYLine = (scrollYAdjusted & 7) << 3;
     var tileYDown = this.gfxBackgroundCHRBankPosition | (scrollYAdjusted & 0xf8) << 2; //The row of cached tiles we're fetching from.
@@ -1480,7 +1453,7 @@ export default class GameBoyCore {
         }
       }
     }
-  }
+  };
 
   BGGBCLayerRender(scanlineToRender) {
     var scrollYAdjusted = this.backgroundY + scanlineToRender & 0xff; //The line of the BG we're at.
@@ -1682,7 +1655,7 @@ export default class GameBoyCore {
     }
   }
 
-  renderWindowGBLayer(scanlineToRender) {
+  renderWindowGBLayer = (scanlineToRender) => {
     if (this.gfxWindowDisplay) {
       //Is the window enabled?
       var scrollYAdjusted = scanlineToRender - this.windowY; //The line of the BG we're at.
@@ -1747,7 +1720,7 @@ export default class GameBoyCore {
         }
       }
     }
-  }
+  };
 
   WindowGBCLayerRender(scanlineToRender) {
     if (this.gfxWindowDisplay) {
@@ -1896,7 +1869,7 @@ export default class GameBoyCore {
     }
   }
 
-  renderSpriteGBLayer(scanlineToRender) {
+  renderSpriteGBLayer = (scanlineToRender) => {
     if (this.gfxSpriteShow) {
       //Are sprites enabled?
       var lineAdjusted = scanlineToRender + 0x10;
@@ -1982,7 +1955,7 @@ export default class GameBoyCore {
         }
       }
     }
-  }
+  };
 
   findLowestSpriteDrawable(scanlineToRender, drawableRange) {
     var address = 0xfe00;
@@ -1998,7 +1971,7 @@ export default class GameBoyCore {
     return spriteCount;
   }
 
-  renderSpriteGBCLayer(scanlineToRender) {
+  renderSpriteGBCLayer = (scanlineToRender) => {
     if (this.gfxSpriteShow) {
       //Are sprites enabled?
       var OAMAddress = 0xfe00;
@@ -2075,7 +2048,7 @@ export default class GameBoyCore {
         }
       }
     }
-  }
+  };
 
   //Generate only a single tile line for the GB tile cache mode:
   generateGBTileLine(address) {
@@ -2469,7 +2442,7 @@ export default class GameBoyCore {
             break;
           case 0xff26:
             this.memoryHighReader[0x26] = this.memoryReader[0xff26] = address => {
-              this.audioController.runJIT();
+              this.audioController.run();
               return 0x70 | this.memory[0xff26];
             };
             break;
@@ -2672,14 +2645,14 @@ export default class GameBoyCore {
           case 0xff76:
             //Undocumented realtime PCM amplitude readback:
             this.memoryHighReader[0x76] = this.memoryReader[0xff76] = address => {
-              this.audioController.runJIT();
+              this.audioController.run();
               return this.audioController.channel2envelopeVolume << 4 | this.audioController.channel1envelopeVolume;
             };
             break;
           case 0xff77:
             //Undocumented realtime PCM amplitude readback:
             this.memoryHighReader[0x77] = this.memoryReader[0xff77] = address => {
-              this.audioController.runJIT();
+              this.audioController.run();
               return this.audioController.channel4envelopeVolume << 4 | this.audioController.channel3envelopeVolume;
             };
             break;
@@ -2706,70 +2679,70 @@ export default class GameBoyCore {
     }
   }
 
-  memoryReadNormal(address: number) {
+  memoryReadNormal = (address: number) => {
     return this.memory[address];
-  }
+  };
 
-  memoryHighReadNormal(address: number) {
+  memoryHighReadNormal = (address: number) => {
     return this.memory[0xff00 | address];
-  }
+  };
 
-  memoryReadROM(address: number) {
+  memoryReadROM = (address: number) => {
     return this.cartridge.rom.getByte(
       this.cartridge.mbc.currentROMBank + address
     );
-  }
+  };
 
-  memoryReadMBC(address) {
+  memoryReadMBC = (address: number) => {
     return this.cartridge.mbc.readRAM(address);
-  }
+  };
 
-  memoryReadMBC7(address) {
+  memoryReadMBC7 = (address: number) => {
     return this.cartridge.mbc.readRAM(address);
-  }
+  };
 
-  memoryReadMBC3(address) {
+  memoryReadMBC3 = (address: number) => {
     return this.cartridge.mbc.readRAM(address);
-  }
+  };
 
-  memoryReadGBCMemory(address) {
+  memoryReadGBCMemory = (address: number) => {
     return this.GBCMemory[address + this.gbcRamBankPosition];
-  }
+  };
 
-  memoryReadOAM(address) {
+  memoryReadOAM(address: number) {
     return this.modeSTAT > 1 ? 0xff : this.memory[address];
   }
 
-  memoryReadECHOGBCMemory(address) {
+  memoryReadECHOGBCMemory = (address: number) => {
     return this.GBCMemory[address + this.gbcRamBankPositionECHO];
-  }
+  };
 
-  memoryReadECHONormal(address) {
+  memoryReadECHONormal = (address: number) => {
     return this.memory[address - 0x2000];
-  }
+  };
 
-  badMemoryRead(address) {
+  badMemoryRead() {
     return 0xff;
   }
 
-  VRAMDATAReadCGBCPU(address) {
+  VRAMDATAReadCGBCPU = (address) => {
     // CPU Side Reading The VRAM (Optimized for GameBoy Color)
     return this.modeSTAT > 2 ?
       0xff :
       this.currVRAMBank === 0 ?
         this.memory[address] :
         this.VRAM[address & 0x1fff];
-  }
+  };
 
-  VRAMDATAReadDMGCPU(address) {
+  VRAMDATAReadDMGCPU = (address) => {
     // CPU Side Reading The VRAM (Optimized for classic GameBoy)
     return this.modeSTAT > 2 ? 0xff : this.memory[address];
-  }
+  };
 
-  VRAMCHRReadCGBCPU(address) {
+  VRAMCHRReadCGBCPU = (address) => {
     // CPU Side Reading the Character Data Map:
     return this.modeSTAT > 2 ? 0xff : this.BGCHRCurrentBank[address & 0x7ff];
-  }
+  };
 
   VRAMCHRReadDMGCPU(address) {
     // CPU Side Reading the Character Data Map:
@@ -2896,9 +2869,9 @@ export default class GameBoyCore {
     this.registerWriteJumpCompile(); // Compile the I/O write functions separately...
   }
 
-  MBCWriteEnable(address, data) {
+  MBCWriteEnable = (address, data) => {
     this.cartridge.mbc.writeEnable(address, data);
-  }
+  };
 
   MBC1WriteROMBank(address, data) {
     this.cartridge.mbc1.writeROMBank(address, data);
@@ -2936,13 +2909,13 @@ export default class GameBoyCore {
     return this.cartridge.mbc5.writeROMBankHigh(address, data);
   }
 
-  MBC5WriteRAMBank(address, data) {
+  MBC5WriteRAMBank = (address, data) => {
     return this.cartridge.mbc5.writeRAMBank(address, data);
   }
 
-  RUMBLEWriteRAMBank(address, data) {
+  RUMBLEWriteRAMBank = (address, data) => {
     return this.cartridge.rumble.writeRAMBank(address, data);
-  }
+  };
 
   HuC3WriteRAMBank(address, data) {
     //HuC3 RAM bank switching
@@ -2954,27 +2927,27 @@ export default class GameBoyCore {
     // throw new Error(`Not allowed to write address 0x${address.toString(16)} with data: ${data.toString(2)}`);
   }
 
-  memoryWriteNormal(address, data) {
+  memoryWriteNormal = (address: number, data: number) => {
     this.memory[address] = data;
-  }
+  };
 
-  memoryHighWriteNormal(address, data) {
+  memoryHighWriteNormal = (address: number, data: number) => {
     this.memory[0xff00 | address] = data;
-  }
+  };
 
-  memoryWriteMBCRAM(address, data) {
+  memoryWriteMBCRAM = (address: number, data: number) => {
     this.cartridge.mbc.writeRAM(address, data);
-  }
+  };
 
-  memoryWriteMBC3RAM(address, data) {
+  memoryWriteMBC3RAM = (address: number, data: number) => {
     return this.cartridge.mbc.writeRAM(address, data);
-  }
+  };
 
-  memoryWriteGBCRAM(address, data) {
+  memoryWriteGBCRAM = (address: number, data: number) => {
     this.GBCMemory[address + this.gbcRamBankPosition] = data;
-  }
+  };
 
-  memoryWriteOAMRAM(address, data) {
+  memoryWriteOAMRAM(address: number, data: number) {
     if (this.modeSTAT < 2) {
       //OAM RAM cannot be written to in mode 2 & 3
       if (this.memory[address] != data) {
@@ -2984,15 +2957,15 @@ export default class GameBoyCore {
     }
   }
 
-  memoryWriteECHOGBCRAM(address, data) {
+  memoryWriteECHOGBCRAM(address: number, data: number) {
     this.GBCMemory[address + this.gbcRamBankPositionECHO] = data;
   }
 
-  memoryWriteECHONormal(address, data) {
+  memoryWriteECHONormal = (address: number, data: number) => {
     this.memory[address - 0x2000] = data;
-  }
+  };
 
-  VRAMGBDATAWrite(address, data) {
+  VRAMGBDATAWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
       if (this.memory[address] != data) {
@@ -3004,7 +2977,7 @@ export default class GameBoyCore {
     }
   }
 
-  VRAMGBDATAUpperWrite(address, data) {
+  VRAMGBDATAUpperWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
       if (this.memory[address] != data) {
@@ -3016,7 +2989,7 @@ export default class GameBoyCore {
     }
   }
 
-  VRAMGBCDATAWrite(address, data) {
+  VRAMGBCDATAWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
       if (this.currVRAMBank === 0) {
@@ -3038,7 +3011,7 @@ export default class GameBoyCore {
     }
   }
 
-  VRAMGBCHRMAPWrite(address, data) {
+  VRAMGBCHRMAPWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
       address &= 0x7ff;
@@ -3050,7 +3023,7 @@ export default class GameBoyCore {
     }
   }
 
-  VRAMGBCCHRMAPWrite(address, data) {
+  VRAMGBCCHRMAPWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
       address &= 0x7ff;
@@ -3177,13 +3150,13 @@ export default class GameBoyCore {
   registerWriteJumpCompile() {
     //I/O Registers (GB + GBC):
     //JoyPad
-    this.memoryHighWriter[0] = this.memoryWriter[MemoryLayout.JOYPAD_REG] = (address, data) => {
+    this.memoryHighWriter[0] = this.memoryWriter[MemoryLayout.JOYPAD_REG] = (address: number, data: number) => {
       this.memory[MemoryLayout.JOYPAD_REG] = data & 0x30 |
         ((data & 0x20) === 0 ? this.joypad.value >> 4 : 0xf) &
         ((data & 0x10) === 0 ? this.joypad.value & 0xf : 0xf);
     };
     //SB (Serial Transfer Data)
-    this.memoryHighWriter[0x1] = this.memoryWriter[MemoryLayout.SERIAL_DATA_REG] = (address, data) => {
+    this.memoryHighWriter[0x1] = this.memoryWriter[MemoryLayout.SERIAL_DATA_REG] = (address: number, data: number) => {
       if (this.memory[MemoryLayout.SERIAL_CONTROL_REG] < 0x80) {
         //Cannot write while a serial transfer is active.
         this.memory[MemoryLayout.SERIAL_DATA_REG] = data;
@@ -3229,7 +3202,7 @@ export default class GameBoyCore {
     //NR10:
     this.memoryHighWriter[0x10] = this.memoryWriter[0xff10] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         if (this.audioController.channel1decreaseSweep && (data & 0x08) === 0) {
           if (this.audioController.channel1Swept) {
             this.audioController.channel1SweepFault = true;
@@ -3246,7 +3219,7 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x11] = this.memoryWriter[0xff11] = (address, data) => {
       if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
         if (this.soundMasterEnabled) {
-          this.audioController.runJIT();
+          this.audioController.run();
         } else {
           data &= 0x3f;
         }
@@ -3259,7 +3232,7 @@ export default class GameBoyCore {
     //NR12:
     this.memoryHighWriter[0x12] = this.memoryWriter[0xff12] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         if (this.audioController.channel1Enabled && this.audioController.channel1envelopeSweeps === 0) {
           //Zombie Volume PAPU Bug:
           if (((this.memory[0xff12] ^ data) & 0x8) === 0x8) {
@@ -3284,7 +3257,7 @@ export default class GameBoyCore {
     //NR13:
     this.memoryHighWriter[0x13] = this.memoryWriter[0xff13] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.audioController.channel1frequency = this.audioController.channel1frequency & 0x700 | data;
         this.audioController.channel1FrequencyTracker = 0x800 - this.audioController.channel1frequency << 2;
       }
@@ -3292,7 +3265,7 @@ export default class GameBoyCore {
     //NR14:
     this.memoryHighWriter[0x14] = this.memoryWriter[0xff14] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.audioController.channel1consecutive = (data & 0x40) === 0x0;
         this.audioController.channel1frequency = (data & 0x7) << 8 | this.audioController.channel1frequency & 0xff;
         this.audioController.channel1FrequencyTracker = 0x800 - this.audioController.channel1frequency << 2;
@@ -3335,7 +3308,7 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x16] = this.memoryWriter[0xff16] = (address, data) => {
       if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
         if (this.soundMasterEnabled) {
-          this.audioController.runJIT();
+          this.audioController.run();
         } else {
           data &= 0x3f;
         }
@@ -3348,7 +3321,7 @@ export default class GameBoyCore {
     //NR22:
     this.memoryHighWriter[0x17] = this.memoryWriter[0xff17] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         if (this.audioController.channel2Enabled && this.audioController.channel2envelopeSweeps === 0) {
           //Zombie Volume PAPU Bug:
           if (((this.memory[0xff17] ^ data) & 0x8) === 0x8) {
@@ -3373,7 +3346,7 @@ export default class GameBoyCore {
     //NR23:
     this.memoryHighWriter[0x18] = this.memoryWriter[0xff18] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.audioController.channel2frequency = this.audioController.channel2frequency & 0x700 | data;
         this.audioController.channel2FrequencyTracker = 0x800 - this.audioController.channel2frequency << 2;
       }
@@ -3381,7 +3354,7 @@ export default class GameBoyCore {
     //NR24:
     this.memoryHighWriter[0x19] = this.memoryWriter[0xff19] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         if (data > 0x7f) {
           //Reload 0xFF17:
           var nr22 = this.memory[0xff17];
@@ -3405,7 +3378,7 @@ export default class GameBoyCore {
     //NR30:
     this.memoryHighWriter[0x1a] = this.memoryWriter[0xff1a] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         if (!this.audioController.channel3canPlay && data >= 0x80) {
           this.audioController.channel3lastSampleLookup = 0;
           this.audioController.cacheChannel3Update();
@@ -3422,7 +3395,7 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x1b] = this.memoryWriter[0xff1b] = (address, data) => {
       if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
         if (this.soundMasterEnabled) {
-          this.audioController.runJIT();
+          this.audioController.run();
         }
         this.audioController.channel3totalLength = 0x100 - data;
         this.audioController.checkChannel3Enable();
@@ -3431,7 +3404,7 @@ export default class GameBoyCore {
     //NR32:
     this.memoryHighWriter[0x1c] = this.memoryWriter[0xff1c] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         data &= 0x60;
         this.memory[0xff1c] = data;
         this.audioController.channel3patternType = data === 0 ? 4 : (data >> 5) - 1;
@@ -3440,7 +3413,7 @@ export default class GameBoyCore {
     //NR33:
     this.memoryHighWriter[0x1d] = this.memoryWriter[0xff1d] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.audioController.channel3frequency = this.audioController.channel3frequency & 0x700 | data;
         this.audioController.channel3FrequencyPeriod = 0x800 - this.audioController.channel3frequency << 1;
       }
@@ -3448,7 +3421,7 @@ export default class GameBoyCore {
     //NR34:
     this.memoryHighWriter[0x1e] = this.memoryWriter[0xff1e] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         if (data > 0x7f) {
           if (this.audioController.channel3totalLength === 0) {
             this.audioController.channel3totalLength = 0x100;
@@ -3471,7 +3444,7 @@ export default class GameBoyCore {
     this.memoryHighWriter[0x20] = this.memoryWriter[0xff20] = (address, data) => {
       if (this.soundMasterEnabled || !this.cartridge.useGBCMode) {
         if (this.soundMasterEnabled) {
-          this.audioController.runJIT();
+          this.audioController.run();
         }
         this.audioController.channel4totalLength = 0x40 - (data & 0x3f);
         this.audioController.checkChannel4Enable();
@@ -3480,7 +3453,7 @@ export default class GameBoyCore {
     //NR42:
     this.memoryHighWriter[0x21] = this.memoryWriter[0xff21] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         if (this.audioController.channel4Enabled && this.audioController.channel4envelopeSweeps === 0) {
           //Zombie Volume PAPU Bug:
           if (((this.memory[0xff21] ^ data) & 0x8) === 0x8) {
@@ -3506,7 +3479,7 @@ export default class GameBoyCore {
     //NR43:
     this.memoryHighWriter[0x22] = this.memoryWriter[0xff22] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.audioController.channel4FrequencyPeriod = Math.max((data & 0x7) << 4, 8) << (data >> 4);
         var bitWidth = data & 0x8;
         if (bitWidth === 0x8 && this.audioController.channel4BitRange === 0x7fff || bitWidth === 0 && this.audioController.channel4BitRange === 0x7f) {
@@ -3523,7 +3496,7 @@ export default class GameBoyCore {
     //NR44:
     this.memoryHighWriter[0x23] = this.memoryWriter[0xff23] = (address, data) => {
       if (this.soundMasterEnabled) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.memory[0xff23] = data;
         this.audioController.channel4consecutive = (data & 0x40) === 0x0;
         if (data > 0x7f) {
@@ -3544,7 +3517,7 @@ export default class GameBoyCore {
     //NR50:
     this.memoryHighWriter[0x24] = this.memoryWriter[0xff24] = (address, data) => {
       if (this.soundMasterEnabled && this.memory[0xff24] != data) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.memory[0xff24] = data;
         this.audioController.VinLeftChannelMasterVolume = (data >> 4 & 0x07) + 1;
         this.audioController.VinRightChannelMasterVolume = (data & 0x07) + 1;
@@ -3554,7 +3527,7 @@ export default class GameBoyCore {
     //NR51:
     this.memoryHighWriter[0x25] = this.memoryWriter[0xff25] = (address, data) => {
       if (this.soundMasterEnabled && this.memory[0xff25] != data) {
-        this.audioController.runJIT();
+        this.audioController.run();
         this.memory[0xff25] = data;
         this.audioController.rightChannel1 = (data & 0x01) === 0x01;
         this.audioController.rightChannel2 = (data & 0x02) === 0x02;
@@ -3572,7 +3545,7 @@ export default class GameBoyCore {
     };
     //NR52:
     this.memoryHighWriter[0x26] = this.memoryWriter[0xff26] = (address, data) => {
-      this.audioController.runJIT();
+      this.audioController.run();
       if (!this.soundMasterEnabled && data > 0x7f) {
         this.memory[0xff26] = 0x80;
         this.soundMasterEnabled = true;

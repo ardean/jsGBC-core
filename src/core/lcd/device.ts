@@ -10,7 +10,7 @@ export default class LcdDevice {
   offscreenRGBACount: number;
   width: any;
   height: any;
-  swizzledFrame: any;
+  swizzledFrame: Uint8Array;
   canvasBuffer: any;
   drewFrame: boolean;
   resizer: any;
@@ -105,7 +105,7 @@ export default class LcdDevice {
         this.offscreenRGBCount,
         0xff,
         "uint8"
-      );
+      ) as Uint8Array;
 
     //Test the draw system and browser vblank latching:
     this.drewFrame = true; //Copy the latest graphics to buffer.
@@ -132,26 +132,12 @@ export default class LcdDevice {
 
   requestDraw() {
     if (this.drewFrame) {
-      this.dispatchDraw();
-    }
-  }
-
-  dispatchDraw() {
-    if (this.offscreenRGBACount > 0) {
-      //We actually updated the graphics internally, so copy out:
-      if (this.offscreenRGBACount === 92160) {
-        this.processDraw(this.swizzledFrame);
-      } else {
-        // this.resizeFrameBuffer();
+      if (this.offscreenRGBACount > 0) {
+        // We actually updated the graphics internally, so copy out:
+        if (this.offscreenRGBACount === 92160) {
+          this.processDraw(this.swizzledFrame);
+        }
       }
-    }
-  }
-
-  resizeFrameBuffer() {
-    // Resize in javascript with resize.js:
-    if (this.resizePathClear) {
-      this.resizePathClear = false;
-      this.resizer.resize(this.swizzledFrame);
     }
   }
 
