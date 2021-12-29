@@ -123,7 +123,7 @@ export function saveAs(file: Blob | ArrayBuffer | Uint8Array, filename?: string)
     file = new Blob([file], { type: "application/octet-binary" });
   }
 
-  FileSaver.saveAs(file, filename);
+  FileSaver.saveAs(file as Blob, filename);
 }
 
 export type Debounced = (() => any) & { clear?(), flush?() };
@@ -134,7 +134,7 @@ export async function readBlob(file: Blob): Promise<ArrayBuffer> {
       const binaryHandle = new FileReader();
       binaryHandle.addEventListener("load", function () {
         if (this.readyState === 2) {
-          resolve(this.result);
+          resolve(this.result as ArrayBuffer);
         }
       });
       binaryHandle.readAsArrayBuffer(file);

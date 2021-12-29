@@ -42,10 +42,12 @@ window.addEventListener("keyup", ({ keyCode }) => {
 const selectRomElement = document.querySelector<HTMLInputElement>(".rom-select");
 selectRomElement.addEventListener("change", async () => {
   const file = selectRomElement.files[0];
+  if (!file) return;
+
   const rom = await util.readCartridgeROM(file, file.name);
-  if (rom) {
-    gameboy.replaceCartridge(rom);
-  }
+  if (!rom) return;
+
+  gameboy.replaceCartridge(rom);
 });
 
 document

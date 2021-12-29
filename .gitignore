@@ -2,6 +2,7 @@
 node_modules
 lcd.png
 /roms
+/dist
 *.log
 *.gbc
 *.gb

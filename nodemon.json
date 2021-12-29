@@ -1,0 +1,8 @@
+{
+  "watch": [
+    "./nodeDemo",
+    "./src"
+  ],
+  "ext": "ts",
+  "exec": "node -r ts-node/register --max-old-space-size=10240 ./nodeDemo"
+}

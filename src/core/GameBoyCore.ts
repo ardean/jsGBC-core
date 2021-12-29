@@ -1,7 +1,7 @@
 import * as util from "../util";
 import settings from "../settings";
 import TickTable from "./tick-table";
-import AudioDevice from "./audio/device";
+import AudioDevice from "./audio/AudioDevice";
 import AudioController from "./audio/controller";
 import LcdDevice from "./lcd/device";
 import LcdController from "./lcd/controller";

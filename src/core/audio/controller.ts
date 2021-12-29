@@ -1,7 +1,8 @@
+import CPU from "../cpu";
 import * as util from "../../util";
 import settings from "../../settings";
 import dutyLookup from "../duty-lookup";
-import CPU from "../cpu";
+import AudioDevice from "./AudioDevice";
 import GameBoyCore from "../GameBoyCore";
 
 export default class AudioController {
@@ -101,7 +102,7 @@ export default class AudioController {
   channel4currentSampleLeftSecondary: any;
   channel4currentSampleRightSecondary: any;
   downSampleInputDivider: number;
-  device: any;
+  device: AudioDevice;
   channel3PCM: util.TypedArray;
   memory: util.TypedArray;
   gameboy: GameBoyCore;
@@ -115,7 +116,7 @@ export default class AudioController {
   bufferContainAmount = 0; // Buffer maintenance metric
   bufferPosition = 0; // Used to keep alignment on audio generation
   downsampleInput = 0;
-  buffer: util.TypedArray;
+  buffer: Float32Array;
 
   constructor({ cpu, gameboy }: { cpu: CPU, gameboy: GameBoyCore }) {
     this.cpu = cpu;
@@ -649,7 +650,7 @@ export default class AudioController {
     this.mixerOutputCache = currentLeftSample * this.VinLeftChannelMasterVolume << 16 | currentRightSample * this.VinRightChannelMasterVolume;
   }
 
-  connectDevice(device) {
+  connectDevice(device: AudioDevice) {
     this.resamplerFirstPassFactor = Math.max(Math.min(Math.floor(this.cpu.clocksPerSecond / 44100), Math.floor(0xffff / 0x1e0)), 1);
     this.downSampleInputDivider = 1 / (this.resamplerFirstPassFactor * 0xf0);
 
@@ -657,7 +658,7 @@ export default class AudioController {
     const maxBufferSize = Math.max(this.cpu.baseCyclesPerIteration * settings.maxAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 8192) << 1;
     device.setSampleRate(sampleRate);
     device.setMaxBufferSize(maxBufferSize);
-    device.initializeAudio();
+    device.init();
 
     this.device = device;
   }
@@ -701,7 +702,7 @@ export default class AudioController {
     this.downsampleInput = 0;
     this.bufferContainAmount = Math.max(this.cpu.baseCyclesPerIteration * settings.minAudioBufferSpanAmountOverXInterpreterIterations / this.resamplerFirstPassFactor, 4096) << 1;
     this.bufferLength = this.cpu.baseCyclesPerIteration / this.resamplerFirstPassFactor << 1;
-    this.buffer = util.getTypedArray(this.bufferLength, 0, "float32");
+    this.buffer = util.getTypedArray(this.bufferLength, 0, "float32") as Float32Array;
   }
 
   generateWhiteNoise() {
