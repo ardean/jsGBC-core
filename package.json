@@ -1,6 +1,6 @@
 {
   "name": "jsgbc",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "jsGBC Core Emulator",
   "main": "./dist/jsgbc-core.js",
   "types": "./dist/types/index.d.ts",
