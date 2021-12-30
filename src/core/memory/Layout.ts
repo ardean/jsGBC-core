@@ -124,7 +124,7 @@ export const OBP1_REG = 0xFF49; /*  Object Palette 1 Data */
 export const WY_REG = 0xFF4A; /*  Window Y Position; 0 <= WY <= 143*/
 export const WX_REG = 0xFF4B; /*  Window X Position; 0 <= WX <= 166 */
 
-export const disableBootRomAddress = 0xFF50;
+export const toggleBootRomControlAddress = 0xFF50;
 
 /* DMA transfer for Gameboy Color */
 export const HDMA1_REG = 0xFF51;
@@ -143,6 +143,11 @@ export const BGPI = 0xFF68; // Background Palette index for Gameboy Color
 export const BGPD = 0xFF69; // Background Palette data for Gameboy Color
 export const SPPI = 0xFF6A; // Sprite Palette index for Gameboy Color
 export const SPPD = 0xFF6B; // Sprite Palette data for Gameboy Color
+
+// FF6C - Bit 0 (Read/Write) - CGB Mode Only
+// Only the least significant bit of this register can be written to. It defaults to 0, so this register's initial value is $FE.
+// In non-CGB mode, it isn't writable, and its value is locked at $FF.
+export const undocumentedGbcOnlyAddress = 0xFF6C;
 
 export const SRAM_BANK = 0xFF70; // Register to select internal RAM banks for Gameboy Color
 

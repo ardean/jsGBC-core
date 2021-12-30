@@ -1,16 +1,15 @@
 import CPU from "./cpu";
 import ROM from "./ROM";
 import { GameBoy } from "..";
-import Memory from "./memory";
 import Joypad from "./Joypad";
 import * as util from "../util";
 import settings from "../settings";
 import Cartridge from "./cartridge";
+import Memory from "./memory/Memory";
 import TickTable from "./tick-table";
 import LcdDevice from "./lcd/device";
 import { EventEmitter } from "events";
-import dutyLookup from "./duty-lookup";
-import StateManager from "./state-manager";
+import StateManager from "./StateManager";
 import LcdController from "./lcd/controller";
 import AudioDevice from "./audio/AudioDevice";
 import * as MemoryLayout from "./memory/Layout";
@@ -43,7 +42,7 @@ export default class GameBoyCore {
   pixelStart: number;
   cartridge: Cartridge;
   memory: Uint8Array;
-  inBootstrap: boolean = true;
+  isBootingRom: boolean = true;
   VRAM: Uint8Array;
   GBCMemory: Uint8Array;
   frameBuffer: util.TypedArray;
@@ -120,7 +119,7 @@ export default class GameBoyCore {
   gbcRamBankPositionECHO: any;
   gbcRamBank: number;
   highMemoryWriter: any[];
-  memoryHighReader: any[];
+  highMemoryReader: any[];
   memoryWriter: any[];
   memoryReader: any[];
   IRQLineMatched: number;
@@ -176,7 +175,7 @@ export default class GameBoyCore {
     // Main RAM, MBC RAM, GBC Main RAM, VRAM, etc.
     this.memoryReader = []; // Array of functions mapped to read back memory
     this.memoryWriter = []; // Array of functions mapped to write to memory
-    this.memoryHighReader = []; // Array of functions mapped to read back 0xFFXX memory
+    this.highMemoryReader = []; // Array of functions mapped to read back 0xFFXX memory
     this.highMemoryWriter = []; // Array of functions mapped to write to 0xFFXX memory
     this.spriteCount = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
     this.LINECONTROL = []; // Array of functions to handle each scan line we do (onscreen + offscreen)
@@ -213,30 +212,32 @@ export default class GameBoyCore {
     this.stateManager.load(state);
 
     this.initializeReferencesFromSaveState();
-    this.jumpCompile();
+    this.memoryNew.init();
     this.lcdDevice.init();
-    this.initSound();
     this.audioController.noiseSampleTable = this.audioController.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
     this.audioController.channel4VolumeShifter = this.audioController.channel4BitRange === 0x7fff ? 15 : 7;
   }
 
-  jumpCompile() {
-    this.memoryNew.jumpCompile();
-  }
-
   connectCartridge(cartridge: Cartridge) {
-    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.removeListener("rumble", this.onRumble);
+    if (this.cartridge?.mbc) this.cartridge.mbc.removeListener("rumble", this.onRumble);
 
+    this.cartridge?.disconnect();
     cartridge.connect(this);
+
+    cartridge.interpret();
+    if (cartridge?.mbc) {
+      cartridge.mbc.addListener("rumble", this.onRumble);
+      cartridge.mbc.setupROM();
+      cartridge.mbc.on("ramWrite", () => {
+        this.events.emit("sramWrite");
+      });
+    }
+
     this.cartridge = cartridge;
 
     this.loadCartridgeRomIntoMemory();
     if (this.gbcBootRom) this.loadGbcBootRomIntoMemory();
     else if (this.gbBootRom) this.loadGbBootRomIntoMemory();
-
-    this.cartridge.interpret();
-
-    if (this.cartridge && this.cartridge.mbc) this.cartridge.mbc.addListener("rumble", this.onRumble);
   }
 
   onRumble() {
@@ -282,22 +283,38 @@ export default class GameBoyCore {
   }
 
   start(cartridge: Cartridge) {
-    this.init();
+    this.stateManager.init();
+
+    // Initialize the RAM:
+    this.memory = new Uint8Array(0x10000);
+    this.audioController.setMemory(this.memory);
+    this.frameBuffer = util.getTypedArray(23040, 0xf8f8f8, "int32") as Int32Array;
+    this.BGCHRBank1 = new Uint8Array(0x800);
+    this.audioController.initMemory();
+
+    this.memoryNew = new Memory(this, this.memory);
+
+    this.lcdDevice.init(); // Initialize the graphics.
+
+    this.audioController.connectDevice(this.audioDevice);
+
     this.connectCartridge(cartridge);
 
-    if (this.cartridge && this.cartridge.mbc) {
-      this.cartridge.mbc.setupROM();
-      this.cartridge.mbc.on("ramWrite", () => {
-        this.events.emit("sramWrite");
-      });
+    this.cartridge.setupRAM();
+
+    // Setup the RAM for GBC mode.
+    if (this.cartridge.useGbcMode) {
+      this.VRAM = new Uint8Array(0x2000);
+      this.GBCMemory = new Uint8Array(0x7000);
     }
 
+    this.memoryNew.init();
+    this.initializeModeSpecificArrays();
+
     if (!this.usedBootRom) {
-      this.inBootstrap = false;
-      this.setupRAM();
+      this.isBootingRom = false;
       this.initSkipBootstrap();
     } else {
-      this.setupRAM();
       this.initBootstrap();
     }
 
@@ -305,43 +322,11 @@ export default class GameBoyCore {
     this.checkIRQMatching();
   }
 
-  init() {
-    this.stateManager.init();
-    this.initMemory(); // Write the startup memory.
-    this.lcdDevice.init(); // Initialize the graphics.
-    this.initSound(); // Sound object initialization.
-  }
-
-  setupRAM() {
-    this.cartridge.setupRAM();
-
-    // Setup the RAM for GBC mode.
-    if (this.cartridge.useGBCMode) {
-      this.VRAM = new Uint8Array(0x2000);
-      this.GBCMemory = new Uint8Array(0x7000);
-    }
-
-    this.jumpCompile();
-
-    this.initializeModeSpecificArrays();
-  }
-
-  initMemory() {
-    // Initialize the RAM:
-    this.memory = util.getTypedArray(0x10000, 0, "uint8") as Uint8Array;
-    this.audioController.setMemory(this.memory);
-    this.frameBuffer = util.getTypedArray(23040, 0xf8f8f8, "int32");
-    this.BGCHRBank1 = util.getTypedArray(0x800, 0, "uint8");
-    this.audioController.initMemory();
-
-    this.memoryNew = new Memory(this, this.memory);
-  }
-
-  generateCacheArray(tileAmount) {
+  generateCacheArray(tileAmount: number) {
     const tileArray = [];
     let tileNumber = 0;
     while (tileNumber < tileAmount) {
-      tileArray[tileNumber++] = util.getTypedArray(64, 0, "uint8");
+      tileArray[tileNumber++] = new Uint8Array(64);
     }
     return tileArray;
   }
@@ -371,7 +356,7 @@ export default class GameBoyCore {
       --index;
     }
 
-    if (this.cartridge.useGBCMode) {
+    if (this.cartridge.useGbcMode) {
       this.memory[0xff6c] = 0xfe;
       this.memory[0xff74] = 0xfe;
     } else {
@@ -383,7 +368,7 @@ export default class GameBoyCore {
 
     // Start as an unset device:
     console.log("Starting without the GBC boot ROM.");
-    this.registerA = this.cartridge.useGBCMode ? 0x11 : 0x1;
+    this.registerA = this.cartridge.useGbcMode ? 0x11 : 0x1;
     this.registerB = 0;
     this.registerC = 0x13;
     this.registerD = 0;
@@ -408,65 +393,7 @@ export default class GameBoyCore {
     this.mode1TriggerSTAT = false;
     this.mode0TriggerSTAT = false;
     this.LCDisOn = true;
-    this.audioController.channel1FrequencyTracker = 0x2000;
-    this.audioController.channel1DutyTracker = 0;
-    this.audioController.channel1CachedDuty = dutyLookup[2];
-    this.audioController.channel1totalLength = 0;
-    this.audioController.channel1envelopeVolume = 0;
-    this.audioController.channel1envelopeType = false;
-    this.audioController.channel1envelopeSweeps = 0;
-    this.audioController.channel1envelopeSweepsLast = 0;
-    this.audioController.channel1consecutive = true;
-    this.audioController.channel1frequency = 1985;
-    this.audioController.channel1SweepFault = true;
-    this.audioController.channel1ShadowFrequency = 1985;
-    this.audioController.channel1timeSweep = 1;
-    this.audioController.channel1lastTimeSweep = 0;
-    this.audioController.channel1Swept = false;
-    this.audioController.channel1frequencySweepDivider = 0;
-    this.audioController.channel1decreaseSweep = false;
-    this.audioController.channel2FrequencyTracker = 0x2000;
-    this.audioController.channel2DutyTracker = 0;
-    this.audioController.channel2CachedDuty = dutyLookup[2];
-    this.audioController.channel2totalLength = 0;
-    this.audioController.channel2envelopeVolume = 0;
-    this.audioController.channel2envelopeType = false;
-    this.audioController.channel2envelopeSweeps = 0;
-    this.audioController.channel2envelopeSweepsLast = 0;
-    this.audioController.channel2consecutive = true;
-    this.audioController.channel2frequency = 0;
-    this.audioController.channel3CanPlay = false;
-    this.audioController.channel3totalLength = 0;
-    this.audioController.channel3patternType = 4;
-    this.audioController.channel3frequency = 0;
-    this.audioController.channel3consecutive = true;
-    this.audioController.channel3Counter = 0x418;
-    this.audioController.channel4FrequencyPeriod = 8;
-    this.audioController.channel4totalLength = 0;
-    this.audioController.channel4envelopeVolume = 0;
-    this.audioController.channel4currentVolume = 0;
-    this.audioController.channel4envelopeType = false;
-    this.audioController.channel4envelopeSweeps = 0;
-    this.audioController.channel4envelopeSweepsLast = 0;
-    this.audioController.channel4consecutive = true;
-    this.audioController.channel4BitRange = 0x7fff;
-    this.audioController.channel4VolumeShifter = 15;
-    this.audioController.channel1FrequencyCounter = 0x200;
-    this.audioController.channel2FrequencyCounter = 0x200;
-    this.audioController.channel3Counter = 0x800;
-    this.audioController.channel3FrequencyPeriod = 0x800;
-    this.audioController.channel3lastSampleLookup = 0;
-    this.audioController.channel4lastSampleLookup = 0;
-    this.audioController.VinLeftChannelMasterVolume = 8;
-    this.audioController.VinRightChannelMasterVolume = 8;
-    this.audioController.leftChannel1 = true;
-    this.audioController.leftChannel2 = true;
-    this.audioController.leftChannel3 = true;
-    this.audioController.leftChannel4 = true;
-    this.audioController.rightChannel1 = true;
-    this.audioController.rightChannel2 = true;
-    this.audioController.rightChannel3 = false;
-    this.audioController.rightChannel4 = false;
+    this.audioController.setSkippedBootRomState();
     this.DIVTicks = 27044;
     this.LCDTicks = 160;
     this.timerTicks = 0;
@@ -512,11 +439,11 @@ export default class GameBoyCore {
     this.memory[MemoryLayout.JOYPAD_REG] = this.joypad.initialValue;
   }
 
-  disableBootROM() {
+  disableBootRom() {
     this.loadCartridgeRomIntoMemory();
 
     if (this.usedGbcBootRom) {
-      if (!this.cartridge.useGBCMode) {
+      if (!this.cartridge.useGbcMode) {
         // Clean up the post-boot (GB mode only) state:
         this.adjustGBCtoGBMode();
       } else {
@@ -529,10 +456,6 @@ export default class GameBoyCore {
 
   setSpeed(speed: number) {
     this.cpu.setSpeed(speed);
-    this.initSound();
-  }
-
-  initSound() {
     this.audioController.connectDevice(this.audioDevice);
   }
 
@@ -778,7 +701,7 @@ export default class GameBoyCore {
 
   updateSpriteCount(line) {
     this.spriteCount = 252;
-    if (this.cartridge.useGBCMode && this.gfxSpriteShow) {
+    if (this.cartridge.useGbcMode && this.gfxSpriteShow) {
       //Is the window enabled and are we in CGB mode?
       var lineAdjusted = line + 0x10;
       var yoffset = 0;
@@ -1051,7 +974,7 @@ export default class GameBoyCore {
       this.renderWindowLayer(scanlineToRender);
     } else {
       const pixelLine = (scanlineToRender + 1) * 160;
-      const defaultColor = this.cartridge.useGBCMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
+      const defaultColor = this.cartridge.useGbcMode || this.colorizedGBPalettes ? 0xf8f8f8 : 0xefffde;
       for (let pixelPosition = scanlineToRender * 160 + this.currentX; pixelPosition < pixelLine; pixelPosition++) {
         this.frameBuffer[pixelPosition] = defaultColor;
       }
@@ -1081,7 +1004,7 @@ export default class GameBoyCore {
           //TODO: Do midscanline JIT for sprites...
         } else {
           var pixelLine = this.lastUnrenderedLine * 160 + this.pixelEnd;
-          var defaultColor = this.cartridge.useGBCMode ||
+          var defaultColor = this.cartridge.useGbcMode ||
             this.colorizedGBPalettes ?
             0xf8f8f8 :
             0xefffde;
@@ -1098,7 +1021,7 @@ export default class GameBoyCore {
 
   initializeModeSpecificArrays() {
     this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
-    if (this.cartridge.useGBCMode) {
+    if (this.cartridge.useGbcMode) {
       this.gbcOBJRawPalette = util.getTypedArray(0x40, 0, "uint8");
       this.gbcBGRawPalette = util.getTypedArray(0x40, 0, "uint8");
       this.gbcOBJPalette = util.getTypedArray(0x20, 0x1000000, "int32");
@@ -1122,7 +1045,7 @@ export default class GameBoyCore {
 
   adjustGBCtoGBMode() {
     console.log("Stepping down from GBC mode.");
-    this.VRAM = this.GBCMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = null;
+    this.VRAM = this.GBCMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = undefined;
     this.tileCache.length = 0x700;
     if (settings.colorizeGBMode) {
       this.gbBGColorizedPalette = util.getTypedArray(4, 0, "int32");
@@ -1131,7 +1054,7 @@ export default class GameBoyCore {
       this.cachedOBJPaletteConversion = util.getTypedArray(8, 0, "int32");
       this.BGPalette = this.gbBGColorizedPalette;
       this.OBJPalette = this.gbOBJColorizedPalette;
-      this.gbOBJPalette = this.gbBGPalette = null;
+      this.gbOBJPalette = this.gbBGPalette = undefined;
       this.getGBCColor();
     } else {
       this.gbOBJPalette = util.getTypedArray(8, 0, "int32");
@@ -1142,11 +1065,11 @@ export default class GameBoyCore {
     this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
     this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
     this.renderPathBuild();
-    this.jumpCompile();
+    this.memoryNew.init();
   }
 
   renderPathBuild() {
-    if (!this.cartridge.useGBCMode) {
+    if (!this.cartridge.useGbcMode) {
       this.renderBGLayer = this.renderBGGBLayer;
       this.renderWindowLayer = this.renderWindowGBLayer;
       this.renderSpriteLayer = this.renderSpriteGBLayer;
@@ -1168,7 +1091,7 @@ export default class GameBoyCore {
 
   initializeReferencesFromSaveState() {
     this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
-    if (!this.cartridge.useGBCMode) {
+    if (!this.cartridge.useGbcMode) {
       if (this.colorizedGBPalettes) {
         this.BGPalette = this.gbBGColorizedPalette;
         this.OBJPalette = this.gbOBJColorizedPalette;
@@ -2273,16 +2196,30 @@ export default class GameBoyCore {
   }
 
   //Memory Reading:
-  memoryRead(address) {
+  memoryRead(address: number) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
     if (this.memoryNew.hasReader(address)) return this.memoryNew.read(address);
     return this.memoryReader[address].apply(this, [address]);
   }
 
-  memoryHighRead(address) {
+  memoryHighRead(address: number) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
     if (this.memoryNew.hasHighReader(address)) return this.memoryNew.readHigh(address);
-    return this.memoryHighReader[address].apply(this, [address]);
+    return this.highMemoryReader[address].apply(this, [address]);
+  }
+
+  //Memory Writing:
+  memoryWrite(address: number, data: number) {
+    //Act as a wrapper for writing by compiled jumps to specific memory writing functions.
+    if (this.memoryNew.hasWriter(address)) return this.memoryNew.write(address, data);
+    return this.memoryWriter[address].apply(this, [address, data]);
+  }
+
+  //0xFFXX fast path:
+  memoryHighWrite(address: number, data: number) {
+    //Act as a wrapper for writing by compiled jumps to specific memory writing functions.
+    if (this.memoryNew.hasHighWriter(address)) return this.memoryNew.writeHigh(address, data);
+    return this.highMemoryWriter[address].apply(this, [address, data]);
   }
 
   memoryReadJumpCompile() {
@@ -2291,90 +2228,90 @@ export default class GameBoyCore {
       if (index >= 0xff00) {
         switch (index) {
           case 0xff10:
-            this.memoryHighReader[0x10] = this.memoryReader[0xff10] = address => {
+            this.highMemoryReader[0x10] = this.memoryReader[0xff10] = address => {
               return 0x80 | this.memory[0xff10];
             };
             break;
           case 0xff11:
-            this.memoryHighReader[0x11] = this.memoryReader[0xff11] = address => {
+            this.highMemoryReader[0x11] = this.memoryReader[0xff11] = address => {
               return 0x3f | this.memory[0xff11];
             };
             break;
           case 0xff12:
-            this.memoryHighReader[0x12] = this.memoryHighReadNormal;
+            this.highMemoryReader[0x12] = this.memoryHighReadNormal;
             this.memoryReader[0xff12] = this.memoryReadNormal;
             break;
           case 0xff13:
-            this.memoryHighReader[0x13] = this.memoryReader[0xff13] = this.badMemoryRead;
+            this.highMemoryReader[0x13] = this.memoryReader[0xff13] = this.memoryNew.readBad;
             break;
           case 0xff14:
-            this.memoryHighReader[0x14] = this.memoryReader[0xff14] = address => {
+            this.highMemoryReader[0x14] = this.memoryReader[0xff14] = address => {
               return 0xbf | this.memory[0xff14];
             };
             break;
           case 0xff15:
-            this.memoryHighReader[0x15] = this.badMemoryRead;
-            this.memoryReader[0xff15] = this.badMemoryRead;
+            this.highMemoryReader[0x15] = this.memoryNew.readBad;
+            this.memoryReader[0xff15] = this.memoryNew.readBad;
             break;
           case 0xff16:
-            this.memoryHighReader[0x16] = this.memoryReader[0xff16] = address => {
+            this.highMemoryReader[0x16] = this.memoryReader[0xff16] = address => {
               return 0x3f | this.memory[0xff16];
             };
             break;
           case 0xff17:
-            this.memoryHighReader[0x17] = this.memoryHighReadNormal;
+            this.highMemoryReader[0x17] = this.memoryHighReadNormal;
             this.memoryReader[0xff17] = this.memoryReadNormal;
             break;
           case 0xff18:
-            this.memoryHighReader[0x18] = this.memoryReader[0xff18] = this.badMemoryRead;
+            this.highMemoryReader[0x18] = this.memoryReader[0xff18] = this.memoryNew.readBad;
             break;
           case 0xff19:
-            this.memoryHighReader[0x19] = this.memoryReader[0xff19] = address => {
+            this.highMemoryReader[0x19] = this.memoryReader[0xff19] = address => {
               return 0xbf | this.memory[0xff19];
             };
             break;
           case 0xff1a:
-            this.memoryHighReader[0x1a] = this.memoryReader[0xff1a] = address => {
+            this.highMemoryReader[0x1a] = this.memoryReader[0xff1a] = address => {
               return 0x7f | this.memory[0xff1a];
             };
             break;
           case 0xff1b:
-            this.memoryHighReader[0x1b] = this.memoryReader[0xff1b] = this.badMemoryRead;
+            this.highMemoryReader[0x1b] = this.memoryReader[0xff1b] = this.memoryNew.readBad;
             break;
           case 0xff1c:
-            this.memoryHighReader[0x1c] = this.memoryReader[0xff1c] = address => {
+            this.highMemoryReader[0x1c] = this.memoryReader[0xff1c] = address => {
               return 0x9f | this.memory[0xff1c];
             };
             break;
           case 0xff1d:
-            this.memoryHighReader[0x1d] = this.memoryReader[0xff1d] = this.badMemoryRead;
+            this.highMemoryReader[0x1d] = this.memoryReader[0xff1d] = this.memoryNew.readBad;
             break;
           case 0xff1e:
-            this.memoryHighReader[0x1e] = this.memoryReader[0xff1e] = address => {
+            this.highMemoryReader[0x1e] = this.memoryReader[0xff1e] = address => {
               return 0xbf | this.memory[0xff1e];
             };
             break;
           case 0xff1f:
           case 0xff20:
-            this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.badMemoryRead;
+            this.highMemoryReader[index & 0xff] = this.memoryReader[index] = this.memoryNew.readBad;
             break;
           case 0xff21:
           case 0xff22:
-            this.memoryHighReader[index & 0xff] = this.memoryHighReadNormal;
+            this.highMemoryReader[index & 0xff] = this.memoryHighReadNormal;
             this.memoryReader[index] = this.memoryReadNormal;
             break;
           case 0xff23:
-            this.memoryHighReader[0x23] = this.memoryReader[0xff23] = address => {
+            this.highMemoryReader[0x23] = this.memoryReader[0xff23] = address => {
               return 0xbf | this.memory[0xff23];
             };
             break;
           case 0xff24:
           case 0xff25:
-            this.memoryHighReader[index & 0xff] = this.memoryHighReadNormal;
+            this.highMemoryReader[index & 0xff] = this.memoryHighReadNormal;
             this.memoryReader[index] = this.memoryReadNormal;
             break;
           case 0xff26:
-            this.memoryHighReader[0x26] = this.memoryReader[0xff26] = address => {
+            this.highMemoryReader[0x26] = this.memoryReader[0xff26] = address => {
               this.audioController.run();
               return 0x70 | this.memory[0xff26];
             };
@@ -2388,7 +2325,7 @@ export default class GameBoyCore {
           case 0xff2d:
           case 0xff2e:
           case 0xff2f:
-            this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.badMemoryRead;
+            this.highMemoryReader[index & 0xff] = this.memoryReader[index] = this.memoryNew.readBad;
             break;
           case 0xff30:
           case 0xff31:
@@ -2411,33 +2348,33 @@ export default class GameBoyCore {
                 this.memory[0xff00 | this.audioController.channel3lastSampleLookup >> 1] :
                 this.memory[address];
             };
-            this.memoryHighReader[index & 0xff] = address => {
+            this.highMemoryReader[index & 0xff] = address => {
               return this.audioController.channel3CanPlay ?
                 this.memory[0xff00 | this.audioController.channel3lastSampleLookup >> 1] :
                 this.memory[0xff00 | address];
             };
             break;
           case 0xff40:
-            this.memoryHighReader[0x40] = this.memoryHighReadNormal;
+            this.highMemoryReader[0x40] = this.memoryHighReadNormal;
             this.memoryReader[0xff40] = this.memoryReadNormal;
             break;
           case 0xff41:
-            this.memoryHighReader[0x41] = this.memoryReader[0xff41] = address => {
+            this.highMemoryReader[0x41] = this.memoryReader[0xff41] = address => {
               return 0x80 | this.memory[0xff41] | this.modeSTAT;
             };
             break;
           case 0xff42:
-            this.memoryHighReader[0x42] = this.memoryReader[0xff42] = address => {
+            this.highMemoryReader[0x42] = this.memoryReader[0xff42] = address => {
               return this.backgroundY;
             };
             break;
           case 0xff43:
-            this.memoryHighReader[0x43] = this.memoryReader[0xff43] = address => {
+            this.highMemoryReader[0x43] = this.memoryReader[0xff43] = address => {
               return this.backgroundX;
             };
             break;
           case 0xff44:
-            this.memoryHighReader[0x44] = this.memoryReader[0xff44] = address => {
+            this.highMemoryReader[0x44] = this.memoryReader[0xff44] = address => {
               return this.LCDisOn ? this.memory[0xff44] : 0;
             };
             break;
@@ -2446,45 +2383,45 @@ export default class GameBoyCore {
           case 0xff47:
           case 0xff48:
           case 0xff49:
-            this.memoryHighReader[index & 0xff] = this.memoryHighReadNormal;
+            this.highMemoryReader[index & 0xff] = this.memoryHighReadNormal;
             this.memoryReader[index] = this.memoryReadNormal;
             break;
           case 0xff4a:
             //WY
-            this.memoryHighReader[0x4a] = this.memoryReader[0xff4a] = address => {
+            this.highMemoryReader[0x4a] = this.memoryReader[0xff4a] = address => {
               return this.windowY;
             };
             break;
           case 0xff4b:
-            this.memoryHighReader[0x4b] = this.memoryHighReadNormal;
+            this.highMemoryReader[0x4b] = this.memoryHighReadNormal;
             this.memoryReader[0xff4b] = this.memoryReadNormal;
             break;
           case 0xff4c:
-            this.memoryHighReader[0x4c] = this.memoryReader[0xff4c] = this.badMemoryRead;
+            this.highMemoryReader[0x4c] = this.memoryReader[0xff4c] = this.memoryNew.readBad;
             break;
           case 0xff4d:
-            this.memoryHighReader[0x4d] = this.memoryHighReadNormal;
+            this.highMemoryReader[0x4d] = this.memoryHighReadNormal;
             this.memoryReader[0xff4d] = this.memoryReadNormal;
             break;
           case 0xff4e:
-            this.memoryHighReader[0x4e] = this.memoryReader[0xff4e] = this.badMemoryRead;
+            this.highMemoryReader[0x4e] = this.memoryReader[0xff4e] = this.memoryNew.readBad;
             break;
           case 0xff4f:
-            this.memoryHighReader[0x4f] = this.memoryReader[0xff4f] = address => {
+            this.highMemoryReader[0x4f] = this.memoryReader[0xff4f] = address => {
               return this.currVRAMBank;
             };
             break;
-          case MemoryLayout.disableBootRomAddress:
+          case MemoryLayout.toggleBootRomControlAddress:
           case 0xff51:
           case 0xff52:
           case 0xff53:
           case 0xff54:
-            this.memoryHighReader[index & 0xff] = this.memoryHighReadNormal;
+            this.highMemoryReader[index & 0xff] = this.memoryHighReadNormal;
             this.memoryReader[index] = this.memoryReadNormal;
             break;
           case 0xff55:
-            if (this.cartridge.useGBCMode) {
-              this.memoryHighReader[0x55] = this.memoryReader[0xff55] = address => {
+            if (this.cartridge.useGbcMode) {
+              this.highMemoryReader[0x55] = this.memoryReader[0xff55] = address => {
                 if (!this.LCDisOn && this.hdmaRunning) {
                   //Undocumented behavior alert: HDMA becomes GDMA when LCD is off (Worms Armageddon Fix).
                   //DMA
@@ -2496,18 +2433,18 @@ export default class GameBoyCore {
               };
             } else {
               this.memoryReader[0xff55] = this.memoryReadNormal;
-              this.memoryHighReader[0x55] = this.memoryHighReadNormal;
+              this.highMemoryReader[0x55] = this.memoryHighReadNormal;
             }
             break;
           case 0xff56:
-            if (this.cartridge.useGBCMode) {
-              this.memoryHighReader[0x56] = this.memoryReader[0xff56] = address => {
+            if (this.cartridge.useGbcMode) {
+              this.highMemoryReader[0x56] = this.memoryReader[0xff56] = address => {
                 //Return IR "not connected" status:
                 return 0x3c | (this.memory[0xff56] >= 0xc0 ? 0x2 | this.memory[0xff56] & 0xc1 : this.memory[0xff56] & 0xc3);
               };
             } else {
               this.memoryReader[0xff56] = this.memoryReadNormal;
-              this.memoryHighReader[0x56] = this.memoryHighReadNormal;
+              this.highMemoryReader[0x56] = this.memoryHighReadNormal;
             }
             break;
           case 0xff57:
@@ -2527,68 +2464,68 @@ export default class GameBoyCore {
           case 0xff65:
           case 0xff66:
           case 0xff67:
-            this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.badMemoryRead;
+            this.highMemoryReader[index & 0xff] = this.memoryReader[index] = this.memoryNew.readBad;
             break;
           case 0xff68:
           case 0xff69:
           case 0xff6a:
           case 0xff6b:
-            this.memoryHighReader[index & 0xff] = this.memoryHighReadNormal;
+            this.highMemoryReader[index & 0xff] = this.memoryHighReadNormal;
             this.memoryReader[index] = this.memoryReadNormal;
             break;
           case 0xff6c:
-            if (this.cartridge.useGBCMode) {
-              this.memoryHighReader[0x6c] = this.memoryReader[0xff6c] = address => {
+            if (this.cartridge.useGbcMode) {
+              this.highMemoryReader[0x6c] = this.memoryReader[0xff6c] = address => {
                 return 0xfe | this.memory[0xff6c];
               };
             } else {
-              this.memoryHighReader[0x6c] = this.memoryReader[0xff6c] = this.badMemoryRead;
+              this.highMemoryReader[0x6c] = this.memoryReader[0xff6c] = this.memoryNew.readBad;
             }
             break;
           case 0xff6d:
           case 0xff6e:
           case 0xff6f:
-            this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.badMemoryRead;
+            this.highMemoryReader[index & 0xff] = this.memoryReader[index] = this.memoryNew.readBad;
             break;
           case 0xff70:
-            if (this.cartridge.useGBCMode) {
+            if (this.cartridge.useGbcMode) {
               //SVBK
-              this.memoryHighReader[0x70] = this.memoryReader[0xff70] = address => {
+              this.highMemoryReader[0x70] = this.memoryReader[0xff70] = address => {
                 return 0x40 | this.memory[0xff70];
               };
             } else {
-              this.memoryHighReader[0x70] = this.memoryReader[0xff70] = this.badMemoryRead;
+              this.highMemoryReader[0x70] = this.memoryReader[0xff70] = this.memoryNew.readBad;
             }
             break;
           case 0xff71:
-            this.memoryHighReader[0x71] = this.memoryReader[0xff71] = this.badMemoryRead;
+            this.highMemoryReader[0x71] = this.memoryReader[0xff71] = this.memoryNew.readBad;
             break;
           case 0xff72:
           case 0xff73:
-            this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.memoryReadNormal;
+            this.highMemoryReader[index & 0xff] = this.memoryReader[index] = this.memoryReadNormal;
             break;
           case 0xff74:
-            if (this.cartridge.useGBCMode) {
-              this.memoryHighReader[0x74] = this.memoryReader[0xff74] = this.memoryReadNormal;
+            if (this.cartridge.useGbcMode) {
+              this.highMemoryReader[0x74] = this.memoryReader[0xff74] = this.memoryReadNormal;
             } else {
-              this.memoryHighReader[0x74] = this.memoryReader[0xff74] = this.badMemoryRead;
+              this.highMemoryReader[0x74] = this.memoryReader[0xff74] = this.memoryNew.readBad;
             }
             break;
           case 0xff75:
-            this.memoryHighReader[0x75] = this.memoryReader[0xff75] = address => {
+            this.highMemoryReader[0x75] = this.memoryReader[0xff75] = address => {
               return 0x8f | this.memory[0xff75];
             };
             break;
           case 0xff76:
             //Undocumented realtime PCM amplitude readback:
-            this.memoryHighReader[0x76] = this.memoryReader[0xff76] = address => {
+            this.highMemoryReader[0x76] = this.memoryReader[0xff76] = address => {
               this.audioController.run();
               return this.audioController.channel2envelopeVolume << 4 | this.audioController.channel1envelopeVolume;
             };
             break;
           case 0xff77:
             //Undocumented realtime PCM amplitude readback:
-            this.memoryHighReader[0x77] = this.memoryReader[0xff77] = address => {
+            this.highMemoryReader[0x77] = this.memoryReader[0xff77] = address => {
               this.audioController.run();
               return this.audioController.channel4envelopeVolume << 4 | this.audioController.channel3envelopeVolume;
             };
@@ -2601,17 +2538,17 @@ export default class GameBoyCore {
           case 0xff7d:
           case 0xff7e:
           case 0xff7f:
-            this.memoryHighReader[index & 0xff] = this.memoryReader[index] = this.badMemoryRead;
+            this.highMemoryReader[index & 0xff] = this.memoryReader[index] = this.memoryNew.readBad;
             break;
           case MemoryLayout.INTERRUPT_ENABLE_REG:
-            this.memoryHighReader[0xff] = this.memoryReader[MemoryLayout.INTERRUPT_ENABLE_REG] = address => this.interruptsEnabled;
+            this.highMemoryReader[0xff] = this.memoryReader[MemoryLayout.INTERRUPT_ENABLE_REG] = address => this.interruptsEnabled;
             break;
           default:
             this.memoryReader[index] = this.memoryReadNormal;
-            this.memoryHighReader[index & 0xff] = this.memoryHighReadNormal;
+            this.highMemoryReader[index & 0xff] = this.memoryHighReadNormal;
         }
       } else {
-        this.memoryReader[index] = this.badMemoryRead;
+        this.memoryReader[index] = this.memoryNew.readBad;
       }
     }
   }
@@ -2658,10 +2595,6 @@ export default class GameBoyCore {
     return this.memory[address - 0x2000];
   };
 
-  badMemoryRead = () => {
-    return 0xff;
-  };
-
   VRAMDATAReadCGBCPU = (address) => {
     // CPU Side Reading The VRAM (Optimized for GameBoy Color)
     return this.modeSTAT > 2 ?
@@ -2686,18 +2619,6 @@ export default class GameBoyCore {
     return this.modeSTAT > 2 ? 0xff : this.BGCHRBank1[address & 0x7ff];
   }
 
-  //Memory Writing:
-  memoryWrite(address: number, data: number) {
-    //Act as a wrapper for writing by compiled jumps to specific memory writing functions.
-    this.memoryWriter[address].apply(this, [address, data]);
-  }
-
-  //0xFFXX fast path:
-  memoryHighWrite(address, data) {
-    //Act as a wrapper for writing by compiled jumps to specific memory writing functions.
-    this.highMemoryWriter[address].apply(this, [address, data]);
-  }
-
   memoryWriteJumpCompile() {
     // Faster in some browsers, since we are doing less conditionals overall by implementing them in advance.
     for (let address = 0x0000; address <= 0xffff; address++) {
@@ -2718,7 +2639,7 @@ export default class GameBoyCore {
           } else if (address >= 0x2100 && address < 0x2200) {
             this.memoryWriter[address] = this.MBC2WriteROMBank;
           } else {
-            this.memoryWriter[address] = this.onIllegalWrite;
+            this.memoryWriter[address] = this.memoryNew.writeIllegal;
           }
         } else if (this.cartridge.hasMBC3) {
           if (address < 0x2000) {
@@ -2746,7 +2667,7 @@ export default class GameBoyCore {
               this.RUMBLEWriteRAMBank :
               this.MBC5WriteRAMBank;
           } else {
-            this.memoryWriter[address] = this.onIllegalWrite;
+            this.memoryWriter[address] = this.memoryNew.writeIllegal;
           }
         } else if (this.cartridge.hasHuC3) {
           if (address < 0x2000) {
@@ -2756,17 +2677,17 @@ export default class GameBoyCore {
           } else if (address < 0x6000) {
             this.memoryWriter[address] = this.HuC3WriteRAMBank;
           } else {
-            this.memoryWriter[address] = this.onIllegalWrite;
+            this.memoryWriter[address] = this.memoryNew.writeIllegal;
           }
         } else {
-          this.memoryWriter[address] = this.onIllegalWrite;
+          this.memoryWriter[address] = this.memoryNew.writeIllegal;
         }
       } else if (address <= MemoryLayout.TILE_SET_0_END) {
-        this.memoryWriter[address] = this.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAWrite;
+        this.memoryWriter[address] = this.cartridge.useGbcMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAWrite;
       } else if (address < 0x9800) {
-        this.memoryWriter[address] = this.cartridge.useGBCMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAUpperWrite;
+        this.memoryWriter[address] = this.cartridge.useGbcMode ? this.VRAMGBCDATAWrite : this.VRAMGBDATAUpperWrite;
       } else if (address < 0xa000) {
-        this.memoryWriter[address] = this.cartridge.useGBCMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
+        this.memoryWriter[address] = this.cartridge.useGbcMode ? this.VRAMGBCCHRMAPWrite : this.VRAMGBCHRMAPWrite;
       } else if (address < 0xc000) {
         if (this.cartridge.mbc && this.cartridge.mbc.ramSize !== 0) {
           if (!this.cartridge.hasMBC3) {
@@ -2776,16 +2697,16 @@ export default class GameBoyCore {
             this.memoryWriter[address] = this.memoryWriteMBC3RAM;
           }
         } else {
-          this.memoryWriter[address] = this.onIllegalWrite;
+          this.memoryWriter[address] = this.memoryNew.writeIllegal;
         }
       } else if (address < 0xe000) {
-        if (this.cartridge.useGBCMode && address >= 0xd000) {
+        if (this.cartridge.useGbcMode && address >= 0xd000) {
           this.memoryWriter[address] = this.memoryWriteGBCRAM;
         } else {
           this.memoryWriter[address] = this.memoryWriteNormal;
         }
       } else if (address < 0xfe00) {
-        if (this.cartridge.useGBCMode && address >= 0xf000) {
+        if (this.cartridge.useGbcMode && address >= 0xf000) {
           this.memoryWriter[address] = this.memoryWriteECHOGBCRAM;
         } else {
           this.memoryWriter[address] = this.memoryWriteECHONormal;
@@ -2793,11 +2714,11 @@ export default class GameBoyCore {
       } else if (address <= 0xfea0) {
         this.memoryWriter[address] = this.memoryWriteOAMRAM;
       } else if (address < 0xff00) {
-        if (this.cartridge.useGBCMode) {
+        if (this.cartridge.useGbcMode) {
           // Only GBC has access to this RAM.
           this.memoryWriter[address] = this.memoryWriteNormal;
         } else {
-          this.memoryWriter[address] = this.onIllegalWrite;
+          this.memoryWriter[address] = this.memoryNew.writeIllegal;
         }
       } else {
         //Start the I/O initialization by filling in the slots as normal memory:
@@ -2861,10 +2782,6 @@ export default class GameBoyCore {
     //HuC3 RAM bank switching
     this.cartridge.mbc.currentMBCRAMBank = data & 0x03;
     this.cartridge.mbc.currentRAMBankPosition = (this.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
-  }
-
-  onIllegalWrite(address: number, data: number) {
-    // throw new Error(`Not allowed to write address 0x${address.toString(16)} with data: ${data.toString(2)}`);
   }
 
   memoryWriteNormal = (address: number, data: number) => {
@@ -3102,7 +3019,7 @@ export default class GameBoyCore {
     this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = this.memoryWriteNormal;
 
     // Unmapped I/O:
-    this.highMemoryWriter[0x3] = this.memoryWriter[0xff03] = this.onIllegalWrite;
+    this.highMemoryWriter[0x3] = this.memoryWriter[0xff03] = this.memoryNew.writeIllegal;
 
     // DIV
     this.highMemoryWriter[0x4] = this.memoryWriter[MemoryLayout.DIV_REG] = (address, data) => {
@@ -3124,13 +3041,13 @@ export default class GameBoyCore {
       this.TACClocker = Math.pow(4, (data & 0x3) != 0 ? data & 0x3 : 4) << 2; //TODO: Find a way to not make a conditional in here...
     };
     //Unmapped I/O:
-    this.highMemoryWriter[0x8] = this.memoryWriter[0xff08] = this.onIllegalWrite;
-    this.highMemoryWriter[0x9] = this.memoryWriter[0xff09] = this.onIllegalWrite;
-    this.highMemoryWriter[0xa] = this.memoryWriter[0xff0a] = this.onIllegalWrite;
-    this.highMemoryWriter[0xb] = this.memoryWriter[0xff0b] = this.onIllegalWrite;
-    this.highMemoryWriter[0xc] = this.memoryWriter[0xff0c] = this.onIllegalWrite;
-    this.highMemoryWriter[0xd] = this.memoryWriter[0xff0d] = this.onIllegalWrite;
-    this.highMemoryWriter[0xe] = this.memoryWriter[0xff0e] = this.onIllegalWrite;
+    this.highMemoryWriter[0x8] = this.memoryWriter[0xff08] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x9] = this.memoryWriter[0xff09] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0xa] = this.memoryWriter[0xff0a] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0xb] = this.memoryWriter[0xff0b] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0xc] = this.memoryWriter[0xff0c] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0xd] = this.memoryWriter[0xff0d] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0xe] = this.memoryWriter[0xff0e] = this.memoryNew.writeIllegal;
     //IF (Interrupt Request)
     this.highMemoryWriter[0xf] = this.memoryWriter[0xff0f] = (address, data) => {
       this.interruptsRequested = data;
@@ -3140,15 +3057,15 @@ export default class GameBoyCore {
     this.audioController.registerMemoryWriters();
 
     //0xFF27 to 0xFF2F don't do anything...
-    this.highMemoryWriter[0x27] = this.memoryWriter[0xff27] = this.onIllegalWrite;
-    this.highMemoryWriter[0x28] = this.memoryWriter[0xff28] = this.onIllegalWrite;
-    this.highMemoryWriter[0x29] = this.memoryWriter[0xff29] = this.onIllegalWrite;
-    this.highMemoryWriter[0x2a] = this.memoryWriter[0xff2a] = this.onIllegalWrite;
-    this.highMemoryWriter[0x2b] = this.memoryWriter[0xff2b] = this.onIllegalWrite;
-    this.highMemoryWriter[0x2c] = this.memoryWriter[0xff2c] = this.onIllegalWrite;
-    this.highMemoryWriter[0x2d] = this.memoryWriter[0xff2d] = this.onIllegalWrite;
-    this.highMemoryWriter[0x2e] = this.memoryWriter[0xff2e] = this.onIllegalWrite;
-    this.highMemoryWriter[0x2f] = this.memoryWriter[0xff2f] = this.onIllegalWrite;
+    this.highMemoryWriter[0x27] = this.memoryWriter[0xff27] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x28] = this.memoryWriter[0xff28] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x29] = this.memoryWriter[0xff29] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x2a] = this.memoryWriter[0xff2a] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x2b] = this.memoryWriter[0xff2b] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x2c] = this.memoryWriter[0xff2c] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x2d] = this.memoryWriter[0xff2d] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x2e] = this.memoryWriter[0xff2e] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x2f] = this.memoryWriter[0xff2f] = this.memoryNew.writeIllegal;
 
     this.audioController.registerWaveformMemoryWriters();
 
@@ -3209,8 +3126,8 @@ export default class GameBoyCore {
     this.highMemoryWriter[0x75] = this.memoryWriter[0xff75] = (address, data) => {
       this.memory[0xff75] = data;
     };
-    this.highMemoryWriter[0x76] = this.memoryWriter[0xff76] = this.onIllegalWrite;
-    this.highMemoryWriter[0x77] = this.memoryWriter[0xff77] = this.onIllegalWrite;
+    this.highMemoryWriter[0x76] = this.memoryWriter[0xff76] = this.memoryNew.writeIllegal;
+    this.highMemoryWriter[0x77] = this.memoryWriter[0xff77] = this.memoryNew.writeIllegal;
     this.highMemoryWriter[0xff] = this.memoryWriter[MemoryLayout.INTERRUPT_ENABLE_REG] = (address, data) => {
       this.interruptsEnabled = data;
       this.checkIRQMatching();
@@ -3220,7 +3137,7 @@ export default class GameBoyCore {
   }
 
   recompileModelSpecificIOWriteHandling() {
-    if (this.cartridge.useGBCMode) {
+    if (this.cartridge.useGbcMode) {
       // GameBoy Color Specific I/O:
       // SC (Serial Transfer Control Register)
       this.highMemoryWriter[0x2] = this.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = (address, data) => {
@@ -3512,39 +3429,35 @@ export default class GameBoyCore {
       this.highMemoryWriter[0x4d] = this.memoryWriter[0xff4d] = (address, data) => {
         this.memory[0xff4d] = data;
       };
-      this.highMemoryWriter[0x4f] = this.memoryWriter[0xff4f] = this.onIllegalWrite; //Not writable in DMG mode.
-      this.highMemoryWriter[0x55] = this.memoryWriter[0xff55] = this.onIllegalWrite;
-      this.highMemoryWriter[0x68] = this.memoryWriter[0xff68] = this.onIllegalWrite;
-      this.highMemoryWriter[0x69] = this.memoryWriter[0xff69] = this.onIllegalWrite;
-      this.highMemoryWriter[0x6a] = this.memoryWriter[0xff6a] = this.onIllegalWrite;
-      this.highMemoryWriter[0x6b] = this.memoryWriter[0xff6b] = this.onIllegalWrite;
-      this.highMemoryWriter[0x6c] = this.memoryWriter[0xff6c] = this.onIllegalWrite;
-      this.highMemoryWriter[0x70] = this.memoryWriter[0xff70] = this.onIllegalWrite;
-      this.highMemoryWriter[0x74] = this.memoryWriter[0xff74] = this.onIllegalWrite;
+      this.highMemoryWriter[0x4f] = this.memoryWriter[0xff4f] = this.memoryNew.writeIllegal; //Not writable in DMG mode.
+      this.highMemoryWriter[0x55] = this.memoryWriter[0xff55] = this.memoryNew.writeIllegal;
+      this.highMemoryWriter[0x68] = this.memoryWriter[0xff68] = this.memoryNew.writeIllegal;
+      this.highMemoryWriter[0x69] = this.memoryWriter[0xff69] = this.memoryNew.writeIllegal;
+      this.highMemoryWriter[0x6a] = this.memoryWriter[0xff6a] = this.memoryNew.writeIllegal;
+      this.highMemoryWriter[0x6b] = this.memoryWriter[0xff6b] = this.memoryNew.writeIllegal;
+      this.highMemoryWriter[0x6c] = this.memoryWriter[0xff6c] = this.memoryNew.writeIllegal;
+      this.highMemoryWriter[0x70] = this.memoryWriter[0xff70] = this.memoryNew.writeIllegal;
+      this.highMemoryWriter[0x74] = this.memoryWriter[0xff74] = this.memoryNew.writeIllegal;
     }
   }
 
   recompileBootIOWriteHandling() {
     // Boot I/O Registers:
-    if (this.inBootstrap) {
-      this.highMemoryWriter[0x50] = this.memoryWriter[MemoryLayout.disableBootRomAddress] = (address: number, data: number) => {
-        console.log("Bootstrap process has ended");
+    if (this.isBootingRom) {
+      this.memoryNew.enableBootRomControl();
 
-        this.inBootstrap = false;
-        this.disableBootROM(); // Fill in the boot ROM ranges with ROM bank 0 ROM ranges
-        this.memory[MemoryLayout.disableBootRomAddress] = data;
-      };
-      if (this.cartridge.useGBCMode) {
-        this.highMemoryWriter[0x6c] = this.memoryWriter[0xff6c] = (address: number, data: number) => {
-          if (this.inBootstrap) {
+      if (this.cartridge.useGbcMode) {
+        this.highMemoryWriter[0x6c] = this.memoryWriter[MemoryLayout.undocumentedGbcOnlyAddress] = (address: number, data: number) => {
+          data &= 1;
+
+          if (this.isBootingRom) {
             this.cartridge.setGBCMode(data);
           }
-          this.memory[0xff6c] = data;
+          this.memory[MemoryLayout.undocumentedGbcOnlyAddress] = data;
         };
       }
     } else {
-      // Lockout the ROMs from accessing the BOOT ROM control register:
-      this.highMemoryWriter[0x50] = this.memoryWriter[MemoryLayout.disableBootRomAddress] = this.onIllegalWrite;
+      this.memoryNew.disableBootRomControl();
     }
   };
 }

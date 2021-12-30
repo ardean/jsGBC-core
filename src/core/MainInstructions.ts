@@ -1,5 +1,5 @@
-import bitInstructions from "./bit-instructions";
-import SecondaryTickTable from "./secondary-tick-table";
+import bitInstructions from "./bitInstructions";
+import SecondaryTickTable from "./secondaryTickTable";
 
 export default [
   // NOP
@@ -116,7 +116,7 @@ export default [
   //STOP
   //#0x10:
   function () {
-    if (this.cartridge.useGBCMode) {
+    if (this.cartridge.useGbcMode) {
       if ((this.memory[0xff4d] & 0x01) === 0x01) {
         //Speed change requested.
         if (this.memory[0xff4d] > 0x7f) {
@@ -800,7 +800,7 @@ export default [
   function () {
     //See if there's already an IRQ match:
     if ((this.interruptsEnabled & this.interruptsRequested & 0x1f) > 0) {
-      if (!this.cartridge.useGBCMode && !this.usedBootROM) {
+      if (!this.cartridge.useGbcMode && !this.usedBootROM) {
         //HALT bug in the DMG CPU model (Program Counter fails to increment for one instruction after HALT):
         this.skipPCIncrement = true;
       } else {
@@ -2023,7 +2023,7 @@ export default [
   //LD A, (0xFF00 + C)
   //#0xF2:
   function () {
-    this.registerA = this.memoryHighReader[this.registerC].apply(this, [
+    this.registerA = this.highMemoryReader[this.registerC].apply(this, [
       this.registerC
     ]);
   },

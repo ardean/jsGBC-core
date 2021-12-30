@@ -224,6 +224,68 @@ export default class AudioController {
     this.noiseSampleTable = this.LSFR15Table;
   }
 
+  setSkippedBootRomState() {
+    this.channel1FrequencyTracker = 0x2000;
+    this.channel1DutyTracker = 0;
+    this.channel1CachedDuty = dutyLookup[2];
+    this.channel1totalLength = 0;
+    this.channel1envelopeVolume = 0;
+    this.channel1envelopeType = false;
+    this.channel1envelopeSweeps = 0;
+    this.channel1envelopeSweepsLast = 0;
+    this.channel1consecutive = true;
+    this.channel1frequency = 1985;
+    this.channel1SweepFault = true;
+    this.channel1ShadowFrequency = 1985;
+    this.channel1timeSweep = 1;
+    this.channel1lastTimeSweep = 0;
+    this.channel1Swept = false;
+    this.channel1frequencySweepDivider = 0;
+    this.channel1decreaseSweep = false;
+    this.channel2FrequencyTracker = 0x2000;
+    this.channel2DutyTracker = 0;
+    this.channel2CachedDuty = dutyLookup[2];
+    this.channel2totalLength = 0;
+    this.channel2envelopeVolume = 0;
+    this.channel2envelopeType = false;
+    this.channel2envelopeSweeps = 0;
+    this.channel2envelopeSweepsLast = 0;
+    this.channel2consecutive = true;
+    this.channel2frequency = 0;
+    this.channel3CanPlay = false;
+    this.channel3totalLength = 0;
+    this.channel3patternType = 4;
+    this.channel3frequency = 0;
+    this.channel3consecutive = true;
+    this.channel3Counter = 0x418;
+    this.channel4FrequencyPeriod = 8;
+    this.channel4totalLength = 0;
+    this.channel4envelopeVolume = 0;
+    this.channel4currentVolume = 0;
+    this.channel4envelopeType = false;
+    this.channel4envelopeSweeps = 0;
+    this.channel4envelopeSweepsLast = 0;
+    this.channel4consecutive = true;
+    this.channel4BitRange = 0x7fff;
+    this.channel4VolumeShifter = 15;
+    this.channel1FrequencyCounter = 0x200;
+    this.channel2FrequencyCounter = 0x200;
+    this.channel3Counter = 0x800;
+    this.channel3FrequencyPeriod = 0x800;
+    this.channel3lastSampleLookup = 0;
+    this.channel4lastSampleLookup = 0;
+    this.VinLeftChannelMasterVolume = 8;
+    this.VinRightChannelMasterVolume = 8;
+    this.leftChannel1 = true;
+    this.leftChannel2 = true;
+    this.leftChannel3 = true;
+    this.leftChannel4 = true;
+    this.rightChannel1 = true;
+    this.rightChannel2 = true;
+    this.rightChannel3 = false;
+    this.rightChannel4 = false;
+  }
+
   // Below are the audio generation functions timed against the CPU:
   generate(sampleCount: number) {
     if (
@@ -828,7 +890,7 @@ export default class AudioController {
     };
     //NR11:
     this.gameboy.highMemoryWriter[0x11] = this.gameboy.memoryWriter[0xff11] = (address: number, data: number) => {
-      if (this.enabled || !this.gameboy.cartridge.useGBCMode) {
+      if (this.enabled || !this.gameboy.cartridge.useGbcMode) {
         if (this.enabled) {
           this.run();
         } else {
@@ -914,10 +976,10 @@ export default class AudioController {
       }
     };
     //NR20 (Unused I/O):
-    this.gameboy.highMemoryWriter[0x15] = this.gameboy.memoryWriter[0xff15] = this.gameboy.onIllegalWrite;
+    this.gameboy.highMemoryWriter[0x15] = this.gameboy.memoryWriter[0xff15] = this.gameboy.memoryNew.writeIllegal;
     //NR21:
     this.gameboy.highMemoryWriter[0x16] = this.gameboy.memoryWriter[0xff16] = (address: number, data: number) => {
-      if (this.enabled || !this.gameboy.cartridge.useGBCMode) {
+      if (this.enabled || !this.gameboy.cartridge.useGbcMode) {
         if (this.enabled) {
           this.run();
         } else {
@@ -1004,7 +1066,7 @@ export default class AudioController {
     };
     //NR31:
     this.gameboy.highMemoryWriter[0x1b] = this.gameboy.memoryWriter[0xff1b] = (address: number, data: number) => {
-      if (this.enabled || !this.gameboy.cartridge.useGBCMode) {
+      if (this.enabled || !this.gameboy.cartridge.useGbcMode) {
         if (this.enabled) {
           this.run();
         }
@@ -1051,10 +1113,10 @@ export default class AudioController {
     };
 
     //NR40 (Unused I/O):
-    this.gameboy.highMemoryWriter[0x1f] = this.gameboy.memoryWriter[0xff1f] = this.gameboy.onIllegalWrite;
+    this.gameboy.highMemoryWriter[0x1f] = this.gameboy.memoryWriter[0xff1f] = this.gameboy.memoryNew.writeIllegal;
     //NR41:
     this.gameboy.highMemoryWriter[0x20] = this.gameboy.memoryWriter[0xff20] = (address: number, data: number) => {
-      if (this.enabled || !this.gameboy.cartridge.useGBCMode) {
+      if (this.enabled || !this.gameboy.cartridge.useGbcMode) {
         if (this.enabled) {
           this.run();
         }

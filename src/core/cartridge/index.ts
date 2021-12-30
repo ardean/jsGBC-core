@@ -29,7 +29,7 @@ export default class Cartridge {
 
   gameboy: GameBoyCore;
   rom: ROM;
-  useGBCMode: boolean;
+  useGbcMode: boolean;
 
   name: string;
   gameCode: string;
@@ -55,6 +55,10 @@ export default class Cartridge {
 
   connect(gameboy: GameBoyCore) {
     this.gameboy = gameboy;
+  }
+
+  disconnect() {
+    this.gameboy = undefined;
   }
 
   interpret() {
@@ -87,29 +91,29 @@ export default class Cartridge {
     if (!this.gameboy.usedBootRom) {
       switch (this.colorCompatibilityByte) {
         case 0x00: // GB only
-          this.useGBCMode = false;
+          this.useGbcMode = false;
           break;
         case 0x32: // Exception to the GBC identifying code:
           if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === GAME_AND_WATCH_ID) {
-            this.useGBCMode = true;
+            this.useGbcMode = true;
             console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
           } else {
-            this.useGBCMode = false;
+            this.useGbcMode = false;
           }
           break;
         case 0x80: // Both GB + GBC modes
-          this.useGBCMode = !settings.gbHasPriority;
+          this.useGbcMode = !settings.gbHasPriority;
           break;
         case 0xc0: // Only GBC mode
-          this.useGBCMode = true;
+          this.useGbcMode = true;
           break;
         default:
-          this.useGBCMode = false;
+          this.useGbcMode = false;
           console.warn("Unknown GameBoy game type code #" + this.colorCompatibilityByte + ", defaulting to GB mode (Old games don't have a type code).");
       }
     } else {
       console.log("used boot rom");
-      this.useGBCMode = this.gameboy.usedGbcBootRom; // Allow the GBC boot ROM to run in GBC mode...
+      this.useGbcMode = this.gameboy.usedGbcBootRom; // Allow the GBC boot ROM to run in GBC mode...
     }
 
     const oldLicenseCode = this.rom.getByte(0x14b);
@@ -124,13 +128,13 @@ export default class Cartridge {
   }
 
   setGBCMode(data) {
-    this.useGBCMode = (data & 0x1) === 0;
+    this.useGbcMode = (data & 0x1) === 0;
     // Exception to the GBC identifying code:
     if (this.name + this.gameCode + this.colorCompatibilityByte === GAME_AND_WATCH_ID) {
-      this.useGBCMode = true;
+      this.useGbcMode = true;
       console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
     }
-    console.log("Booted to GBC Mode: " + this.useGBCMode);
+    console.log("Booted to GBC Mode: " + this.useGbcMode);
   }
 
   setTypeName() {

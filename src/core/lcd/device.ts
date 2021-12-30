@@ -189,7 +189,7 @@ export default class LcdDevice {
   clearFrameBuffer() {
     const frameBuffer = this.swizzledFrame;
     let bufferIndex = 0;
-    if (this.gameboy.cartridge.useGBCMode || this.colorizedGBPalettes) {
+    if (this.gameboy.cartridge.useGbcMode || this.colorizedGBPalettes) {
       while (bufferIndex < this.offscreenRGBCount) {
         frameBuffer[bufferIndex++] = 248;
       }

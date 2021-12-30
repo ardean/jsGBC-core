@@ -23,7 +23,7 @@ export default class StateManager {
     );
 
     // return [
-    //   gameboy.inBootstrap,
+    //   gameboy.isBootingRom,
     //   gameboy.registerA,
     //   gameboy.FZero,
     //   gameboy.FSubtract,
@@ -233,7 +233,7 @@ export default class StateManager {
     let index = 0;
     const gameboy = this.gameboy;
 
-    gameboy.inBootstrap = state[index++];
+    gameboy.isBootingRom = state[index++];
     gameboy.registerA = state[index++];
     gameboy.FZero = state[index++];
     gameboy.FSubtract = state[index++];

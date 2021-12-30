@@ -14,7 +14,7 @@ export default class Joypad {
     this.value &= 0xff ^ 1 << key;
     if (
       this.gameboy.cartridge &&
-      !this.gameboy.cartridge.useGBCMode &&
+      !this.gameboy.cartridge.useGbcMode &&
       (!this.gameboy.usedBootRom || !this.gameboy.usedGbcBootRom)
     ) {
       this.gameboy.interruptsRequested |= 0x10; // A real GBC doesn't set this!
