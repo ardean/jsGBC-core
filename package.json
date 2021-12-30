@@ -1,6 +1,6 @@
 {
   "name": "jsgbc",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "jsGBC Core Emulator",
   "main": "./dist/jsgbc-core.js",
   "types": "./dist/types/index.d.ts",
@@ -24,9 +24,9 @@
     "dist"
   ],
   "scripts": {
-    "start": "NODE_ENV=development webpack serve --config webpack.dev.js",
+    "start": "cross-env NODE_ENV=development webpack serve --config webpack.dev.js",
     "start-node": "node demo-node/index.js",
-    "build": "NODE_ENV=production webpack --config webpack.prod.js",
+    "build": "cross-env NODE_ENV=production webpack --config webpack.prod.js",
     "test": "npm run build"
   },
   "dependencies": {
@@ -39,6 +39,7 @@
     "canvas": "^2.8.0",
     "clean-webpack-plugin": "^4.0.0",
     "cpy-cli": "^3.1.1",
+    "cross-env": "^7.0.3",
     "del-cli": "^4.0.1",
     "ts-loader": "^9.2.6",
     "typescript": "^4.5.4",
