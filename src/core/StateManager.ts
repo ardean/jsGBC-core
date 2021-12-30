@@ -75,7 +75,6 @@ export default class StateManager {
     //   gameboy.drewBlank,
     //   fromTypedArray(gameboy.frameBuffer),
     //   gameboy.bgEnabled,
-    //   gameboy.BGPriorityEnabled,
     //   gameboy.audioController.channel1FrequencyTracker,
     //   gameboy.channel1FrequencyCounter,
     //   gameboy.channel1totalLength,
@@ -292,7 +291,6 @@ export default class StateManager {
     gameboy.drewBlank = state[index++];
     gameboy.frameBuffer = toTypedArray(state[index++], "int32");
     gameboy.bgEnabled = state[index++];
-    gameboy.BGPriorityEnabled = state[index++];
     gameboy.audioController.channel1FrequencyTracker = state[index++];
     gameboy.audioController.channel1FrequencyCounter = state[index++];
     gameboy.audioController.channel1totalLength = state[index++];

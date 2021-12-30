@@ -54,7 +54,6 @@ export default [
   0, // To prevent the repeating of drawing a blank screen.
   [], // The internal frame-buffer.
   true, // Is the BG enabled?
-  true, // Can we flag the BG for priority over sprites?
   0x2000, // channel1FrequencyTracker
   0x200, // channel1FrequencyCounter
   0, // channel1totalLength

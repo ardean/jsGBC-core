@@ -27,7 +27,6 @@ export default class GameBoyCore {
   IRQLineMatched = 0; // CPU IRQ assertion.
 
   ROMBank1Offset: any;
-  BGPriorityEnabled: any;
   haltPostClocks: any;
   spriteCount: number = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
   BGCHRCurrentBank: any; // BG Tile Pointer Caches:
