@@ -1,6 +1,5 @@
 import CPU from "./CPU";
 import ROM from "./ROM";
-import GPU from "./GPU";
 import { GameBoy } from "..";
 import Joypad from "./Joypad";
 import * as util from "../util";
@@ -14,6 +13,7 @@ import StateManager from "./StateManager";
 import LcdController from "./lcd/controller";
 import AudioDevice from "./audio/AudioDevice";
 import * as MemoryLayout from "./memory/Layout";
+import GPU, { totalScanlineCount } from "./GPU";
 import mainInstructions from "./MainInstructions";
 import AudioController from "./audio/AudioController";
 import postBootRegisterState from "./postBootRegisterState";
@@ -689,11 +689,37 @@ export default class GameBoyCore {
   clocksUntilLYCMatch() {
     if (this.memory[0xff45] !== 0) {
       if (this.memory[0xff45] > this.actualScanLine) {
-        return 456 * (this.memory[0xff45] - this.actualScanLine);
+        return (
+          456 *
+          (
+            this.memory[0xff45] -
+            this.actualScanLine
+          )
+        );
       }
-      return 456 * (154 - this.actualScanLine + this.memory[0xff45]);
+
+      return (
+        456 *
+        (
+          totalScanlineCount -
+          this.actualScanLine +
+          this.memory[0xff45]
+        )
+      );
     }
-    return 456 * (this.actualScanLine === 153 && this.memory[0xff44] === 0 ? 154 : 153 - this.actualScanLine) + 8;
+
+    return (
+      456 *
+      (
+        (
+          this.actualScanLine === 153 &&
+          this.memory[0xff44] === 0
+        ) ?
+          totalScanlineCount :
+          153 - this.actualScanLine
+      ) +
+      8
+    );
   }
 
   clocksUntilMode0() {
@@ -711,7 +737,7 @@ export default class GameBoyCore {
         return this.spriteCount;
       case 1:
         this.updateSpriteCount(0);
-        return this.spriteCount + 456 * (154 - this.actualScanLine);
+        return this.spriteCount + 456 * (totalScanlineCount - this.actualScanLine);
     }
   }
 
@@ -855,7 +881,7 @@ export default class GameBoyCore {
           this.pixelStart = this.lastUnrenderedLine * 160;
           this.renderBGLayer(this.lastUnrenderedLine);
           this.renderWindowLayer(this.lastUnrenderedLine);
-          //TODO: Do midscanline JIT for sprites...
+          // TODO: Do midscanline JIT for sprites...
         } else {
           var pixelLine = this.lastUnrenderedLine * 160 + this.pixelEnd;
           var defaultColor = this.cartridge.useGbcMode ||
@@ -1975,7 +2001,14 @@ export default class GameBoyCore {
             }
           }
           if (this.mode2TriggerSTAT) {
-            const temp_var = (this.actualScanLine >= 143 ? 456 * (154 - this.actualScanLine) : 456) - this.LCDTicks << this.doubleSpeedShifter;
+            const temp_var = (
+              (
+                this.actualScanLine >= 143 ?
+                  456 * (totalScanlineCount - this.actualScanLine) :
+                  456
+              ) -
+              this.LCDTicks << this.doubleSpeedShifter
+            );
             if (temp_var <= currentClocks || currentClocks === -1) {
               currentClocks = temp_var;
             }
@@ -2097,9 +2130,11 @@ export default class GameBoyCore {
     // CPU Side Reading The VRAM (Optimized for GameBoy Color)
     return this.modeSTAT > 2 ?
       0xff :
-      this.currVRAMBank === 0 ?
-        this.memory[address] :
-        this.VRAM[address & 0x1fff];
+      (
+        this.currVRAMBank === 0 ?
+          this.memory[address] :
+          this.VRAM[address & 0x1fff]
+      );
   };
 
   VRAMDATAReadDMGCPU = (address) => {

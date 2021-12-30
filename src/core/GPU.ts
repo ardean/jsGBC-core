@@ -1,5 +1,7 @@
 import GameBoyCore from "./GameBoyCore";
 
+export const totalScanlineCount = 154;
+
 export default class GPU {
   lcdEnabled: boolean = false;
   scanlineProcessors: (() => void)[] = [];
@@ -15,7 +17,7 @@ export default class GPU {
   }
 
   disableLCD() {
-    for (let line = 0; line < 154; ++line) {
+    for (let line = 0; line < totalScanlineCount; ++line) {
       this.scanlineProcessors[line] = () => { };
     }
 
@@ -23,7 +25,7 @@ export default class GPU {
   }
 
   enableLCD() {
-    for (let line = 0; line < 154; ++line) {
+    for (let line = 0; line < totalScanlineCount; ++line) {
       if (line < 143) {
         // We're on a normal scan line:
         this.scanlineProcessors[line] = this.runVisibleScanline;
@@ -52,9 +54,9 @@ export default class GPU {
     } else {
       //We're on a new scan line:
       this.gameboy.LCDTicks -= 456;
-      if (this.gameboy.STATTracker != 3) {
+      if (this.gameboy.STATTracker !== 3) {
         //Make sure the mode 0 handler was run at least once per scan line:
-        if (this.gameboy.STATTracker != 2) {
+        if (this.gameboy.STATTracker !== 2) {
           if (this.gameboy.STATTracker === 0 && this.gameboy.mode2TriggerSTAT) {
             this.gameboy.interruptsRequested |= 0x2;
           }
@@ -99,9 +101,9 @@ export default class GPU {
       //Starting V-Blank:
       //Just finished the last visible scan line:
       this.gameboy.LCDTicks -= 456;
-      if (this.gameboy.STATTracker != 3) {
+      if (this.gameboy.STATTracker !== 3) {
         //Make sure the mode 0 handler was run at least once per scan line:
-        if (this.gameboy.STATTracker != 2) {
+        if (this.gameboy.STATTracker !== 2) {
           if (this.gameboy.STATTracker === 0 && this.gameboy.mode2TriggerSTAT) {
             this.gameboy.interruptsRequested |= 0x2;
           }
@@ -170,7 +172,7 @@ export default class GPU {
   runLastVBlankScanline = () => {
     if (this.gameboy.LCDTicks >= 8) {
       if (
-        this.gameboy.STATTracker != 4 &&
+        this.gameboy.STATTracker !== 4 &&
         this.gameboy.memory[0xff44] === 153
       ) {
         this.gameboy.memory[0xff44] = 0; //LY register resets to 0 early.
