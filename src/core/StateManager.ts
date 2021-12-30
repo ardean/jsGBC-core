@@ -54,7 +54,7 @@ export default class StateManager {
     //   gameboy.mode2TriggerSTAT,
     //   gameboy.mode1TriggerSTAT,
     //   gameboy.mode0TriggerSTAT,
-    //   gameboy.LCDisOn,
+    //   gameboy.gpu.lcdEnabled,
     //   gameboy.gfxWindowCHRBankPosition,
     //   gameboy.gfxWindowDisplay,
     //   gameboy.gfxSpriteShow,
@@ -268,7 +268,7 @@ export default class StateManager {
     gameboy.mode2TriggerSTAT = state[index++];
     gameboy.mode1TriggerSTAT = state[index++];
     gameboy.mode0TriggerSTAT = state[index++];
-    gameboy.LCDisOn = state[index++];
+    gameboy.gpu.lcdEnabled = state[index++];
     gameboy.gfxWindowCHRBankPosition = state[index++];
     gameboy.gfxWindowDisplay = state[index++];
     gameboy.gfxSpriteShow = state[index++];

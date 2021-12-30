@@ -127,7 +127,7 @@ export default class Cartridge {
     }
   }
 
-  setGBCMode(data) {
+  setGbcMode(data: number) {
     this.useGbcMode = (data & 0x1) === 0;
     // Exception to the GBC identifying code:
     if (this.name + this.gameCode + this.colorCompatibilityByte === GAME_AND_WATCH_ID) {

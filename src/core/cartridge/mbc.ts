@@ -7,7 +7,7 @@ import RTC from "./rtc";
 export default class MBC extends EventEmitter {
   currentROMBank: number;
   ROMBank1Offset: number;
-  RAM: any;
+  ram: Uint8Array;
   ROMBankEdge: number;
   currentMBCRAMBank: number;
   currentRAMBankPosition: number;
@@ -56,16 +56,16 @@ export default class MBC extends EventEmitter {
   setupRAM() {
     this.ramSize = this.ramSizes[this.cartridge.ramSizeType];
     console.log("RAM size 0x" + this.ramSize.toString(16));
-    this.RAM = util.getTypedArray(this.ramSize, 0, "uint8"); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
+    this.ram = new Uint8Array(this.ramSize); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
   }
 
   loadSRAM(data: Uint8Array) {
     if (data.byteLength !== this.ramSize) return;
-    this.RAM = data.slice(0);
+    this.ram = data.slice(0);
   }
 
   getSRAM() {
-    return new Uint8Array(this.RAM.buffer.slice(0, this.ramSize));
+    return new Uint8Array(this.ram.buffer.slice(0, this.ramSize));
   }
 
   cutSRAMFromBatteryFileArray(data: ArrayBuffer) {
@@ -74,16 +74,16 @@ export default class MBC extends EventEmitter {
 
   saveState() {
     // TODO: remove after state refactor
-    if (!this.cartridge.hasBattery || this.RAM.length === 0) return; // No battery backup...
+    if (!this.cartridge.hasBattery || this.ram.length === 0) return; // No battery backup...
 
     // return the MBC RAM for backup...
-    return util.fromTypedArray(this.RAM);
+    return util.fromTypedArray(this.ram);
   }
 
   readRAM(address) {
     // Switchable RAM
     if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-      return this.RAM[address + this.currentRAMBankPosition];
+      return this.ram[address + this.currentRAMBankPosition];
     }
     //console.log("Reading from disabled RAM.");
     return 0xff;
@@ -92,7 +92,7 @@ export default class MBC extends EventEmitter {
   writeRAM(address, data) {
     if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
       this.emit("ramWrite");
-      this.RAM[address + this.currentRAMBankPosition] = data;
+      this.ram[address + this.currentRAMBankPosition] = data;
     }
   }
 

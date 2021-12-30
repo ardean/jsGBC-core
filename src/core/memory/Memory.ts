@@ -99,7 +99,7 @@ export default class Memory {
     this.highWriters[address] = writer;
   }
 
-  init() { // TODO: move to gameboy?
+  init() {
     this.setReaders(MemoryLayout.INTERRUPT_VECTORS_START, MemoryLayout.CART_ROM_BANK0_END, (address: number) => this.data[address]);
     this.setReaders(MemoryLayout.CART_ROM_SWITCH_BANK_START, MemoryLayout.CART_ROM_SWITCH_BANK_END, (address: number) => this.gameboy.cartridge.rom.getByte(this.gameboy.cartridge.mbc.currentROMBank + address));
     this.setReaders(MemoryLayout.TILE_SET_0_START, MemoryLayout.TILE_SET_1_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMDATAReadCGBCPU : this.gameboy.VRAMDATAReadDMGCPU);
@@ -134,6 +134,9 @@ export default class Memory {
     if (this.gameboy.cartridge.useGbcMode) {
       this.setReaders(MemoryLayout.UNUSABLE_MEM_START, MemoryLayout.UNUSABLE_MEM_END, this.gameboy.memoryReadNormal);
     }
+
+    this.setWriter(MemoryLayout.JOYPAD_REG, this.gameboy.joypad.writeMemory);
+    this.setHighWriter(MemoryLayout.JOYPAD_REG, this.gameboy.joypad.writeMemory);
 
     // top nibble returns as set.
     const joypadReader = () => 0xc0 | this.gameboy.memoryReadNormal(MemoryLayout.JOYPAD_REG);
@@ -183,6 +186,27 @@ export default class Memory {
 
     this.gameboy.memoryReadJumpCompile(); // TODO: remove
     this.gameboy.memoryWriteJumpCompile(); // TODO: remove
+  }
+
+  updateIORegisters() {
+    if (this.gameboy.isBootingRom) {
+      this.enableBootRomControl();
+
+      if (this.gameboy.cartridge.useGbcMode) {
+        const undocumentedGbcOnlyWriter = (address: number, data: number) => {
+          data &= 1;
+
+          if (this.gameboy.isBootingRom) {
+            this.gameboy.cartridge.setGbcMode(data);
+          }
+          this.data[MemoryLayout.undocumentedGbcOnlyAddress] = data;
+        };
+        this.setWriter(MemoryLayout.undocumentedGbcOnlyAddress, undocumentedGbcOnlyWriter);
+        this.setHighWriter(MemoryLayout.undocumentedGbcOnlyAddress, undocumentedGbcOnlyWriter);
+      }
+    } else {
+      this.disableBootRomControl();
+    }
   }
 
   enableBootRomControl() {

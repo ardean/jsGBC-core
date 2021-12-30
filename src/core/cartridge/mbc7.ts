@@ -43,7 +43,7 @@ export default class MBC7 extends MBC {
           // X Low Byte:
           return this.lowX;
         default:
-          return this.RAM[address + this.currentRAMBankPosition];
+          return this.ram[address + this.currentRAMBankPosition];
       }
     }
 

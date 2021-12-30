@@ -262,10 +262,10 @@ export default [
   //LDI (HL), A
   //#0x22:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registerA
-    ]);
+    );
     this.registersHL = this.registersHL + 1 & 0xffff;
   },
   //INC HL
@@ -398,10 +398,10 @@ export default [
   //LDD (HL), A
   //#0x32:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registerA
-    ]);
+    );
     this.registersHL = this.registersHL - 1 & 0xffff;
   },
   //INC SP
@@ -416,10 +416,10 @@ export default [
     this.FZero = temp_var === 0;
     this.FHalfCarry = (temp_var & 0xf) === 0;
     this.FSubtract = false;
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       temp_var
-    ]);
+    );
   },
   //DEC (HL)
   //#0x35:
@@ -428,18 +428,18 @@ export default [
     this.FZero = temp_var === 0;
     this.FHalfCarry = (temp_var & 0xf) === 0xf;
     this.FSubtract = true;
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       temp_var
-    ]);
+    );
   },
   //LD (HL), n
   //#0x36:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.memoryRead(this.programCounter)
-    ]);
+    );
     this.programCounter = this.programCounter + 1 & 0xffff;
   },
   //SCF
@@ -750,50 +750,50 @@ export default [
   //LD (HL), B
   //#0x70:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registerB
-    ]);
+    );
   },
   //LD (HL), C
   //#0x71:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registerC
-    ]);
+    );
   },
   //LD (HL), D
   //#0x72:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registerD
-    ]);
+    );
   },
   //LD (HL), E
   //#0x73:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registerE
-    ]);
+    );
   },
   //LD (HL), H
   //#0x74:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registersHL >> 8
-    ]);
+    );
   },
   //LD (HL), L
   //#0x75:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registersHL & 0xff
-    ]);
+    );
   },
   //HALT
   //#0x76:
@@ -815,10 +815,10 @@ export default [
   //LD (HL), A
   //#0x77:
   function () {
-    this.memoryWriter[this.registersHL].apply(this, [
+    this.memoryWrite(
       this.registersHL,
       this.registerA
-    ]);
+    );
   },
   //LD A, B
   //#0x78:
@@ -1521,15 +1521,15 @@ export default [
         this.memoryRead(this.programCounter);
       this.programCounter = this.programCounter + 2 & 0xffff;
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter >> 8
-      ]);
+      );
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter & 0xff
-      ]);
+      );
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
@@ -1540,15 +1540,15 @@ export default [
   //#0xC5:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.registerB
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.registerC
-    ]);
+    );
   },
   //ADD, n
   //#0xC6:
@@ -1566,15 +1566,15 @@ export default [
   //#0xC7:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0;
   },
   //RET FZ
@@ -1620,15 +1620,15 @@ export default [
       var temp_pc = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
       this.programCounter = this.programCounter + 2 & 0xffff;
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter >> 8
-      ]);
+      );
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter & 0xff
-      ]);
+      );
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
@@ -1642,15 +1642,15 @@ export default [
       this.memoryRead(this.programCounter);
     this.programCounter = this.programCounter + 2 & 0xffff;
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = temp_pc;
   },
   //ADC A, n
@@ -1672,15 +1672,15 @@ export default [
   //#0xCF:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0x8;
   },
   //RET !FC
@@ -1723,15 +1723,15 @@ export default [
       var temp_pc = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
       this.programCounter = this.programCounter + 2 & 0xffff;
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter >> 8
-      ]);
+      );
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter & 0xff
-      ]);
+      );
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
@@ -1742,15 +1742,15 @@ export default [
   //#0xD5:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.registerD
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.registerE
-    ]);
+    );
   },
   //SUB A, n
   //#0xD6:
@@ -1767,15 +1767,15 @@ export default [
   //#0xD7:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0x10;
   },
   //RET FC
@@ -1820,15 +1820,15 @@ export default [
         this.memoryRead(this.programCounter);
       this.programCounter = this.programCounter + 2 & 0xffff;
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter >> 8
-      ]);
+      );
       this.stackPointer = this.stackPointer - 1 & 0xffff;
-      this.memoryWriter[this.stackPointer].apply(this, [
+      this.memoryWrite(
         this.stackPointer,
         this.programCounter & 0xff
-      ]);
+      );
       this.programCounter = temp_pc;
       this.CPUTicks += 12;
     } else {
@@ -1859,15 +1859,15 @@ export default [
   //#0xDF:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0x18;
   },
   //LDH (n), A
@@ -1885,10 +1885,7 @@ export default [
   //LD (0xFF00 + C), A
   //#0xE2:
   function () {
-    this.highMemoryWriter[this.registerC].apply(this, [
-      this.registerC,
-      this.registerA
-    ]);
+    this.memoryHighWrite(this.registerC, this.registerA);
   },
   //0xE3 - Illegal
   //#0xE3:
@@ -1904,15 +1901,15 @@ export default [
   //#0xE5:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.registersHL >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.registersHL & 0xff
-    ]);
+    );
   },
   //AND n
   //#0xE6:
@@ -1927,15 +1924,15 @@ export default [
   //#0xE7:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0x20;
   },
   //ADD SP, n
@@ -1992,15 +1989,15 @@ export default [
   //#0xEF:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0x28;
   },
   //LDH A, (n)
@@ -2023,9 +2020,7 @@ export default [
   //LD A, (0xFF00 + C)
   //#0xF2:
   function () {
-    this.registerA = this.highMemoryReader[this.registerC].apply(this, [
-      this.registerC
-    ]);
+    this.registerA = this.memoryHighRead(this.registerC);
   },
   //DI
   //#0xF3:
@@ -2042,18 +2037,18 @@ export default [
   //#0xF5:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.registerA
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       (this.FZero ? 0x80 : 0) |
       (this.FSubtract ? 0x40 : 0) |
       (this.FHalfCarry ? 0x20 : 0) |
       (this.FCarry ? 0x10 : 0)
-    ]);
+    );
   },
   //OR n
   //#0xF6:
@@ -2067,15 +2062,15 @@ export default [
   //#0xF7:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0x30;
   },
   //LDHL SP, n
@@ -2130,15 +2125,15 @@ export default [
   //#0xFF:
   function () {
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter >> 8
-    ]);
+    );
     this.stackPointer = this.stackPointer - 1 & 0xffff;
-    this.memoryWriter[this.stackPointer].apply(this, [
+    this.memoryWrite(
       this.stackPointer,
       this.programCounter & 0xff
-    ]);
+    );
     this.programCounter = 0x38;
   }
 ];

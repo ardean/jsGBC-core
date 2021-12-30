@@ -34,7 +34,7 @@ export default class MBC3 extends MBC {
         case 0x02:
         case 0x03:
           this.emit("ramWrite");
-          this.RAM[address + this.currentRAMBankPosition] = data;
+          this.ram[address + this.currentRAMBankPosition] = data;
           break;
         case 0x08:
           this.rtc && this.rtc.writeSeconds(data);
@@ -65,7 +65,7 @@ export default class MBC3 extends MBC {
         case 0x01:
         case 0x02:
         case 0x03:
-          return this.RAM[address + this.currentRAMBankPosition];
+          return this.ram[address + this.currentRAMBankPosition];
         case 0x08:
           if (this.rtc) return this.rtc.readSeconds();
           break;

@@ -1,5 +1,6 @@
-import CPU from "./cpu";
+import CPU from "./CPU_";
 import ROM from "./ROM";
+import GPU from "./GPU";
 import { GameBoy } from "..";
 import Joypad from "./Joypad";
 import * as util from "../util";
@@ -22,9 +23,6 @@ export default class GameBoyCore {
   BGPriorityEnabled: any;
   haltPostClocks: any;
   spriteCount: number;
-  LINECONTROL: any[];
-  DISPLAYOFFCONTROL: (() => void)[];
-  LCDCONTROL: any;
   drewFrame: boolean;
   midScanlineOffset: number;
   pixelEnd: number;
@@ -45,8 +43,8 @@ export default class GameBoyCore {
   isBootingRom: boolean = true;
   VRAM: Uint8Array;
   GBCMemory: Uint8Array;
-  frameBuffer: util.TypedArray;
-  BGCHRBank1: util.TypedArray;
+  frameBuffer: Int32Array;
+  BGCHRBank1: Uint8Array;
   registerA: number;
   registerB: number;
   registerC: number;
@@ -68,7 +66,6 @@ export default class GameBoyCore {
   mode2TriggerSTAT: boolean;
   mode1TriggerSTAT: boolean;
   mode0TriggerSTAT: boolean;
-  LCDisOn: boolean;
   DIVTicks: number;
   LCDTicks: number;
   timerTicks: number;
@@ -98,8 +95,8 @@ export default class GameBoyCore {
   doubleSpeedShifter: number;
   colorizedGBPalettes: any;
   backgroundX: number;
-  gbcOBJRawPalette: util.TypedArray;
-  gbcBGRawPalette: util.TypedArray;
+  gbcOBJRawPalette: Uint8Array;
+  gbcBGRawPalette: Uint8Array;
   gbcOBJPalette: util.TypedArray;
   gbcBGPalette: util.TypedArray;
   BGCHRBank2: util.TypedArray;
@@ -118,10 +115,6 @@ export default class GameBoyCore {
   gbcRamBankPosition: any;
   gbcRamBankPositionECHO: any;
   gbcRamBank: number;
-  highMemoryWriter: any[];
-  highMemoryReader: any[];
-  memoryWriter: any[];
-  memoryReader: any[];
   IRQLineMatched: number;
   stopEmulator: number;
   lcdController: LcdController;
@@ -131,6 +124,7 @@ export default class GameBoyCore {
   audioController: AudioController;
   audioDevice: AudioDevice;
   cpu: CPU;
+  gpu: GPU;
   memoryNew: Memory;
   events: EventEmitter;
   api: GameBoy;
@@ -140,6 +134,11 @@ export default class GameBoyCore {
   gbBootRom?: ROM;
   gbcBootRom?: ROM;
   usedGbcBootRom: boolean;
+
+  highMemoryWriter: any[];
+  highMemoryReader: any[];
+  memoryWriter: any[];
+  memoryReader: any[];
 
   constructor(
     {
@@ -155,6 +154,7 @@ export default class GameBoyCore {
     lcdOptions.gameboy = this;
 
     this.cpu = new CPU();
+    this.gpu = new GPU(this);
     this.audioDevice = new AudioDevice({
       context: audioOptions.context,
       channels: 2
@@ -178,11 +178,6 @@ export default class GameBoyCore {
     this.highMemoryReader = []; // Array of functions mapped to read back 0xFFXX memory
     this.highMemoryWriter = []; // Array of functions mapped to write to 0xFFXX memory
     this.spriteCount = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
-    this.LINECONTROL = []; // Array of functions to handle each scan line we do (onscreen + offscreen)
-    this.DISPLAYOFFCONTROL = [function () { }]; // Array of line 0 function to handle the LCD controller when it's off (Do nothing!).
-
-    this.LCDCONTROL = null; //Pointer to either LINECONTROL or DISPLAYOFFCONTROL.
-    this.initializeLCDController(); //Compile the LCD controller functions.
 
     //Graphics Variables
     this.drewFrame = false; //Throttle how many draws we can do to once per iteration.
@@ -255,14 +250,17 @@ export default class GameBoyCore {
       this.memory[address] = this.gbcBootRom.getByte(address);
       ++address;
     }
+
     while (address < 0x200) {
       this.memory[address] = this.cartridge.rom.getByte(address);
       ++address;
     }
+
     while (address < 0x900) {
       this.memory[address] = this.gbcBootRom.getByte(address);
       ++address;
     }
+
     this.usedBootRom = true;
     this.usedGbcBootRom = true;
   }
@@ -309,7 +307,27 @@ export default class GameBoyCore {
     }
 
     this.memoryNew.init();
-    this.initializeModeSpecificArrays();
+
+    if (this.cartridge.useGbcMode) {
+      this.gbcOBJRawPalette = new Uint8Array(0x40);
+      this.gbcBGRawPalette = new Uint8Array(0x40);
+      this.gbcOBJPalette = util.getTypedArray(0x20, 0x1000000, "int32");
+      this.gbcBGPalette = util.getTypedArray(0x40, 0, "int32");
+      this.BGCHRBank2 = util.getTypedArray(0x800, 0, "uint8");
+      this.BGCHRCurrentBank = this.currVRAMBank > 0 ?
+        this.BGCHRBank2 :
+        this.BGCHRBank1;
+      this.tileCache = this.generateCacheArray(0xf80);
+    } else {
+      this.gbOBJPalette = util.getTypedArray(8, 0, "int32");
+      this.gbBGPalette = util.getTypedArray(4, 0, "int32");
+      this.BGPalette = this.gbBGPalette;
+      this.OBJPalette = this.gbOBJPalette;
+      this.tileCache = this.generateCacheArray(0x700);
+      this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
+      this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
+    }
+    this.renderPathBuild();
 
     if (!this.usedBootRom) {
       this.isBootingRom = false;
@@ -378,7 +396,7 @@ export default class GameBoyCore {
     this.FHalfCarry = true;
     this.FCarry = true;
     this.registersHL = 0x014d;
-    this.LCDCONTROL = this.LINECONTROL;
+    this.gpu.enableLCD();
     this.IME = false;
     this.IRQLineMatched = 0;
     this.interruptsRequested = 225;
@@ -392,7 +410,6 @@ export default class GameBoyCore {
     this.mode2TriggerSTAT = false;
     this.mode1TriggerSTAT = false;
     this.mode0TriggerSTAT = false;
-    this.LCDisOn = true;
     this.audioController.setSkippedBootRomState();
     this.DIVTicks = 27044;
     this.LCDTicks = 160;
@@ -447,10 +464,10 @@ export default class GameBoyCore {
         // Clean up the post-boot (GB mode only) state:
         this.adjustGBCtoGBMode();
       } else {
-        this.recompileBootIOWriteHandling();
+        this.memoryNew.updateIORegisters();
       }
     } else {
-      this.recompileBootIOWriteHandling();
+      this.memoryNew.updateIORegisters();
     }
   }
 
@@ -542,8 +559,7 @@ export default class GameBoyCore {
       const timedTicks = this.CPUTicks >> this.doubleSpeedShifter;
       this.LCDTicks += timedTicks; //LCD Timing
 
-      const scanLineProcessor = this.LCDCONTROL[this.actualScanLine] || (() => { });
-      scanLineProcessor(this); // Scan Line and STAT Mode Control
+      this.gpu.runScanline(this.actualScanLine); // Scan Line and STAT Mode Control
 
       //Single-speed relative timing for A/V emulation:
       this.audioController.audioTicks += timedTicks; //Audio Timing
@@ -733,7 +749,7 @@ export default class GameBoyCore {
   updateCore() {
     //Update the clocking for the LCD emulation:
     this.LCDTicks += this.CPUTicks >> this.doubleSpeedShifter; // LCD Timing
-    this.LCDCONTROL[this.actualScanLine](this); //Scan Line and STAT Mode Control
+    this.gpu.runScanline(this.actualScanLine); //Scan Line and STAT Mode Control
     //Single-speed relative timing for A/V emulation:
     var timedTicks = this.CPUTicks >> this.doubleSpeedShifter; // CPU clocking can be updated from the LCD handling.
     this.audioController.audioTicks += timedTicks; // Audio Timing
@@ -775,169 +791,6 @@ export default class GameBoyCore {
     //End of iteration routine:
     if (this.cpu.ticks >= this.cpu.cyclesTotal) {
       this.iterationEndRoutine();
-    }
-  }
-
-  initializeLCDController() {
-    //Display on hanlding:
-    var line = 0;
-    while (line < 154) {
-      if (line < 143) {
-        //We're on a normal scan line:
-        this.LINECONTROL[line] = () => {
-          if (this.LCDTicks < 80) {
-            this.scanLineMode2();
-          } else if (this.LCDTicks < 252) {
-            this.scanLineMode3();
-          } else if (this.LCDTicks < 456) {
-            this.scanLineMode0();
-          } else {
-            //We're on a new scan line:
-            this.LCDTicks -= 456;
-            if (this.STATTracker != 3) {
-              //Make sure the mode 0 handler was run at least once per scan line:
-              if (this.STATTracker != 2) {
-                if (this.STATTracker === 0 && this.mode2TriggerSTAT) {
-                  this.interruptsRequested |= 0x2;
-                }
-                this.incrementScanLineQueue();
-              }
-              if (this.hdmaRunning) {
-                this.executeHDMA();
-              }
-              if (this.mode0TriggerSTAT) {
-                this.interruptsRequested |= 0x2;
-              }
-            }
-
-            //Update the scanline registers and assert the LYC counter:
-            this.actualScanLine = ++this.memory[0xff44];
-
-            //Perform a LYC counter assert:
-            if (this.actualScanLine === this.memory[0xff45]) {
-              this.memory[0xff41] |= 0x04;
-              if (this.LYCMatchTriggerSTAT) {
-                this.interruptsRequested |= 0x2;
-              }
-            } else {
-              this.memory[0xff41] &= 0x7b;
-            }
-            this.checkIRQMatching();
-            //Reset our mode contingency variables:
-            this.STATTracker = 0;
-            this.modeSTAT = 2;
-            this.LINECONTROL[this.actualScanLine].apply(this); //Scan Line and STAT Mode Control.
-          }
-        };
-      } else if (line === 143) {
-        //We're on the last visible scan line of the LCD screen:
-        this.LINECONTROL[143] = () => {
-          if (this.LCDTicks < 80) {
-            this.scanLineMode2();
-          } else if (this.LCDTicks < 252) {
-            this.scanLineMode3();
-          } else if (this.LCDTicks < 456) {
-            this.scanLineMode0();
-          } else {
-            //Starting V-Blank:
-            //Just finished the last visible scan line:
-            this.LCDTicks -= 456;
-            if (this.STATTracker != 3) {
-              //Make sure the mode 0 handler was run at least once per scan line:
-              if (this.STATTracker != 2) {
-                if (this.STATTracker === 0 && this.mode2TriggerSTAT) {
-                  this.interruptsRequested |= 0x2;
-                }
-                this.incrementScanLineQueue();
-              }
-              if (this.hdmaRunning) {
-                this.executeHDMA();
-              }
-              if (this.mode0TriggerSTAT) {
-                this.interruptsRequested |= 0x2;
-              }
-            }
-            //Update the scanline registers and assert the LYC counter:
-            this.actualScanLine = this.memory[0xff44] = 144;
-            //Perform a LYC counter assert:
-            if (this.memory[0xff45] === 144) {
-              this.memory[0xff41] |= 0x04;
-              if (this.LYCMatchTriggerSTAT) {
-                this.interruptsRequested |= 0x2;
-              }
-            } else {
-              this.memory[0xff41] &= 0x7b;
-            }
-            //Reset our mode contingency variables:
-            this.STATTracker = 0;
-            //Update our state for v-blank:
-            this.modeSTAT = 1;
-            this.interruptsRequested |= this.mode1TriggerSTAT ? 0x3 : 0x1;
-            this.checkIRQMatching();
-            //Attempt to blit out to our canvas:
-            if (this.drewBlank === 0) {
-              //Ensure JIT framing alignment:
-              if (this.cpu.totalLinesPassed < 144 || this.cpu.totalLinesPassed === 144 && this.midScanlineOffset > -1) {
-                //Make sure our gfx are up-to-date:
-                this.graphicsJITVBlank();
-                //Draw the frame:
-                this.lcdDevice.prepareFrame();
-              }
-            } else {
-              //LCD off takes at least 2 frames:
-              --this.drewBlank;
-            }
-            this.LINECONTROL[144].apply(this); //Scan Line and STAT Mode Control.
-          }
-        };
-      } else if (line < 153) {
-        //In VBlank
-        this.LINECONTROL[line] = () => {
-          if (this.LCDTicks >= 456) {
-            //We're on a new scan line:
-            this.LCDTicks -= 456;
-            this.actualScanLine = ++this.memory[0xff44];
-            //Perform a LYC counter assert:
-            if (this.actualScanLine === this.memory[0xff45]) {
-              this.memory[0xff41] |= 0x04;
-              if (this.LYCMatchTriggerSTAT) {
-                this.interruptsRequested |= 0x2;
-                this.checkIRQMatching();
-              }
-            } else {
-              this.memory[0xff41] &= 0x7b;
-            }
-            this.LINECONTROL[this.actualScanLine].apply(this); //Scan Line and STAT Mode Control.
-          }
-        };
-      } else {
-        //VBlank Ending (We're on the last actual scan line)
-        this.LINECONTROL[153] = () => {
-          if (this.LCDTicks >= 8) {
-            if (this.STATTracker != 4 && this.memory[0xff44] === 153) {
-              this.memory[0xff44] = 0; //LY register resets to 0 early.
-              //Perform a LYC counter assert:
-              if (this.memory[0xff45] === 0) {
-                this.memory[0xff41] |= 0x04;
-                if (this.LYCMatchTriggerSTAT) {
-                  this.interruptsRequested |= 0x2;
-                  this.checkIRQMatching();
-                }
-              } else {
-                this.memory[0xff41] &= 0x7b;
-              }
-              this.STATTracker = 4;
-            }
-            if (this.LCDTicks >= 456) {
-              //We reset back to the beginning:
-              this.LCDTicks -= 456;
-              this.STATTracker = this.actualScanLine = 0;
-              this.LINECONTROL[0].apply(this); //Scan Line and STAT Mode Control.
-            }
-          }
-        };
-      }
-      ++line;
     }
   }
 
@@ -1019,30 +872,6 @@ export default class GameBoyCore {
     }
   }
 
-  initializeModeSpecificArrays() {
-    this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
-    if (this.cartridge.useGbcMode) {
-      this.gbcOBJRawPalette = util.getTypedArray(0x40, 0, "uint8");
-      this.gbcBGRawPalette = util.getTypedArray(0x40, 0, "uint8");
-      this.gbcOBJPalette = util.getTypedArray(0x20, 0x1000000, "int32");
-      this.gbcBGPalette = util.getTypedArray(0x40, 0, "int32");
-      this.BGCHRBank2 = util.getTypedArray(0x800, 0, "uint8");
-      this.BGCHRCurrentBank = this.currVRAMBank > 0 ?
-        this.BGCHRBank2 :
-        this.BGCHRBank1;
-      this.tileCache = this.generateCacheArray(0xf80);
-    } else {
-      this.gbOBJPalette = util.getTypedArray(8, 0, "int32");
-      this.gbBGPalette = util.getTypedArray(4, 0, "int32");
-      this.BGPalette = this.gbBGPalette;
-      this.OBJPalette = this.gbOBJPalette;
-      this.tileCache = this.generateCacheArray(0x700);
-      this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
-      this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
-    }
-    this.renderPathBuild();
-  }
-
   adjustGBCtoGBMode() {
     console.log("Stepping down from GBC mode.");
     this.VRAM = this.GBCMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = undefined;
@@ -1090,7 +919,6 @@ export default class GameBoyCore {
   }
 
   initializeReferencesFromSaveState() {
-    this.LCDCONTROL = this.LCDisOn ? this.LINECONTROL : this.DISPLAYOFFCONTROL;
     if (!this.cartridge.useGbcMode) {
       if (this.colorizedGBPalettes) {
         this.BGPalette = this.gbBGColorizedPalette;
@@ -1124,32 +952,32 @@ export default class GameBoyCore {
     this.renderPathBuild();
   }
 
-  adjustRGBTint(value) {
-    //Adjustment for the GBC's tinting (According to Gambatte):
-    const r = value & 0x1f;
-    const g = value >> 5 & 0x1f;
-    const b = value >> 10 & 0x1f;
-    return r * 13 + g * 2 + b >> 1 << 16 | g * 3 + b << 9 | r * 3 + g * 2 + b * 11 >> 1;
+  adjustRGBTint(value: number) {
+    // Adjustment for the GBC's tinting (According to Gambatte):
+    const red = value & 0x1f;
+    const green = value >> 5 & 0x1f;
+    const blue = value >> 10 & 0x1f;
+    return red * 13 + green * 2 + blue >> 1 << 16 | green * 3 + blue << 9 | red * 3 + green * 2 + blue * 11 >> 1;
   }
 
   getGBCColor() {
-    //GBC Colorization of DMG ROMs:
-    //BG
+    // GBC Colorization of DMG ROMs:
+    // BG
     for (let counter = 0; counter < 4; counter++) {
       const adjustedIndex = counter << 1;
-      //BG
+      // BG
       this.cachedBGPaletteConversion[counter] = this.adjustRGBTint(this.gbcBGRawPalette[adjustedIndex | 1] << 8 | this.gbcBGRawPalette[adjustedIndex]);
-      //OBJ 1
+      // OBJ 1
       this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(this.gbcOBJRawPalette[adjustedIndex | 1] << 8 | this.gbcOBJRawPalette[adjustedIndex]);
     }
 
-    //OBJ 2
+    // OBJ 2
     for (let counter = 4; counter < 8; counter++) {
       const adjustedIndex = counter << 1;
       this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(this.gbcOBJRawPalette[adjustedIndex | 1] << 8 | this.gbcOBJRawPalette[adjustedIndex]);
     }
 
-    //Update the palette entries:
+    // Update the palette entries:
     this.updateGBBGPalette = this.updateGBColorizedBGPalette;
     this.updateGBOBJPalette = this.updateGBColorizedOBJPalette;
     this.updateGBBGPalette(this.memory[0xff47]);
@@ -1166,7 +994,7 @@ export default class GameBoyCore {
   }
 
   updateGBColorizedBGPalette(data) {
-    //GB colorization:
+    // GB colorization:
     this.gbBGColorizedPalette[0] = this.cachedBGPaletteConversion[data & 0x03] | 0x2000000;
     this.gbBGColorizedPalette[1] = this.cachedBGPaletteConversion[data >> 2 & 0x03];
     this.gbBGColorizedPalette[2] = this.cachedBGPaletteConversion[data >> 4 & 0x03];
@@ -1180,7 +1008,7 @@ export default class GameBoyCore {
   }
 
   updateGBColorizedOBJPalette(index, data) {
-    //GB colorization:
+    // GB colorization:
     this.gbOBJColorizedPalette[index | 1] = this.cachedOBJPaletteConversion[index | data >> 2 & 0x03];
     this.gbOBJColorizedPalette[index | 2] = this.cachedOBJPaletteConversion[index | data >> 4 & 0x03];
     this.gbOBJColorizedPalette[index | 3] = this.cachedOBJPaletteConversion[index | data >> 6];
@@ -2034,7 +1862,7 @@ export default class GameBoyCore {
   }
 
   graphicsJIT() {
-    if (this.LCDisOn) {
+    if (this.gpu.lcdEnabled) {
       this.cpu.totalLinesPassed = 0; //Mark frame for ensuring a JIT pass for the next framebuffer output.
       this.graphicsJITScanlineGroup();
     }
@@ -2127,7 +1955,7 @@ export default class GameBoyCore {
     if (!this.halt) {
       this.halt = true;
       var currentClocks = -1;
-      if (this.LCDisOn) {
+      if (this.gpu.lcdEnabled) {
         //If the LCD is enabled, then predict the LCD IRQs enabled:
         if ((this.interruptsEnabled & 0x1) === 0x1) {
           currentClocks = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
@@ -2195,7 +2023,7 @@ export default class GameBoyCore {
     }
   }
 
-  //Memory Reading:
+  // Memory Reading:
   memoryRead(address: number) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
     if (this.memoryNew.hasReader(address)) return this.memoryNew.read(address);
@@ -2208,7 +2036,7 @@ export default class GameBoyCore {
     return this.highMemoryReader[address].apply(this, [address]);
   }
 
-  //Memory Writing:
+  // Memory Writing:
   memoryWrite(address: number, data: number) {
     //Act as a wrapper for writing by compiled jumps to specific memory writing functions.
     if (this.memoryNew.hasWriter(address)) return this.memoryNew.write(address, data);
@@ -2375,7 +2203,7 @@ export default class GameBoyCore {
             break;
           case 0xff44:
             this.highMemoryReader[0x44] = this.memoryReader[0xff44] = address => {
-              return this.LCDisOn ? this.memory[0xff44] : 0;
+              return this.gpu.lcdEnabled ? this.memory[0xff44] : 0;
             };
             break;
           case 0xff45:
@@ -2422,7 +2250,7 @@ export default class GameBoyCore {
           case 0xff55:
             if (this.cartridge.useGbcMode) {
               this.highMemoryReader[0x55] = this.memoryReader[0xff55] = address => {
-                if (!this.LCDisOn && this.hdmaRunning) {
+                if (!this.gpu.lcdEnabled && this.hdmaRunning) {
                   //Undocumented behavior alert: HDMA becomes GDMA when LCD is off (Worms Armageddon Fix).
                   //DMA
                   this.DMAWrite((this.memory[0xff55] & 0x7f) + 1);
@@ -3005,8 +2833,6 @@ export default class GameBoyCore {
   };
 
   registerIOMemoryWriters() {
-    this.joypad.registerMemoryWriters();
-
     // SB (Serial Transfer Data)
     this.highMemoryWriter[0x1] = this.memoryWriter[MemoryLayout.SERIAL_DATA_REG] = (address: number, data: number) => {
       if (this.memory[MemoryLayout.SERIAL_CONTROL_REG] < 0x80) {
@@ -3086,7 +2912,7 @@ export default class GameBoyCore {
     //LY
     this.highMemoryWriter[0x44] = this.memoryWriter[0xff44] = (address, data) => {
       //Read Only:
-      if (this.LCDisOn) {
+      if (this.gpu.lcdEnabled) {
         //Gambatte says to do this:
         this.modeSTAT = 2;
         this.midScanlineOffset = -1;
@@ -3097,7 +2923,7 @@ export default class GameBoyCore {
     this.highMemoryWriter[0x45] = this.memoryWriter[0xff45] = (address, data) => {
       if (this.memory[0xff45] != data) {
         this.memory[0xff45] = data;
-        if (this.LCDisOn) {
+        if (this.gpu.lcdEnabled) {
           this.matchLYC(); //Get the compare of the first scan line.
         }
       }
@@ -3133,7 +2959,7 @@ export default class GameBoyCore {
       this.checkIRQMatching();
     };
     this.recompileModelSpecificIOWriteHandling();
-    this.recompileBootIOWriteHandling();
+    this.memoryNew.updateIORegisters();
   }
 
   recompileModelSpecificIOWriteHandling() {
@@ -3156,19 +2982,19 @@ export default class GameBoyCore {
         if (this.memory[0xff40] !== data) {
           this.midScanLineJIT();
           const isLcdOn = data > 0x7f;
-          if (isLcdOn !== this.LCDisOn) {
+          if (isLcdOn !== this.gpu.lcdEnabled) {
             // When the display mode changes...
-            this.LCDisOn = isLcdOn;
+            this.gpu.lcdEnabled = isLcdOn;
             this.memory[0xff41] &= 0x78;
             this.midScanlineOffset = -1;
             this.cpu.totalLinesPassed = this.currentX = this.queuedScanLines = this.lastUnrenderedLine = this.STATTracker = this.LCDTicks = this.actualScanLine = this.memory[0xff44] = 0;
-            if (this.LCDisOn) {
+            if (this.gpu.lcdEnabled) {
               this.modeSTAT = 2;
               this.matchLYC(); // Get the compare of the first scan line.
-              this.LCDCONTROL = this.LINECONTROL;
+              this.gpu.enableLCD();
             } else {
               this.modeSTAT = 0;
-              this.LCDCONTROL = this.DISPLAYOFFCONTROL;
+              this.gpu.disableLCD();
               this.lcdDevice.DisplayShowOff();
             }
             this.interruptsRequested &= 0xfd;
@@ -3335,20 +3161,20 @@ export default class GameBoyCore {
       this.highMemoryWriter[0x40] = this.memoryWriter[0xff40] = (address, data) => {
         if (this.memory[0xff40] != data) {
           this.midScanLineJIT();
-          var temp_var = data > 0x7f;
-          if (temp_var != this.LCDisOn) {
-            //When the display mode changes...
-            this.LCDisOn = temp_var;
+          const newState = data > 0x7f;
+          if (newState !== this.gpu.lcdEnabled) {
+            // When the display mode changes...
+            this.gpu.lcdEnabled = newState;
             this.memory[0xff41] &= 0x78;
             this.midScanlineOffset = -1;
             this.cpu.totalLinesPassed = this.currentX = this.queuedScanLines = this.lastUnrenderedLine = this.STATTracker = this.LCDTicks = this.actualScanLine = this.memory[0xff44] = 0;
-            if (this.LCDisOn) {
+            if (this.gpu.lcdEnabled) {
               this.modeSTAT = 2;
-              this.matchLYC(); //Get the compare of the first scan line.
-              this.LCDCONTROL = this.LINECONTROL;
+              this.matchLYC(); // Get the compare of the first scan line.
+              this.gpu.enableLCD();
             } else {
               this.modeSTAT = 0;
-              this.LCDCONTROL = this.DISPLAYOFFCONTROL;
+              this.gpu.disableLCD();
               this.lcdDevice.DisplayShowOff();
             }
             this.interruptsRequested &= 0xfd;
@@ -3369,7 +3195,7 @@ export default class GameBoyCore {
         this.mode1TriggerSTAT = (data & 0x10) === 0x10;
         this.mode0TriggerSTAT = (data & 0x08) === 0x08;
         this.memory[0xff41] = data & 0x78;
-        if ((!this.usedBootRom || !this.usedGbcBootRom) && this.LCDisOn && this.modeSTAT < 2) {
+        if ((!this.usedBootRom || !this.usedGbcBootRom) && this.gpu.lcdEnabled && this.modeSTAT < 2) {
           this.interruptsRequested |= 0x2;
           this.checkIRQMatching();
         }
@@ -3440,24 +3266,4 @@ export default class GameBoyCore {
       this.highMemoryWriter[0x74] = this.memoryWriter[0xff74] = this.memoryNew.writeIllegal;
     }
   }
-
-  recompileBootIOWriteHandling() {
-    // Boot I/O Registers:
-    if (this.isBootingRom) {
-      this.memoryNew.enableBootRomControl();
-
-      if (this.cartridge.useGbcMode) {
-        this.highMemoryWriter[0x6c] = this.memoryWriter[MemoryLayout.undocumentedGbcOnlyAddress] = (address: number, data: number) => {
-          data &= 1;
-
-          if (this.isBootingRom) {
-            this.cartridge.setGBCMode(data);
-          }
-          this.memory[MemoryLayout.undocumentedGbcOnlyAddress] = data;
-        };
-      }
-    } else {
-      this.memoryNew.disableBootRomControl();
-    }
-  };
 }
