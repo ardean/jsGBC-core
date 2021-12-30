@@ -14,11 +14,10 @@ export default class RTC {
   RTCSeconds: number;
   RTCHalt: boolean;
   RTCisLatched: boolean;
-  mbc: MBC;
 
-  constructor(mbc: MBC) {
-    this.mbc = mbc;
-  }
+  constructor(
+    private mbc: MBC
+  ) { }
 
   // TODO: rename RTC vars
 

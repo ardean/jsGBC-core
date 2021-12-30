@@ -19,17 +19,20 @@ import AudioController from "./audio/AudioController";
 import postBootRegisterState from "./postBootRegisterState";
 
 export default class GameBoyCore {
+  // Graphics Variables
+  drewFrame = false; //Throttle how many draws we can do to once per iteration.
+  midScanlineOffset = -1; //mid-scanline rendering offset.
+  currentX = 0; //The x-coord we left off at for mid-scanline rendering.
+  stopEmulator = 3; // Has the emulation been paused or a frame has ended?
+  IRQLineMatched = 0; // CPU IRQ assertion.
+
   ROMBank1Offset: any;
   BGPriorityEnabled: any;
   haltPostClocks: any;
-  spriteCount: number;
-  drewFrame: boolean;
-  midScanlineOffset: number;
-  pixelEnd: number;
-  currentX: number;
-  BGCHRCurrentBank: any;
-  tileCache: any;
-  colors: number[];
+  spriteCount: number = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
+  BGCHRCurrentBank: any; // BG Tile Pointer Caches:
+  tileCache: any; // Tile Data Cache
+  colors: number[] = [0xefffde, 0xadd794, 0x529273, 0x183442]; // "Classic" GameBoy palette colors.
   OBJPalette: any;
   BGPalette: any;
   updateGBBGPalette: (data: any) => void;
@@ -37,7 +40,8 @@ export default class GameBoyCore {
   renderBGLayer: any;
   renderWindowLayer: any;
   renderSpriteLayer: any;
-  pixelStart: number;
+  pixelStart: number = 0; // Temp variable for holding the current working framebuffer offset.
+  pixelEnd: number = 0; // track the x-coord limit for line rendering (mid-scanline usage).
   cartridge: Cartridge;
   memory: Uint8Array;
   isBootingRom: boolean = true;
@@ -115,8 +119,6 @@ export default class GameBoyCore {
   gbcRamBankPosition: any;
   gbcRamBankPositionECHO: any;
   gbcRamBank: number;
-  IRQLineMatched: number;
-  stopEmulator: number;
   lcdController: LcdController;
   stateManager: StateManager;
   lcdDevice: LcdDevice;
@@ -135,10 +137,10 @@ export default class GameBoyCore {
   gbcBootRom?: ROM;
   usedGbcBootRom: boolean;
 
-  highMemoryWriter: any[];
-  highMemoryReader: any[];
-  memoryWriter: any[];
-  memoryReader: any[];
+  memoryReader = []; // Array of functions mapped to read back memory
+  memoryWriter = []; // Array of functions mapped to write to memory
+  highMemoryReader = []; // Array of functions mapped to read back 0xFFXX memory
+  highMemoryWriter = []; // Array of functions mapped to write to 0xFFXX memory
 
   constructor(
     {
@@ -169,38 +171,9 @@ export default class GameBoyCore {
     this.stateManager = new StateManager(this);
     this.stateManager.init();
 
-    this.stopEmulator = 3; // Has the emulation been paused or a frame has ended?
-    this.IRQLineMatched = 0; // CPU IRQ assertion.
-
-    // Main RAM, MBC RAM, GBC Main RAM, VRAM, etc.
-    this.memoryReader = []; // Array of functions mapped to read back memory
-    this.memoryWriter = []; // Array of functions mapped to write to memory
-    this.highMemoryReader = []; // Array of functions mapped to read back 0xFFXX memory
-    this.highMemoryWriter = []; // Array of functions mapped to write to 0xFFXX memory
-    this.spriteCount = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
-
-    //Graphics Variables
-    this.drewFrame = false; //Throttle how many draws we can do to once per iteration.
-    this.midScanlineOffset = -1; //mid-scanline rendering offset.
-    this.pixelEnd = 0; //track the x-coord limit for line rendering (mid-scanline usage).
-    this.currentX = 0; //The x-coord we left off at for mid-scanline rendering.
-
-    //BG Tile Pointer Caches:
-    this.BGCHRCurrentBank = null;
-
-    //Tile Data Cache:
-    this.tileCache = null;
-
-    //Palettes:
-    this.colors = [0xefffde, 0xadd794, 0x529273, 0x183442]; // "Classic" GameBoy palette colors.
-    this.OBJPalette = null;
-    this.BGPalette = null;
+    // Palettes:
     this.updateGBBGPalette = this.updateGBRegularBGPalette;
     this.updateGBOBJPalette = this.updateGBRegularOBJPalette;
-    this.renderBGLayer = null; // Reference to the BG rendering function.
-    this.renderWindowLayer = null; // Reference to the window rendering function.
-    this.renderSpriteLayer = null; // Reference to the OAM rendering function.
-    this.pixelStart = 0; // Temp variable for holding the current working framebuffer offset.
   }
 
   loadState(state) {
@@ -2095,7 +2068,8 @@ export default class GameBoyCore {
 
   memoryReadROM = (address: number) => {
     return this.cartridge.rom.getByte(
-      this.cartridge.mbc.currentROMBank + address
+      this.cartridge.mbc.currentROMBank +
+      address
     );
   };
 
