@@ -1,4 +1,4 @@
-import CPU from "./CPU_";
+import CPU from "./CPU";
 import ROM from "./ROM";
 import GPU from "./GPU";
 import { GameBoy } from "..";

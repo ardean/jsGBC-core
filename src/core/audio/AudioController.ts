@@ -1,4 +1,4 @@
-import CPU from "../CPU_";
+import CPU from "../CPU";
 import * as util from "../../util";
 import settings from "../../settings";
 import dutyLookup from "../duty-lookup";
