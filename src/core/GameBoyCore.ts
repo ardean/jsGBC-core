@@ -5,8 +5,8 @@ import Joypad from "./Joypad";
 import * as util from "../util";
 import settings from "../settings";
 import Cartridge from "./cartridge";
+import tickTable from "./tickTable";
 import Memory from "./memory/Memory";
-import TickTable from "./tick-table";
 import LcdDevice from "./lcd/device";
 import { EventEmitter } from "events";
 import StateManager from "./StateManager";
@@ -59,7 +59,7 @@ export default class GameBoyCore {
   interruptsRequested: number;
   interruptsEnabled: number;
   hdmaRunning: boolean;
-  CPUTicks: number;
+  currentInstructionCycleCount: number;
   STATTracker: number;
   modeSTAT: number;
   LYCMatchTriggerSTAT: boolean;
@@ -402,7 +402,7 @@ export default class GameBoyCore {
     this.interruptsRequested = 225;
     this.interruptsEnabled = 0;
     this.hdmaRunning = false;
-    this.CPUTicks = 12;
+    this.currentInstructionCycleCount = 12;
     this.STATTracker = 0;
     this.modeSTAT = 1;
     this.spriteCount = 252;
@@ -493,7 +493,7 @@ export default class GameBoyCore {
             this.executeIteration();
           } else {
             // Finish the HALT rundown execution.
-            this.CPUTicks = 0;
+            this.currentInstructionCycleCount = 0;
             this.calculateHALTPeriod();
 
             if (!this.halt) {
@@ -549,14 +549,14 @@ export default class GameBoyCore {
         this.skipPCIncrement = false;
       }
       //Get how many CPU cycles the current instruction counts for:
-      this.CPUTicks = TickTable[operationCode];
+      this.currentInstructionCycleCount = tickTable[operationCode];
 
       //Execute the current instruction:
       mainInstructions[operationCode].apply(this);
 
       //Update the state (Inlined updateCoreFull manually here):
       //Update the clocking for the LCD emulation:
-      const timedTicks = this.CPUTicks >> this.doubleSpeedShifter;
+      const timedTicks = this.currentInstructionCycleCount >> this.doubleSpeedShifter;
       this.LCDTicks += timedTicks; //LCD Timing
 
       this.gpu.runScanline(this.actualScanLine); // Scan Line and STAT Mode Control
@@ -565,10 +565,10 @@ export default class GameBoyCore {
       this.audioController.audioTicks += timedTicks; //Audio Timing
       this.cpu.ticks += timedTicks; //Emulator Timing
       //CPU Timers:
-      this.DIVTicks += this.CPUTicks; //DIV Timing
+      this.DIVTicks += this.currentInstructionCycleCount; //DIV Timing
       if (this.TIMAEnabled) {
         //TIMA Timing
-        this.timerTicks += this.CPUTicks;
+        this.timerTicks += this.currentInstructionCycleCount;
         while (this.timerTicks >= this.TACClocker) {
           this.timerTicks -= this.TACClocker;
           if (++this.memory[0xff05] === 0x100) {
@@ -582,14 +582,14 @@ export default class GameBoyCore {
       if (this.serialTimer > 0) {
         // Serial Timing
         // IRQ Counter:
-        this.serialTimer -= this.CPUTicks;
+        this.serialTimer -= this.currentInstructionCycleCount;
         if (this.serialTimer <= 0) {
           this.interruptsRequested |= 0x8;
           this.checkIRQMatching();
         }
 
         // Bit Shift Counter:
-        this.serialShiftTimer -= this.CPUTicks;
+        this.serialShiftTimer -= this.currentInstructionCycleCount;
         if (this.serialShiftTimer <= 0) {
           this.serialShiftTimer = this.serialShiftTimerAllocated;
           // We could shift in actual link data here if we were to implement such!!!
@@ -774,17 +774,17 @@ export default class GameBoyCore {
 
   updateCore() {
     //Update the clocking for the LCD emulation:
-    this.LCDTicks += this.CPUTicks >> this.doubleSpeedShifter; // LCD Timing
+    this.LCDTicks += this.currentInstructionCycleCount >> this.doubleSpeedShifter; // LCD Timing
     this.gpu.runScanline(this.actualScanLine); //Scan Line and STAT Mode Control
     //Single-speed relative timing for A/V emulation:
-    var timedTicks = this.CPUTicks >> this.doubleSpeedShifter; // CPU clocking can be updated from the LCD handling.
+    var timedTicks = this.currentInstructionCycleCount >> this.doubleSpeedShifter; // CPU clocking can be updated from the LCD handling.
     this.audioController.audioTicks += timedTicks; // Audio Timing
     this.cpu.ticks += timedTicks; // CPU Timing
     //CPU Timers:
-    this.DIVTicks += this.CPUTicks; // DIV Timing
+    this.DIVTicks += this.currentInstructionCycleCount; // DIV Timing
     if (this.TIMAEnabled) {
       //TIMA Timing
-      this.timerTicks += this.CPUTicks;
+      this.timerTicks += this.currentInstructionCycleCount;
       while (this.timerTicks >= this.TACClocker) {
         this.timerTicks -= this.TACClocker;
         if (++this.memory[0xff05] === 0x100) {
@@ -797,13 +797,13 @@ export default class GameBoyCore {
     if (this.serialTimer > 0) {
       //Serial Timing
       //IRQ Counter:
-      this.serialTimer -= this.CPUTicks;
+      this.serialTimer -= this.currentInstructionCycleCount;
       if (this.serialTimer <= 0) {
         this.interruptsRequested |= 0x8;
         this.checkIRQMatching();
       }
       //Bit Shit Counter:
-      this.serialShiftTimer -= this.CPUTicks;
+      this.serialShiftTimer -= this.currentInstructionCycleCount;
       if (this.serialShiftTimer <= 0) {
         this.serialShiftTimer = this.serialShiftTimerAllocated;
         this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
@@ -828,7 +828,7 @@ export default class GameBoyCore {
         this.LCDTicks - this.spriteCount < (4 >> this.doubleSpeedShifter | 0x20)
       ) {
         //HALT clocking correction:
-        this.CPUTicks = 4 + (0x20 + this.spriteCount << this.doubleSpeedShifter);
+        this.currentInstructionCycleCount = 4 + (0x20 + this.spriteCount << this.doubleSpeedShifter);
         this.LCDTicks = this.spriteCount + (4 >> this.doubleSpeedShifter | 0x20);
       }
     } else {
@@ -1944,7 +1944,7 @@ export default class GameBoyCore {
         this.interruptsRequested -= testbit; //Reset the interrupt request.
         this.IRQLineMatched = 0; //Reset the IRQ assertion.
         //Interrupts have a certain clock cycle length:
-        this.CPUTicks = 20;
+        this.currentInstructionCycleCount = 20;
         //Set the stack pointer to the current program counter value:
         this.stackPointer = this.stackPointer - 1 & 0xffff;
         this.memoryWrite(this.stackPointer, this.programCounter >> 8);
@@ -2037,23 +2037,24 @@ export default class GameBoyCore {
     } else {
       currentClocks = this.remainingClocks;
     }
-    var maxClocks = this.cpu.cyclesTotal - this.cpu.ticks << this.doubleSpeedShifter;
+
+    const maxClocks = this.cpu.cyclesTotal - this.cpu.ticks << this.doubleSpeedShifter;
     if (currentClocks >= 0) {
       if (currentClocks <= maxClocks) {
         //Exit out of HALT normally:
-        this.CPUTicks = Math.max(currentClocks, this.CPUTicks);
+        this.currentInstructionCycleCount = Math.max(currentClocks, this.currentInstructionCycleCount);
         this.updateCoreFull();
         this.halt = false;
-        this.CPUTicks = 0;
+        this.currentInstructionCycleCount = 0;
       } else {
         //Still in HALT, clock only up to the clocks specified per iteration:
-        this.CPUTicks = Math.max(maxClocks, this.CPUTicks);
-        this.remainingClocks = currentClocks - this.CPUTicks;
+        this.currentInstructionCycleCount = Math.max(maxClocks, this.currentInstructionCycleCount);
+        this.remainingClocks = currentClocks - this.currentInstructionCycleCount;
       }
     } else {
       //Still in HALT, clock only up to the clocks specified per iteration:
       //Will stay in HALT forever (Stuck in HALT forever), but the APU and LCD are still clocked, so don't pause:
-      this.CPUTicks += maxClocks;
+      this.currentInstructionCycleCount += maxClocks;
     }
   }
 
@@ -2317,7 +2318,7 @@ export default class GameBoyCore {
   writeDirectlyToMemory(tilesToTransfer: number) {
     if (!this.halt) {
       //Clock the CPU for the DMA transfer (CPU is halted during the transfer):
-      this.CPUTicks += 4 | tilesToTransfer << 5 << this.doubleSpeedShifter;
+      this.currentInstructionCycleCount += 4 | tilesToTransfer << 5 << this.doubleSpeedShifter;
     }
     // Source address of the transfer:
     var source = this.memory[0xff51] << 8 | this.memory[0xff52];

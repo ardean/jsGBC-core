@@ -1,12 +1,42 @@
 import CPU from "../CPU";
 import * as util from "../../util";
 import settings from "../../settings";
-import dutyLookup from "../duty-lookup";
+import dutyLookup from "../dutyLookup";
 import AudioDevice from "./AudioDevice";
 import GameBoyCore from "../GameBoyCore";
 
 export default class AudioController {
-  channel3envelopeVolume: number;
+  VinLeftChannelMasterVolume: number;
+  VinRightChannelMasterVolume: number;
+  mixerOutputCache: number;
+  sequencerClocks: number;
+  sequencePosition: number;
+  cachedChannel3Sample: number;
+  cachedChannel4Sample: number;
+
+  channel1Enabled: boolean;
+  channel2Enabled: boolean;
+  channel3Enabled: boolean;
+  channel4Enabled: boolean;
+
+  channel1CanPlay: boolean;
+  channel2CanPlay: boolean;
+  channel3CanPlay: boolean;
+  channel4CanPlay: boolean;
+
+  audioClocksUntilNextEvent: number;
+  audioClocksUntilNextEventCounter: number;
+  resamplerFirstPassFactor: number;
+
+  leftChannel1: boolean;
+  rightChannel1: boolean;
+  channel1currentSampleLeft: number;
+  channel1currentSampleRight: number;
+  channel1currentSampleLeftSecondary: number;
+  channel1currentSampleRightSecondary: number;
+  channel1currentSampleLeftTrimary: number;
+  channel1currentSampleRightTrimary: number;
+  channel1FrequencyCounter: number;
   channel1FrequencyTracker: number;
   channel1DutyTracker: number;
   channel1CachedDuty: boolean[];
@@ -24,6 +54,15 @@ export default class AudioController {
   channel1Swept: boolean;
   channel1frequencySweepDivider: number;
   channel1decreaseSweep: boolean;
+
+  leftChannel2: boolean;
+  rightChannel2: boolean;
+  channel2currentSampleLeft: number;
+  channel2currentSampleRight: number;
+  channel2currentSampleLeftSecondary: number;
+  channel2currentSampleRightSecondary: number;
+  channel2currentSampleLeftTrimary: number;
+  channel2currentSampleRightTrimary: number;
   channel2FrequencyTracker: number;
   channel2DutyTracker: number;
   channel2CachedDuty: boolean[];
@@ -34,11 +73,31 @@ export default class AudioController {
   channel2envelopeSweepsLast: number;
   channel2consecutive: boolean;
   channel2frequency: number;
+  channel2FrequencyCounter: number;
+
+  leftChannel3: boolean;
+  rightChannel3: boolean;
+  channel3currentSampleLeft: number;
+  channel3currentSampleRight: number;
+  channel3currentSampleLeftSecondary: number;
+  channel3currentSampleRightSecondary: number;
+  channel3envelopeVolume: number;
   channel3totalLength: number;
   channel3patternType: number;
   channel3frequency: number;
   channel3consecutive: boolean;
   channel3Counter: number;
+  channel3FrequencyPeriod: number;
+  channel3lastSampleLookup: number;
+  channel3PCM: Int8Array;
+
+  leftChannel4: boolean;
+  rightChannel4: boolean;
+  channel4Counter: number;
+  channel4currentSampleLeft: number;
+  channel4currentSampleRight: number;
+  channel4currentSampleLeftSecondary: number;
+  channel4currentSampleRightSecondary: number;
   channel4FrequencyPeriod: number;
   channel4totalLength: number;
   channel4envelopeVolume: number;
@@ -49,61 +108,10 @@ export default class AudioController {
   channel4consecutive: boolean;
   channel4BitRange: number;
   channel4VolumeShifter: number;
-  channel1FrequencyCounter: number;
-  channel2FrequencyCounter: number;
-  channel3FrequencyPeriod: number;
-  channel3lastSampleLookup: number;
   channel4lastSampleLookup: number;
-  VinLeftChannelMasterVolume: number;
-  VinRightChannelMasterVolume: number;
-  mixerOutputCache: number;
-  sequencerClocks: number;
-  sequencePosition: number;
-  channel4Counter: number;
-  cachedChannel3Sample: number;
-  cachedChannel4Sample: number;
-  channel1Enabled: boolean;
-  channel2Enabled: boolean;
-  channel3Enabled: boolean;
-  channel4Enabled: boolean;
-  channel1CanPlay: boolean;
-  channel2CanPlay: boolean;
-  channel3CanPlay: boolean;
-  channel4CanPlay: boolean;
-  audioClocksUntilNextEvent: number;
-  audioClocksUntilNextEventCounter: number;
-  resamplerFirstPassFactor: number;
-  channel1currentSampleLeft: any;
-  leftChannel1: boolean;
-  channel1currentSampleRight: any;
-  rightChannel1: boolean;
-  channel1currentSampleLeftSecondary: any;
-  channel1currentSampleRightSecondary: any;
-  channel1currentSampleLeftTrimary: any;
-  channel1currentSampleRightTrimary: any;
-  channel2currentSampleLeft: any;
-  leftChannel2: boolean;
-  channel2currentSampleRight: any;
-  rightChannel2: boolean;
-  channel2currentSampleLeftSecondary: any;
-  channel2currentSampleRightSecondary: any;
-  channel2currentSampleLeftTrimary: any;
-  channel2currentSampleRightTrimary: any;
-  channel3currentSampleLeft: any;
-  leftChannel3: boolean;
-  channel3currentSampleRight: any;
-  rightChannel3: boolean;
-  channel3currentSampleLeftSecondary: any;
-  channel3currentSampleRightSecondary: any;
-  channel4currentSampleLeft: any;
-  leftChannel4: boolean;
-  channel4currentSampleRight: any;
-  rightChannel4: boolean;
-  channel4currentSampleLeftSecondary: any;
-  channel4currentSampleRightSecondary: any;
+
   downSampleInputDivider: number;
   device: AudioDevice;
-  channel3PCM: Int8Array;
   memory: util.TypedArray;
   gameboy: GameBoyCore;
   cpu: CPU;
@@ -339,8 +347,8 @@ export default class AudioController {
     this.memory[0xff26] = 0;
     this.enabled = false;
 
-    for (let index = 0xff10; index < 0xff26; index++) {
-      this.gameboy.memoryWriter[index].apply(this, [index, 0]);
+    for (let address = 0xff10; address < 0xff26; address++) {
+      this.gameboy.memoryWrite(address, 0);
     }
   }
 

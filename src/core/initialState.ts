@@ -1,4 +1,4 @@
-import dutyLookup from "./duty-lookup";
+import dutyLookup from "./dutyLookup";
 
 export default [
   true, // Whether we're in the GBC boot ROM.

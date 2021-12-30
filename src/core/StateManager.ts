@@ -1,6 +1,6 @@
-import { toTypedArray, concatArrayBuffers } from "../util";
-import initialState from "./initial-state";
 import GameBoyCore from "./GameBoyCore";
+import initialState from "./initialState";
+import { toTypedArray, concatArrayBuffers } from "../util";
 
 export default class StateManager {
   gameboy: GameBoyCore;
@@ -39,7 +39,7 @@ export default class StateManager {
     //   gameboy.halt,
     //   gameboy.IME,
     //   gameboy.hdmaRunning,
-    //   gameboy.CPUTicks,
+    //   gameboy.currentInstructionCycleCount,
     //   gameboy.doubleSpeedShifter,
     //   // fromTypedArray(gameboy.memory),
     //   // fromTypedArray(gameboy.VRAM),
@@ -249,7 +249,7 @@ export default class StateManager {
     gameboy.halt = state[index++];
     gameboy.IME = state[index++];
     gameboy.hdmaRunning = state[index++];
-    gameboy.CPUTicks = state[index++];
+    gameboy.currentInstructionCycleCount = state[index++];
     gameboy.doubleSpeedShifter = state[index++];
     gameboy.memory = toTypedArray(state[index++], "uint8");
     gameboy.VRAM = toTypedArray(state[index++], "uint8");

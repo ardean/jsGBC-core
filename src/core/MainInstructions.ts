@@ -248,7 +248,7 @@ export default [
   function () {
     if (!this.FZero) {
       this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 1 & 0xffff;
     }
@@ -325,7 +325,7 @@ export default [
   function () {
     if (this.FZero) {
       this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 1 & 0xffff;
     }
@@ -384,7 +384,7 @@ export default [
   function () {
     if (!this.FCarry) {
       this.programCounter = this.programCounter + (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 1 & 0xffff;
     }
@@ -454,7 +454,7 @@ export default [
     if (this.FCarry) {
       this.programCounter = this.programCounter +
         (this.memoryRead(this.programCounter) << 24 >> 24) + 1 & 0xffff;
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 1 & 0xffff;
     }
@@ -805,7 +805,7 @@ export default [
         this.skipPCIncrement = true;
       } else {
         //CGB gets around the HALT PC bug by doubling the hidden NOP.
-        this.CPUTicks += 4;
+        this.currentInstructionCycleCount += 4;
       }
     } else {
       //CPU is stalled until the next IRQ match:
@@ -1484,7 +1484,7 @@ export default [
     if (!this.FZero) {
       this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
       this.stackPointer = this.stackPointer + 2 & 0xffff;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     }
   },
   //POP BC
@@ -1501,7 +1501,7 @@ export default [
       this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) <<
         8 |
         this.memoryRead(this.programCounter);
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
@@ -1531,7 +1531,7 @@ export default [
         this.programCounter & 0xff
       );
       this.programCounter = temp_pc;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
@@ -1583,7 +1583,7 @@ export default [
     if (this.FZero) {
       this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
       this.stackPointer = this.stackPointer + 2 & 0xffff;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     }
   },
   //RET
@@ -1597,7 +1597,7 @@ export default [
   function () {
     if (this.FZero) {
       this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) << 8 | this.memoryRead(this.programCounter);
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
@@ -1609,7 +1609,7 @@ export default [
     //Increment the program counter to the next instruction:
     this.programCounter = this.programCounter + 1 & 0xffff;
     //Get how many CPU cycles the current 0xCBXX op code counts for:
-    this.CPUTicks += SecondaryTickTable[operationCode];
+    this.currentInstructionCycleCount += SecondaryTickTable[operationCode];
     //Execute secondary OP codes for the 0xCB OP code call.
     bitInstructions[operationCode].apply(this);
   },
@@ -1630,7 +1630,7 @@ export default [
         this.programCounter & 0xff
       );
       this.programCounter = temp_pc;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
@@ -1689,7 +1689,7 @@ export default [
     if (!this.FCarry) {
       this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
       this.stackPointer = this.stackPointer + 2 & 0xffff;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     }
   },
   //POP DE
@@ -1706,7 +1706,7 @@ export default [
       this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) <<
         8 |
         this.memoryRead(this.programCounter);
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
@@ -1733,7 +1733,7 @@ export default [
         this.programCounter & 0xff
       );
       this.programCounter = temp_pc;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
@@ -1784,7 +1784,7 @@ export default [
     if (this.FCarry) {
       this.programCounter = this.memoryRead(this.stackPointer + 1 & 0xffff) << 8 | this.memoryRead(this.stackPointer);
       this.stackPointer = this.stackPointer + 2 & 0xffff;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     }
   },
   //RETI
@@ -1802,7 +1802,7 @@ export default [
       this.programCounter = this.memoryRead(this.programCounter + 1 & 0xffff) <<
         8 |
         this.memoryRead(this.programCounter);
-      this.CPUTicks += 4;
+      this.currentInstructionCycleCount += 4;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
@@ -1830,7 +1830,7 @@ export default [
         this.programCounter & 0xff
       );
       this.programCounter = temp_pc;
-      this.CPUTicks += 12;
+      this.currentInstructionCycleCount += 12;
     } else {
       this.programCounter = this.programCounter + 2 & 0xffff;
     }
