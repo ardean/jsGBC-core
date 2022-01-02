@@ -7,7 +7,7 @@ export default class LcdDevice {
   gameboy: GameBoyCore;
   offscreenWidth: number;
   offscreenHeight: number;
-  offscreenRGBACount: number;
+  offscreenRgbaCount: number;
   width: any;
   height: any;
   swizzledFrame: Uint8Array;
@@ -15,11 +15,11 @@ export default class LcdDevice {
   drewFrame: boolean;
   resizer: any;
   drewBlank: number;
-  colorizedGBPalettes: any;
+  colorizedGbPalettes: any;
   offscreenCanvas: any;
   canvas: any;
   resizePathClear: boolean;
-  offscreenRGBCount: number;
+  offscreenRgbCount: number;
 
   constructor({
     canvas,
@@ -37,8 +37,8 @@ export default class LcdDevice {
     this.gameboy = gameboy;
     this.offscreenWidth = 160;
     this.offscreenHeight = 144;
-    this.offscreenRGBCount = this.offscreenWidth * this.offscreenHeight * 3;
-    this.offscreenRGBACount = this.offscreenWidth * this.offscreenHeight * 4;
+    this.offscreenRgbCount = this.offscreenWidth * this.offscreenHeight * 3;
+    this.offscreenRgbaCount = this.offscreenWidth * this.offscreenHeight * 4;
     this.width = width || this.offscreenWidth;
     this.height = height || this.offscreenHeight;
     this.swizzledFrame = null; // The secondary gfx buffer that holds the converted RGBA values.
@@ -90,7 +90,7 @@ export default class LcdDevice {
       this.offscreenHeight
     );
 
-    let index = this.offscreenRGBACount;
+    let index = this.offscreenRgbaCount;
     while (index > 0) {
       index -= 4;
       this.canvasBuffer.data[index] = 0xf8;
@@ -102,7 +102,7 @@ export default class LcdDevice {
     this.graphicsBlit();
     if (!this.swizzledFrame)
       this.swizzledFrame = util.getTypedArray(
-        this.offscreenRGBCount,
+        this.offscreenRgbCount,
         0xff,
         "uint8"
       ) as Uint8Array;
@@ -132,9 +132,9 @@ export default class LcdDevice {
 
   requestDraw() {
     if (this.drewFrame) {
-      if (this.offscreenRGBACount > 0) {
+      if (this.offscreenRgbaCount > 0) {
         // We actually updated the graphics internally, so copy out:
-        if (this.offscreenRGBACount === 92160) {
+        if (this.offscreenRgbaCount === 92160) {
           this.processDraw(this.swizzledFrame);
         }
       }
@@ -146,7 +146,7 @@ export default class LcdDevice {
     let bufferIndex = 0;
     let canvasIndex = 0;
 
-    while (canvasIndex < this.offscreenRGBACount) {
+    while (canvasIndex < this.offscreenRgbaCount) {
       canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
       canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
       canvasData[canvasIndex++] = frameBuffer[bufferIndex++];
@@ -169,7 +169,7 @@ export default class LcdDevice {
     const swizzledFrame = this.swizzledFrame;
     let bufferIndex = 0;
     let canvasIndex = 0;
-    while (canvasIndex < this.offscreenRGBCount) {
+    while (canvasIndex < this.offscreenRgbCount) {
       swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 16 & 0xff; // red
       swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] >> 8 & 0xff; // green
       swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] & 0xff; // blue
@@ -177,7 +177,7 @@ export default class LcdDevice {
     }
   }
 
-  DisplayShowOff() {
+  turnOff() {
     if (this.drewBlank === 0) {
       // Output a blank screen to the output framebuffer:
       this.clearFrameBuffer();
@@ -189,12 +189,15 @@ export default class LcdDevice {
   clearFrameBuffer() {
     const frameBuffer = this.swizzledFrame;
     let bufferIndex = 0;
-    if (this.gameboy.cartridge.useGbcMode || this.colorizedGBPalettes) {
-      while (bufferIndex < this.offscreenRGBCount) {
+    if (
+      this.gameboy.cartridge.useGbcMode ||
+      this.colorizedGbPalettes
+    ) {
+      while (bufferIndex < this.offscreenRgbCount) {
         frameBuffer[bufferIndex++] = 248;
       }
     } else {
-      while (bufferIndex < this.offscreenRGBCount) {
+      while (bufferIndex < this.offscreenRgbCount) {
         frameBuffer[bufferIndex++] = 239;
         frameBuffer[bufferIndex++] = 255;
         frameBuffer[bufferIndex++] = 222;

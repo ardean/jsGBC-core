@@ -835,7 +835,7 @@ export default class Memory {
             } else {
               this.gameboy.modeSTAT = 0;
               this.gameboy.gpu.disableLCD();
-              this.gameboy.lcdDevice.DisplayShowOff();
+              this.gameboy.lcdDevice.turnOff();
             }
             this.gameboy.interruptRequestedFlags &= 0xfd;
           }
@@ -1015,7 +1015,7 @@ export default class Memory {
             } else {
               this.gameboy.modeSTAT = 0;
               this.gameboy.gpu.disableLCD();
-              this.gameboy.lcdDevice.DisplayShowOff();
+              this.gameboy.lcdDevice.turnOff();
             }
             this.gameboy.interruptRequestedFlags &= 0xfd;
           }
