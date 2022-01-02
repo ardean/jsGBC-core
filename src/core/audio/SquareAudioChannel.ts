@@ -1,5 +1,6 @@
 import settings from "../../settings";
 import dutyLookup from "../dutyLookup";
+import GameBoyCore from "../GameBoyCore";
 import AudioChannel from "./AudioChannel";
 
 export default class SquareAudioChannel extends AudioChannel {
@@ -16,17 +17,34 @@ export default class SquareAudioChannel extends AudioChannel {
   totalLength: number;
   envelopeVolume: number;
   envelopeType: boolean;
-  envelopeSweeps: number;
-  envelopeSweepsLast: number;
   consecutive: boolean;
   frequency: number;
-  sweepFault: boolean;
   shadowFrequency: number;
+  envelopeSweeps: number;
+  envelopeSweepsLast: number;
+
+  sweepEnabled: boolean = false;
+  sweepFault: boolean;
   timeSweep: number;
   lastTimeSweep: number;
   swept: boolean;
-  frequencySweepDivider: number;
   decreaseSweep: boolean;
+  frequencySweepDivider: number;
+
+  constructor(
+    protected gameboy: GameBoyCore,
+    options: { sweepEnabled?: boolean; } = {}
+  ) {
+    super(gameboy);
+    this.sweepEnabled = !!options.sweepEnabled;
+  }
+
+  init() {
+    this.leftChannelEnabled = false;
+    this.rightChannelEnabled = false;
+    this.frequency = 0;
+    this.consecutive = false;
+  }
 
   setInitialState() {
     this.enabled = false;
@@ -38,17 +56,20 @@ export default class SquareAudioChannel extends AudioChannel {
     this.totalLength = 0;
     this.envelopeVolume = 0;
     this.envelopeType = false;
-    this.envelopeSweeps = 0;
-    this.envelopeSweepsLast = 0;
     this.consecutive = true;
     this.frequency = 0;
-    this.sweepFault = false;
     this.shadowFrequency = 0;
-    this.timeSweep = 1;
-    this.lastTimeSweep = 0;
-    this.swept = false;
-    this.frequencySweepDivider = 0;
-    this.decreaseSweep = false;
+    this.envelopeSweeps = 0;
+    this.envelopeSweepsLast = 0;
+
+    if (this.sweepEnabled) {
+      this.sweepFault = false;
+      this.timeSweep = 1;
+      this.lastTimeSweep = 0;
+      this.swept = false;
+      this.frequencySweepDivider = 0;
+      this.decreaseSweep = false;
+    }
   }
 
   setSkippedBootRomState() {
@@ -61,17 +82,20 @@ export default class SquareAudioChannel extends AudioChannel {
     this.totalLength = 0;
     this.envelopeVolume = 0;
     this.envelopeType = false;
-    this.envelopeSweeps = 0;
-    this.envelopeSweepsLast = 0;
     this.consecutive = true;
     this.frequency = 1985;
-    this.sweepFault = true;
     this.shadowFrequency = 1985;
-    this.timeSweep = 1;
-    this.lastTimeSweep = 0;
-    this.swept = false;
-    this.frequencySweepDivider = 0;
-    this.decreaseSweep = false;
+    this.envelopeSweeps = 0;
+    this.envelopeSweepsLast = 0;
+
+    if (this.sweepEnabled) {
+      this.swept = false;
+      this.sweepFault = true;
+      this.decreaseSweep = false;
+      this.frequencySweepDivider = 0;
+      this.timeSweep = 1;
+      this.lastTimeSweep = 0;
+    }
   }
 
   envelope() {
@@ -83,14 +107,20 @@ export default class SquareAudioChannel extends AudioChannel {
           if (this.envelopeVolume > 0) {
             --this.envelopeVolume;
             this.envelopeSweeps = this.envelopeSweepsLast;
-            this.gameboy.audioController.cacheChannel1OutputLevel();
+            this.setFirstStageSamples();
+            this.setSecondStageSamples();
+            this.setThirdStageSamples();
+            this.gameboy.audioController.cacheMixerOutputLevel();
           } else {
             this.envelopeSweepsLast = -1;
           }
         } else if (this.envelopeVolume < 0xf) {
           ++this.envelopeVolume;
           this.envelopeSweeps = this.envelopeSweepsLast;
-          this.gameboy.audioController.cacheChannel1OutputLevel();
+          this.setFirstStageSamples();
+          this.setSecondStageSamples();
+          this.setThirdStageSamples();
+          this.gameboy.audioController.cacheMixerOutputLevel();
         } else {
           this.envelopeSweepsLast = -1;
         }
@@ -117,26 +147,29 @@ export default class SquareAudioChannel extends AudioChannel {
     this.totalLength = 0x40 - (data & 0x3f);
   }
 
-  setEnvelopeVolume(data: number) {
+  setEnvelopeVolume(address: number, data: number) {
     if (
       this.enabled &&
       this.envelopeSweeps === 0
     ) {
       // Zombie Volume PAPU Bug:
-      if (((this.gameboy.memory[0xff12] ^ data) & 0x8) === 0x8) {
-        if ((this.gameboy.memory[0xff12] & 0x8) === 0) {
-          if ((this.gameboy.memory[0xff12] & 0x7) === 0x7) {
+      if (((this.gameboy.memory[address] ^ data) & 0x8) === 0x8) {
+        if ((this.gameboy.memory[address] & 0x8) === 0) {
+          if ((this.gameboy.memory[address] & 0x7) === 0x7) {
             this.envelopeVolume += 2;
           } else {
             ++this.envelopeVolume;
           }
         }
         this.envelopeVolume = 16 - this.envelopeVolume & 0xf;
-      } else if ((this.gameboy.memory[0xff12] & 0xf) === 0x8) {
+      } else if ((this.gameboy.memory[address] & 0xf) === 0x8) {
         this.envelopeVolume = 1 + this.envelopeVolume & 0xf;
       }
 
-      this.gameboy.audioController.cacheChannel1OutputLevel();
+      this.setFirstStageSamples();
+      this.setSecondStageSamples();
+      this.setThirdStageSamples();
+      this.gameboy.audioController.cacheMixerOutputLevel();
     }
   }
 
@@ -163,22 +196,26 @@ export default class SquareAudioChannel extends AudioChannel {
       !this.sweepFault &&
       this.canPlay
     );
-    this.gameboy.audioController.cacheChannel1OutputLevelSecondary();
+    this.setSecondStageSamples();
+    this.setThirdStageSamples();
+    this.gameboy.audioController.cacheMixerOutputLevel();
   }
 
   checkVolumeEnabled() {
     this.canPlay = this.gameboy.memory[0xff12] > 7;
     this.checkEnabled();
-    this.gameboy.audioController.cacheChannel1OutputLevelSecondary();
+    this.setSecondStageSamples();
+    this.setThirdStageSamples();
+    this.gameboy.audioController.cacheMixerOutputLevel();
   }
 
-  length() {
+  length(value: number) {
     if (this.totalLength > 1) {
       --this.totalLength;
     } else if (this.totalLength === 1) {
       this.totalLength = 0;
       this.checkEnabled();
-      this.gameboy.memory[0xff26] &= 0xfe; // Channel #1 On Flag Off
+      this.gameboy.memory[0xff26] &= value; // set Channel On Flag Off
     }
   }
 
