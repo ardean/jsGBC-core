@@ -193,7 +193,7 @@ export default class GameBoyCore {
       cartridge.mbc.addListener("rumble", this.onRumble);
       cartridge.mbc.setupROM();
       cartridge.mbc.on("ramWrite", () => {
-        this.events.emit("sramWrite");
+        this.events.emit("mbcRamWrite");
       });
     }
 

@@ -32,62 +32,60 @@ export default class MBC3 extends MBC {
   };
 
   writeRam = (address: number, data: number) => {
-    if (this.ramBanksEnabled) {
-      switch (this.currentMbcRamBank) {
-        case 0x00:
-        case 0x01:
-        case 0x02:
-        case 0x03:
-          this.emit("ramWrite");
-          this.ram[address + this.currentRamBankPosition] = data;
-          break;
-        case 0x08:
-          this.rtc?.writeSeconds(data);
-          break;
-        case 0x09:
-          this.rtc?.writeMinutes(data);
-          break;
-        case 0x0a:
-          this.rtc?.writeHours(data);
-          break;
-        case 0x0b:
-          this.rtc?.writeDaysLow(data);
-          break;
-        case 0x0c:
-          this.rtc?.writeDaysHigh(data);
-          break;
-        default:
-          console.log("Invalid MBC3 bank address selected: " + this.currentMbcRamBank);
-      }
+    if (!this.ramBanksEnabled) return;
+
+    switch (this.currentMbcRamBank) {
+      case 0x00:
+      case 0x01:
+      case 0x02:
+      case 0x03:
+        this.emit("ramWrite");
+        this.ram[address + this.currentRamBankPosition] = data;
+        break;
+      case 0x08:
+        this.rtc?.writeSeconds(data);
+        break;
+      case 0x09:
+        this.rtc?.writeMinutes(data);
+        break;
+      case 0x0a:
+        this.rtc?.writeHours(data);
+        break;
+      case 0x0b:
+        this.rtc?.writeDaysLow(data);
+        break;
+      case 0x0c:
+        this.rtc?.writeDaysHigh(data);
+        break;
+      default:
+        console.log("Invalid MBC3 bank address selected: " + this.currentMbcRamBank);
     }
   };
 
   readRam(address: number) {
-    if (this.ramBanksEnabled) {
-      switch (this.currentMbcRamBank) {
-        case 0x00:
-        case 0x01:
-        case 0x02:
-        case 0x03:
-          return this.ram[address + this.currentRamBankPosition];
-        case 0x08:
-          if (this.rtc) return this.rtc.readSeconds();
-          break;
-        case 0x09:
-          if (this.rtc) return this.rtc.readMinutes();
-          break;
-        case 0x0a:
-          if (this.rtc) return this.rtc.readHours();
-          break;
-        case 0x0b:
-          if (this.rtc) return this.rtc.readDaysLow();
-          break;
-        case 0x0c:
-          if (this.rtc) return this.rtc.readDaysHigh();
-          break;
-      }
-    }
+    if (!this.ramBanksEnabled) return 0xFF;
 
-    return 0xff;
+    switch (this.currentMbcRamBank) {
+      case 0x00:
+      case 0x01:
+      case 0x02:
+      case 0x03:
+        return this.ram[address + this.currentRamBankPosition];
+      case 0x08:
+        if (this.rtc) return this.rtc.readSeconds();
+        break;
+      case 0x09:
+        if (this.rtc) return this.rtc.readMinutes();
+        break;
+      case 0x0a:
+        if (this.rtc) return this.rtc.readHours();
+        break;
+      case 0x0b:
+        if (this.rtc) return this.rtc.readDaysLow();
+        break;
+      case 0x0c:
+        if (this.rtc) return this.rtc.readDaysHigh();
+        break;
+    }
   }
 }

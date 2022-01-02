@@ -36,7 +36,7 @@ export default class GameBoy extends EventEmitter {
       this.autoSave.bind(this),
       100
     );
-    this.core.events.on("sramWrite", () => {
+    this.core.events.on("mbcRamWrite", () => {
       if (!this.core.cartridge) return;
       this.debouncedAutoSave();
     });

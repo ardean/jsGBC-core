@@ -85,10 +85,10 @@ export default class MBC extends EventEmitter {
   }
 
   writeRam = (address: number, data: number) => {
-    if (this.ramBanksEnabled) {
-      this.emit("ramWrite");
-      this.ram[address + this.currentRamBankPosition] = data;
-    }
+    if (!this.ramBanksEnabled) return;
+
+    this.emit("ramWrite");
+    this.ram[address + this.currentRamBankPosition] = data;
   };
 
   // TODO: for MBC2 & MBC3, compare with other MBCx
