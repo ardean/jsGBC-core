@@ -822,7 +822,15 @@ export default class Memory {
             this.gameboy.gpu.lcdEnabled = isLcdOn;
             this.gameboy.memory[0xff41] &= 0x78;
             this.gameboy.midScanlineOffset = -1;
-            this.gameboy.cpu.totalLinesPassed = this.gameboy.currentX = this.gameboy.queuedScanLines = this.gameboy.lastUnrenderedLine = this.gameboy.STATTracker = this.gameboy.LCDTicks = this.gameboy.actualScanLine = this.gameboy.memory[0xff44] = 0;
+            this.gameboy.cpu.totalLinesPassed =
+              this.gameboy.currentX =
+              this.gameboy.queuedScanLines =
+              this.gameboy.lastUnrenderedLine =
+              this.gameboy.STATTracker =
+              this.gameboy.LCDTicks =
+              this.gameboy.actualScanLine =
+              this.gameboy.memory[0xff44] =
+              0;
             if (this.gameboy.gpu.lcdEnabled) {
               this.gameboy.modeSTAT = 2;
               this.gameboy.matchLYC(); // Get the compare of the first scan line.
