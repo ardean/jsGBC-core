@@ -1,4 +1,4 @@
-import MBC from "./mbc";
+import MBC from "./MBC_";
 
 export default class RTC {
   lastTime: number;

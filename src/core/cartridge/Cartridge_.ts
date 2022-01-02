@@ -1,15 +1,15 @@
 import settings from "../../settings";
 import ROM from "../ROM";
-import MBC from "./mbc";
-import MBC1 from "./mbc1";
-import MBC2 from "./mbc2";
-import MBC3 from "./mbc3";
-import MBC5 from "./mbc5";
-import MBC7 from "./mbc7";
+import MBC from "./MBC_";
+import MBC1 from "./MBC1_";
+import MBC2 from "./MBC2_";
+import MBC3 from "./MBC3_";
+import MBC5 from "./MBC5_";
+import MBC7 from "./MBC7_";
 import RUMBLE from "./RUMBLE";
 import GameBoyCore from "../GameBoyCore";
 
-const GAME_AND_WATCH_ID = "Game and Watch 50";
+const gameAndWatchGameCode = "Game and Watch 50";
 
 export default class Cartridge {
   hasMBC1: boolean = false; // does the cartridge use MBC1?
@@ -94,7 +94,7 @@ export default class Cartridge {
           this.useGbcMode = false;
           break;
         case 0x32: // Exception to the GBC identifying code:
-          if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === GAME_AND_WATCH_ID) {
+          if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === gameAndWatchGameCode) {
             this.useGbcMode = true;
             console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
           } else {
@@ -130,7 +130,7 @@ export default class Cartridge {
   setGbcMode(data: number) {
     this.useGbcMode = (data & 0x1) === 0;
     // Exception to the GBC identifying code:
-    if (this.name + this.gameCode + this.colorCompatibilityByte === GAME_AND_WATCH_ID) {
+    if (this.name + this.gameCode + this.colorCompatibilityByte === gameAndWatchGameCode) {
       this.useGbcMode = true;
       console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
     }

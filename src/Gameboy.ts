@@ -2,7 +2,7 @@ import ROM from "./core/ROM";
 import Actions from "./actions";
 import settings from "./settings";
 import { EventEmitter } from "events";
-import Cartridge from "./core/cartridge";
+import Cartridge from "./core/cartridge/Cartridge_";
 import Storage from "./storages/Storage";
 import GameBoyCore from "./core/GameBoyCore";
 import LocalStorage from "./storages/LocalStorage";
@@ -32,7 +32,10 @@ export default class GameBoy extends EventEmitter {
       lcd: options.lcd
     });
 
-    this.debouncedAutoSave = debounce(this.autoSave.bind(this), 100);
+    this.debouncedAutoSave = debounce(
+      this.autoSave.bind(this),
+      100
+    );
     this.core.events.on("sramWrite", () => {
       if (!this.core.cartridge) return;
       this.debouncedAutoSave();

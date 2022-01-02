@@ -1,4 +1,4 @@
-import MBC from "./mbc";
+import MBC from "./MBC_";
 
 export default class MBC2 extends MBC {
   writeROMBank(address, data) {

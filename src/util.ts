@@ -174,9 +174,8 @@ export function hasExtension(filename: string, extension: string): boolean {
   return filename.lastIndexOf(extension) === filename.length - extension.length;
 }
 
-export function debounce(func, wait, immediate?): Debounced {
+export function debounce(func, wait: number): Debounced {
   var timeout, args, context, timestamp, result;
-  if (null == wait) wait = 100;
 
   function later() {
     var last = Date.now() - timestamp;
@@ -185,10 +184,8 @@ export function debounce(func, wait, immediate?): Debounced {
       timeout = setTimeout(later, wait - last);
     } else {
       timeout = null;
-      if (!immediate) {
-        result = func.apply(context, args);
-        context = args = null;
-      }
+      result = func.apply(context, args);
+      context = args = null;
     }
   };
 
@@ -196,12 +193,7 @@ export function debounce(func, wait, immediate?): Debounced {
     context = this;
     args = arguments;
     timestamp = Date.now();
-    var callNow = immediate && !timeout;
     if (!timeout) timeout = setTimeout(later, wait);
-    if (callNow) {
-      result = func.apply(context, args);
-      context = args = null;
-    }
 
     return result;
   };

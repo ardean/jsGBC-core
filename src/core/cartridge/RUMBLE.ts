@@ -1,4 +1,4 @@
-import MBC5 from "./mbc5";
+import MBC5 from "./MBC5_";
 
 export default class RUMBLE extends MBC5 {
   writeRAMBank(address: number, data: number) {

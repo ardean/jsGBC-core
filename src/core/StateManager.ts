@@ -258,7 +258,7 @@ export default class StateManager {
     gameboy.gbcRamBankPosition = state[index++];
     gameboy.ROMBank1Offset = state[index++];
     if (gameboy.cartridge) {
-      gameboy.cartridge.mbc.currentROMBank = state[index++];
+      gameboy.cartridge.mbc.currentRomBank = state[index++];
     } else {
       index++;
     }
@@ -290,7 +290,7 @@ export default class StateManager {
     }
     gameboy.drewBlank = state[index++];
     gameboy.frameBuffer = toTypedArray(state[index++], "int32");
-    gameboy.bgEnabled = state[index++];
+    gameboy.backgroundEnabled = state[index++];
     gameboy.audioController.channel1FrequencyTracker = state[index++];
     gameboy.audioController.channel1FrequencyCounter = state[index++];
     gameboy.audioController.channel1totalLength = state[index++];

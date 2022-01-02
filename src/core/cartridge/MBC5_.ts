@@ -1,9 +1,9 @@
-import MBC from "./mbc";
+import MBC from "./MBC_";
 
 export default class MBC5 extends MBC {
   setCurrentROMBank() {
     // Read the cartridge ROM data from RAM memory:
-    this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
+    this.currentRomBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
   }
 
   writeROMBankLow(address, data) {

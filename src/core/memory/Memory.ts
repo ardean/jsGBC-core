@@ -101,7 +101,7 @@ export default class Memory {
 
   init() {
     this.setReaders(MemoryLayout.INTERRUPT_VECTORS_START, MemoryLayout.CART_ROM_BANK0_END, (address: number) => this.data[address]);
-    this.setReaders(MemoryLayout.CART_ROM_SWITCH_BANK_START, MemoryLayout.CART_ROM_SWITCH_BANK_END, (address: number) => this.gameboy.cartridge.rom.getByte(this.gameboy.cartridge.mbc.currentROMBank + address));
+    this.setReaders(MemoryLayout.CART_ROM_SWITCH_BANK_START, MemoryLayout.CART_ROM_SWITCH_BANK_END, (address: number) => this.gameboy.cartridge.rom.getByte(this.gameboy.cartridge.mbc.currentRomBank + address));
     this.setReaders(MemoryLayout.TILE_SET_0_START, MemoryLayout.TILE_SET_1_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMDATAReadCGBCPU : this.gameboy.VRAMDATAReadDMGCPU);
     this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMCHRReadCGBCPU : this.gameboy.VRAMCHRReadDMGCPU);
 
@@ -632,12 +632,7 @@ export default class Memory {
         this.gameboy.memoryWriter[address] = this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMGBCCHRMAPWrite : this.gameboy.VRAMGBCHRMAPWrite;
       } else if (address < 0xc000) {
         if (this.gameboy.cartridge.mbc && this.gameboy.cartridge.mbc.ramSize !== 0) {
-          if (!this.gameboy.cartridge.hasMBC3) {
-            this.gameboy.memoryWriter[address] = this.gameboy.memoryWriteMBCRAM;
-          } else {
-            //MBC3 RTC + RAM:
-            this.gameboy.memoryWriter[address] = this.gameboy.memoryWriteMBC3RAM;
-          }
+          this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.writeRam;
         } else {
           this.gameboy.memoryWriter[address] = this.writeIllegal;
         }
@@ -737,14 +732,14 @@ export default class Memory {
 
     //SCY
     this.gameboy.highMemoryWriter[0x42] = this.gameboy.memoryWriter[0xff42] = (address: number, data: number) => {
-      if (this.gameboy.backgroundY != data) {
+      if (this.gameboy.backgroundY !== data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.backgroundY = data;
       }
     };
     //SCX
     this.gameboy.highMemoryWriter[0x43] = this.gameboy.memoryWriter[0xff43] = (address: number, data: number) => {
-      if (this.gameboy.backgroundX != data) {
+      if (this.gameboy.backgroundX !== data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.backgroundX = data;
       }
@@ -761,7 +756,7 @@ export default class Memory {
     };
     //LYC
     this.gameboy.highMemoryWriter[0x45] = this.gameboy.memoryWriter[0xff45] = (address: number, data: number) => {
-      if (this.gameboy.memory[0xff45] != data) {
+      if (this.gameboy.memory[0xff45] !== data) {
         this.gameboy.memory[0xff45] = data;
         if (this.gameboy.gpu.lcdEnabled) {
           this.gameboy.matchLYC(); //Get the compare of the first scan line.
@@ -770,14 +765,14 @@ export default class Memory {
     };
     //WY
     this.gameboy.highMemoryWriter[0x4a] = this.gameboy.memoryWriter[0xff4a] = (address: number, data: number) => {
-      if (this.gameboy.windowY != data) {
+      if (this.gameboy.windowY !== data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.windowY = data;
       }
     };
     //WX
     this.gameboy.highMemoryWriter[0x4b] = this.gameboy.memoryWriter[0xff4b] = (address: number, data: number) => {
-      if (this.gameboy.memory[0xff4b] != data) {
+      if (this.gameboy.memory[0xff4b] !== data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.memory[0xff4b] = data;
         this.gameboy.windowX = data - 7;
@@ -846,7 +841,7 @@ export default class Memory {
           this.gameboy.gfxSpriteNormalHeight = (data & 0x04) === 0;
           this.gameboy.gfxSpriteShow = (data & 0x02) === 0x02;
           this.gameboy.hasBGPriority = (data & 0x01) === 0x01;
-          this.gameboy.priorityFlaggingPathRebuild(); // Special case the priority flagging as an optimization.
+          this.gameboy.gpu.initRenderFunctions(); // Special case the priority flagging as an optimization.
           this.gameboy.memory[0xff40] = data;
         }
       };
@@ -867,7 +862,7 @@ export default class Memory {
           var newData = 0;
           do {
             newData = this.gameboy.memoryRead(data++);
-            if (newData != this.gameboy.memory[address]) {
+            if (newData !== this.gameboy.memory[address]) {
               // JIT the graphics render queue:
               this.gameboy.modeSTAT = stat;
               this.gameboy.graphicsJIT();
@@ -999,7 +994,7 @@ export default class Memory {
         }
       };
       this.gameboy.highMemoryWriter[0x40] = this.gameboy.memoryWriter[0xff40] = (address: number, data: number) => {
-        if (this.gameboy.memory[0xff40] != data) {
+        if (this.gameboy.memory[0xff40] !== data) {
           this.gameboy.midScanLineJIT();
           const newState = data > 0x7f;
           if (newState !== this.gameboy.gpu.lcdEnabled) {
@@ -1025,7 +1020,7 @@ export default class Memory {
           this.gameboy.gfxBackgroundCHRBankPosition = (data & 0x08) === 0x08 ? 0x400 : 0;
           this.gameboy.gfxSpriteNormalHeight = (data & 0x04) === 0;
           this.gameboy.gfxSpriteShow = (data & 0x02) === 0x02;
-          this.gameboy.bgEnabled = (data & 0x01) === 0x01;
+          this.gameboy.backgroundEnabled = (data & 0x01) === 0x01;
           this.gameboy.memory[0xff40] = data;
         }
       };
@@ -1051,7 +1046,7 @@ export default class Memory {
           var newData = 0;
           do {
             newData = this.gameboy.memoryRead(data++);
-            if (newData != this.gameboy.memory[address]) {
+            if (newData !== this.gameboy.memory[address]) {
               //JIT the graphics render queue:
               this.gameboy.modeSTAT = stat;
               this.gameboy.graphicsJIT();
@@ -1072,21 +1067,21 @@ export default class Memory {
         }
       };
       this.gameboy.highMemoryWriter[0x47] = this.gameboy.memoryWriter[0xff47] = (address: number, data: number) => {
-        if (this.gameboy.memory[0xff47] != data) {
+        if (this.gameboy.memory[0xff47] !== data) {
           this.gameboy.midScanLineJIT();
           this.gameboy.updateGBBGPalette(data);
           this.gameboy.memory[0xff47] = data;
         }
       };
       this.gameboy.highMemoryWriter[0x48] = this.gameboy.memoryWriter[0xff48] = (address: number, data: number) => {
-        if (this.gameboy.memory[0xff48] != data) {
+        if (this.gameboy.memory[0xff48] !== data) {
           this.gameboy.midScanLineJIT();
           this.gameboy.updateGBOBJPalette(0, data);
           this.gameboy.memory[0xff48] = data;
         }
       };
       this.gameboy.highMemoryWriter[0x49] = this.gameboy.memoryWriter[0xff49] = (address: number, data: number) => {
-        if (this.gameboy.memory[0xff49] != data) {
+        if (this.gameboy.memory[0xff49] !== data) {
           this.gameboy.midScanLineJIT();
           this.gameboy.updateGBOBJPalette(4, data);
           this.gameboy.memory[0xff49] = data;

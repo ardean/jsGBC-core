@@ -1,7 +1,6 @@
-import settings from "../../settings";
-import RTC from "./rtc";
-import MBC from "./mbc";
-import Cartridge from ".";
+import RTC from "./RTC_";
+import MBC from "./MBC_";
+import Cartridge from "./Cartridge_";
 
 export default class MBC3 extends MBC {
   rtc: RTC;
@@ -12,13 +11,13 @@ export default class MBC3 extends MBC {
     this.rtc = new RTC(this);
   }
 
-  writeROMBank(address, data) {
+  writeROMBank(address: number, data: number) {
     // MBC3 ROM bank switching:
     this.ROMBank1Offset = data & 0x7f;
     this.setCurrentROMBank();
   }
 
-  writeRAMBank(address, data) {
+  writeRAMBank(address: number, data: number) {
     this.currentMBCRAMBank = data;
     if (data < 4) {
       // MBC3 RAM bank switching
@@ -26,8 +25,8 @@ export default class MBC3 extends MBC {
     }
   }
 
-  writeRAM(address, data) {
-    if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+  writeRam = (address: number, data: number) => {
+    if (this.ramBanksEnabled) {
       switch (this.currentMBCRAMBank) {
         case 0x00:
         case 0x01:
@@ -37,29 +36,28 @@ export default class MBC3 extends MBC {
           this.ram[address + this.currentRAMBankPosition] = data;
           break;
         case 0x08:
-          this.rtc && this.rtc.writeSeconds(data);
+          this.rtc?.writeSeconds(data);
           break;
         case 0x09:
-          this.rtc && this.rtc.writeMinutes(data);
+          this.rtc?.writeMinutes(data);
           break;
         case 0x0a:
-          this.rtc && this.rtc.writeHours(data);
+          this.rtc?.writeHours(data);
           break;
         case 0x0b:
-          this.rtc && this.rtc.writeDaysLow(data);
+          this.rtc?.writeDaysLow(data);
           break;
         case 0x0c:
-          this.rtc && this.rtc.writeDaysHigh(data);
+          this.rtc?.writeDaysHigh(data);
           break;
         default:
           console.log("Invalid MBC3 bank address selected: " + this.currentMBCRAMBank);
       }
     }
-  }
+  };
 
-  readRAM(address) {
-    // Switchable RAM
-    if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+  readRam(address: number) {
+    if (this.ramBanksEnabled) {
       switch (this.currentMBCRAMBank) {
         case 0x00:
         case 0x01:
@@ -83,8 +81,6 @@ export default class MBC3 extends MBC {
           break;
       }
     }
-
-    // console.log("Reading from invalid or disabled RAM.");
 
     return 0xff;
   }

@@ -1,4 +1,4 @@
-import MBC from "./mbc";
+import MBC from "./MBC_";
 
 export default class MBC1 extends MBC {
   MBC1Mode: boolean = false; // MBC1 Type (4/32, 16/8)
@@ -42,10 +42,10 @@ export default class MBC1 extends MBC {
       case 0x40:
       case 0x60:
         // Bank calls for 0x00, 0x20, 0x40, and 0x60 are really for 0x01, 0x21, 0x41, and 0x61.
-        this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge << 14;
+        this.currentRomBank = this.ROMBank1Offset % this.ROMBankEdge << 14;
         break;
       default:
-        this.currentROMBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
+        this.currentRomBank = this.ROMBank1Offset % this.ROMBankEdge - 1 << 14;
     }
   }
 }

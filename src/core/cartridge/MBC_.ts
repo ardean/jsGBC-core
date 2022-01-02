@@ -1,17 +1,16 @@
-import { EventEmitter } from "events";
-import settings from "../../settings";
+import RTC from "./RTC_";
 import * as util from "../../util";
-import Cartridge from ".";
-import RTC from "./rtc";
+import { EventEmitter } from "events";
+import Cartridge from "./Cartridge_";
 
 export default class MBC extends EventEmitter {
-  currentROMBank: number;
+  currentRomBank: number;
   ROMBank1Offset: number;
   ram: Uint8Array;
   ROMBankEdge: number;
   currentMBCRAMBank: number;
   currentRAMBankPosition: number;
-  MBCRAMBanksEnabled: boolean;
+  ramBanksEnabled: boolean;
   romSize: number;
   ramSize: number;
   rtc?: RTC;
@@ -42,7 +41,7 @@ export default class MBC extends EventEmitter {
   constructor(cartridge: Cartridge) {
     super();
     this.cartridge = cartridge;
-    this.MBCRAMBanksEnabled = false; // MBC RAM Access Control.
+    this.ramBanksEnabled = false; // MBC RAM Access Control.
     this.currentRAMBankPosition = -0xa000; // MBC Position Adder;
     this.currentMBCRAMBank = 0; // MBC Currently Indexed RAM Bank
     this.ROMBankEdge = Math.floor(cartridge.rom.length / 0x4000);
@@ -80,34 +79,30 @@ export default class MBC extends EventEmitter {
     return util.fromTypedArray(this.ram);
   }
 
-  readRAM(address) {
-    // Switchable RAM
-    if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
-      return this.ram[address + this.currentRAMBankPosition];
-    }
-    //console.log("Reading from disabled RAM.");
-    return 0xff;
+  readRam(address: number) {
+    if (!this.ramBanksEnabled) return 0xff;
+    return this.ram[address + this.currentRAMBankPosition];
   }
 
-  writeRAM(address, data) {
-    if (this.MBCRAMBanksEnabled || settings.alwaysAllowRWtoBanks) {
+  writeRam = (address: number, data: number) => {
+    if (this.ramBanksEnabled) {
       this.emit("ramWrite");
       this.ram[address + this.currentRAMBankPosition] = data;
     }
-  }
+  };
 
   // TODO: for MBC2 & MBC3, compare with other MBCx
   setCurrentROMBank() {
     // Read the cartridge ROM data from RAM memory:
     // Only map bank 0 to bank 1 here (MBC2 is like MBC1, but can only do 16 banks, so only the bank 0 quirk appears for MBC2):
-    this.currentROMBank = Math.max(
+    this.currentRomBank = Math.max(
       this.ROMBank1Offset % this.ROMBankEdge - 1,
       0
     ) << 14;
   }
 
-  writeEnable(address, data) {
+  toggle(address: number, data: number) {
     // MBC RAM Bank Enable/Disable:
-    this.MBCRAMBanksEnabled = (data & 0x0f) === 0x0a; // If lower nibble is 0x0A, then enable, otherwise disable.
+    this.ramBanksEnabled = (data & 0x0f) === 0x0a; // If lower nibble is 0x0A, then enable, otherwise disable.
   }
 }
