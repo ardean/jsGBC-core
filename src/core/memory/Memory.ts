@@ -525,14 +525,14 @@ export default class Memory {
             };
             break;
           case 0xff76:
-            //Undocumented realtime PCM amplitude readback:
+            // Undocumented realtime PCM amplitude readback:
             this.gameboy.highMemoryReader[0x76] = this.gameboy.memoryReader[0xff76] = address => {
               this.gameboy.audioController.run();
               return this.gameboy.audioController.channel2.envelopeVolume << 4 | this.gameboy.audioController.channel1.envelopeVolume;
             };
             break;
           case 0xff77:
-            //Undocumented realtime PCM amplitude readback:
+            // Undocumented realtime PCM amplitude readback:
             this.gameboy.highMemoryReader[0x77] = this.gameboy.memoryReader[0xff77] = address => {
               this.gameboy.audioController.run();
               return this.gameboy.audioController.channel4EnvelopeVolume << 4 | this.gameboy.audioController.channel3envelopeVolume;

@@ -974,48 +974,48 @@ export default class GameBoyCore {
     this.gbBGColorizedPalette[3] = this.cachedBGPaletteConversion[data >> 6];
   }
 
-  updateGBRegularOBJPalette(index, data) {
-    this.gbOBJPalette[index | 1] = this.colors[data >> 2 & 0x03];
-    this.gbOBJPalette[index | 2] = this.colors[data >> 4 & 0x03];
-    this.gbOBJPalette[index | 3] = this.colors[data >> 6];
+  updateGBRegularOBJPalette(address: number, data: number) {
+    this.gbOBJPalette[address | 1] = this.colors[data >> 2 & 0x03];
+    this.gbOBJPalette[address | 2] = this.colors[data >> 4 & 0x03];
+    this.gbOBJPalette[address | 3] = this.colors[data >> 6];
   }
 
-  updateGBColorizedOBJPalette(index, data) {
+  updateGBColorizedOBJPalette(address: number, data: number) {
     // GB colorization:
-    this.gbOBJColorizedPalette[index | 1] = this.cachedOBJPaletteConversion[index | data >> 2 & 0x03];
-    this.gbOBJColorizedPalette[index | 2] = this.cachedOBJPaletteConversion[index | data >> 4 & 0x03];
-    this.gbOBJColorizedPalette[index | 3] = this.cachedOBJPaletteConversion[index | data >> 6];
+    this.gbOBJColorizedPalette[address | 1] = this.cachedOBJPaletteConversion[address | data >> 2 & 0x03];
+    this.gbOBJColorizedPalette[address | 2] = this.cachedOBJPaletteConversion[address | data >> 4 & 0x03];
+    this.gbOBJColorizedPalette[address | 3] = this.cachedOBJPaletteConversion[address | data >> 6];
   }
 
-  updateGBCBGPalette(index, data) {
-    if (this.gbcBGRawPalette[index] != data) {
+  updateGBCBGPalette(address: number, data: number) {
+    if (this.gbcBGRawPalette[address] != data) {
       this.midScanLineJIT();
       //Update the color palette for BG tiles since it changed:
-      this.gbcBGRawPalette[index] = data;
-      if ((index & 0x06) === 0) {
+      this.gbcBGRawPalette[address] = data;
+      if ((address & 0x06) === 0) {
         //Palette 0 (Special tile Priority stuff)
-        data = 0x2000000 | this.adjustRGBTint(this.gbcBGRawPalette[index | 1] << 8 | this.gbcBGRawPalette[index & 0x3e]);
-        index >>= 1;
-        this.gbcBGPalette[index] = data;
-        this.gbcBGPalette[0x20 | index] = 0x1000000 | data;
+        data = 0x2000000 | this.adjustRGBTint(this.gbcBGRawPalette[address | 1] << 8 | this.gbcBGRawPalette[address & 0x3e]);
+        address >>= 1;
+        this.gbcBGPalette[address] = data;
+        this.gbcBGPalette[0x20 | address] = 0x1000000 | data;
       } else {
         //Regular Palettes (No special crap)
-        data = this.adjustRGBTint(this.gbcBGRawPalette[index | 1] << 8 | this.gbcBGRawPalette[index & 0x3e]);
-        index >>= 1;
-        this.gbcBGPalette[index] = data;
-        this.gbcBGPalette[0x20 | index] = 0x1000000 | data;
+        data = this.adjustRGBTint(this.gbcBGRawPalette[address | 1] << 8 | this.gbcBGRawPalette[address & 0x3e]);
+        address >>= 1;
+        this.gbcBGPalette[address] = data;
+        this.gbcBGPalette[0x20 | address] = 0x1000000 | data;
       }
     }
   }
 
-  updateGBCOBJPalette(index, data) {
-    if (this.gbcOBJRawPalette[index] !== data) {
+  updateGBCOBJPalette(address: number, data: number) {
+    if (this.gbcOBJRawPalette[address] !== data) {
       //Update the color palette for OBJ tiles since it changed:
-      this.gbcOBJRawPalette[index] = data;
-      if ((index & 0x06) > 0) {
+      this.gbcOBJRawPalette[address] = data;
+      if ((address & 0x06) > 0) {
         //Regular Palettes (No special crap)
         this.midScanLineJIT();
-        this.gbcOBJPalette[index >> 1] = 0x1000000 | this.adjustRGBTint(this.gbcOBJRawPalette[index | 1] << 8 | this.gbcOBJRawPalette[index & 0x3e]);
+        this.gbcOBJPalette[address >> 1] = 0x1000000 | this.adjustRGBTint(this.gbcOBJRawPalette[address | 1] << 8 | this.gbcOBJRawPalette[address & 0x3e]);
       }
     }
   }
@@ -1035,7 +1035,7 @@ export default class GameBoyCore {
   }
 
   //Generate only a single tile line for the GB tile cache mode:
-  generateGBTileLine(address) {
+  generateGBTileLine(address: number) {
     var lineCopy = this.memory[0x1 | address] << 8 | this.memory[0x9ffe & address];
     var tileBlock = this.tileCache[(address & 0x1ff0) >> 4];
     address = (address & 0xe) << 2;
@@ -1050,7 +1050,7 @@ export default class GameBoyCore {
   }
 
   //Generate only a single tile line for the GBC tile cache mode (Bank 1):
-  generateGBCTileLineBank1(address) {
+  generateGBCTileLineBank1(address: number) {
     var lineCopy = this.memory[0x1 | address] << 8 | this.memory[0x9ffe & address];
     address &= 0x1ffe;
     var tileBlock1 = this.tileCache[address >> 4];
@@ -1097,7 +1097,7 @@ export default class GameBoyCore {
   }
 
   //Generate only a single tile line for the GBC tile cache mode (Bank 2):
-  generateGBCTileLineBank2(address) {
+  generateGBCTileLineBank2(address: number) {
     var lineCopy = this.VRAM[0x1 | address] << 8 | this.VRAM[0x1ffe & address];
     var tileBlock1 = this.tileCache[0x800 | address >> 4];
     var tileBlock2 = this.tileCache[0xa00 | address >> 4];

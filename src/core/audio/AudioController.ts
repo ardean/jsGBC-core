@@ -1,7 +1,6 @@
 import CPU from "../CPU";
 import * as util from "../../util";
 import settings from "../../settings";
-import dutyLookup from "../dutyLookup";
 import AudioDevice from "./AudioDevice";
 import GameBoyCore from "../GameBoyCore";
 import * as MemoryLayout from "../memory/Layout";
@@ -13,14 +12,6 @@ export default class AudioController {
   mixerOutputCache: number;
   sequencerClocks: number;
   sequencePosition: number;
-  cachedChannel3Sample: number;
-  cachedChannel4Sample: number;
-
-  channel3Enabled: boolean;
-  channel4Enabled: boolean;
-
-  channel3CanPlay: boolean;
-  channel4CanPlay: boolean;
 
   audioClocksUntilNextEvent: number;
   audioClocksUntilNextEventCounter: number;
@@ -28,6 +19,9 @@ export default class AudioController {
 
   leftChannel3: boolean;
   rightChannel3: boolean;
+  channel3Enabled: boolean;
+  channel3CanPlay: boolean;
+  cachedChannel3Sample: number;
   channel3CurrentSampleLeft: number;
   channel3CurrentSampleRight: number;
   channel3CurrentSampleLeftSecondary: number;
@@ -44,6 +38,9 @@ export default class AudioController {
 
   leftChannel4: boolean;
   rightChannel4: boolean;
+  channel4Enabled: boolean;
+  channel4CanPlay: boolean;
+  cachedChannel4Sample: number;
   channel4Counter: number;
   channel4CurrentSampleLeft: number;
   channel4CurrentSampleRight: number;
@@ -105,8 +102,9 @@ export default class AudioController {
     this.channel2.init();
 
     this.leftChannel3 = false;
-    this.leftChannel4 = false;
     this.rightChannel3 = false;
+
+    this.leftChannel4 = false;
     this.rightChannel4 = false;
     this.channel4Consecutive = false;
 
@@ -123,6 +121,11 @@ export default class AudioController {
     this.channel3frequency = 0;
     this.channel3Consecutive = true;
     this.channel3Counter = 0x800;
+    this.channel3FrequencyPeriod = 0x800;
+    this.channel3LastSampleLookup = 0;
+    this.cachedChannel3Sample = 0;
+    this.channel3Enabled = false;
+    this.channel3CanPlay = false;
 
     this.channel4FrequencyPeriod = 8;
     this.channel4TotalLength = 0;
@@ -134,24 +137,18 @@ export default class AudioController {
     this.channel4Consecutive = true;
     this.channel4BitRange = 0x7fff;
     this.channel4VolumeShifter = 15;
-
-    this.channel3Counter = 0x800;
-    this.channel3FrequencyPeriod = 0x800;
-    this.channel3LastSampleLookup = 0;
     this.channel4LastSampleLookup = 0;
+    this.channel4FrequencyPeriod = 8;
+    this.channel4Counter = 8;
+    this.cachedChannel4Sample = 0;
+    this.channel4Enabled = false;
+    this.channel4CanPlay = false;
+
     this.cartridgeLeftChannelInputVolume = 8;
     this.cartridgeRightChannelInputVolume = 8;
     this.mixerOutputCache = 0;
     this.sequencerClocks = 0x2000;
     this.sequencePosition = 0;
-    this.channel4FrequencyPeriod = 8;
-    this.channel4Counter = 8;
-    this.cachedChannel3Sample = 0;
-    this.cachedChannel4Sample = 0;
-    this.channel3Enabled = false;
-    this.channel4Enabled = false;
-    this.channel3CanPlay = false;
-    this.channel4CanPlay = false;
     this.audioClocksUntilNextEvent = 1;
     this.audioClocksUntilNextEventCounter = 1;
 
@@ -167,6 +164,7 @@ export default class AudioController {
 
     this.cacheChannel3OutputLevel();
     this.cacheChannel4OutputLevel();
+
     this.noiseSampleTable = this.LSFR15Table;
   }
 
@@ -174,13 +172,19 @@ export default class AudioController {
     this.channel1.setSkippedBootRomState();
     this.channel2.setSkippedBootRomState();
 
+    this.leftChannel3 = true;
+    this.rightChannel3 = false;
     this.channel3CanPlay = false;
     this.channel3TotalLength = 0;
     this.channel3PatternType = 4;
     this.channel3frequency = 0;
     this.channel3Consecutive = true;
-    this.channel3Counter = 0x418;
+    this.channel3Counter = 0x800;
+    this.channel3FrequencyPeriod = 0x800;
+    this.channel3LastSampleLookup = 0;
 
+    this.leftChannel4 = true;
+    this.rightChannel4 = false;
     this.channel4FrequencyPeriod = 8;
     this.channel4TotalLength = 0;
     this.channel4EnvelopeVolume = 0;
@@ -191,17 +195,10 @@ export default class AudioController {
     this.channel4Consecutive = true;
     this.channel4BitRange = 0x7fff;
     this.channel4VolumeShifter = 15;
-
-    this.channel3Counter = 0x800;
-    this.channel3FrequencyPeriod = 0x800;
-    this.channel3LastSampleLookup = 0;
     this.channel4LastSampleLookup = 0;
+
     this.cartridgeLeftChannelInputVolume = 8;
     this.cartridgeRightChannelInputVolume = 8;
-    this.leftChannel3 = true;
-    this.leftChannel4 = true;
-    this.rightChannel3 = false;
-    this.rightChannel4 = false;
   }
 
   // Below are the audio generation functions timed against the CPU:
