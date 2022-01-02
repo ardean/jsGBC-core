@@ -1,16 +1,22 @@
 import GameBoyCore from "./GameBoyCore";
-import { JOYPAD_REG } from "./memory/Layout";
+import { joypadAddress } from "./memory/Layout";
+
+const initialValue = 0xF;
 
 export default class Joypad {
-  initialValue: number = 0xf; // for memory
-  value: number = 0xff; // Joypad State (two four-bit states actually)
+  value: number = 0xFF;
 
   constructor(
     private gameboy: GameBoyCore
   ) { }
 
+  init() {
+    this.gameboy.memory[joypadAddress] = initialValue;
+  }
+
   down(key: number) {
     this.value &= 0xff ^ 1 << key;
+
     if (
       this.gameboy.cartridge &&
       !this.gameboy.cartridge.useGbcMode &&
@@ -21,31 +27,45 @@ export default class Joypad {
       this.gameboy.checkIRQMatching();
     }
 
-    this.writeMemory(JOYPAD_REG, this.gameboy.memory[JOYPAD_REG]);
+    this.writeMemory(joypadAddress, this.gameboy.memory[joypadAddress]);
+
+    this.gameboy.cpu.stopped = false;
   }
 
   up(key: number) {
     this.value |= 1 << key;
-    this.writeMemory(JOYPAD_REG, this.gameboy.memory[JOYPAD_REG]);
+    this.writeMemory(joypadAddress, this.gameboy.memory[joypadAddress]);
+
+    this.gameboy.cpu.stopped = false;
   }
 
   writeMemory = (address: number, data: number) => {
+    const switchBits = data & 0b110000;
+
+    const hasDirectionKeys = (data & 0x10) === 0;
+    const directionNibble = this.value & 0xF;
+
+    const hasButtonKeys = (data & 0x20) === 0;
+    const buttonNibble = (this.value >> 4) & 0xF;
+
     this.gameboy.memory[address] = (
-      (data & 0x30) +
+      switchBits +
       (
         (
-          (data & 0x20) === 0 ?
-            this.value >> 4 :
-            0xf
+          hasButtonKeys ?
+            buttonNibble :
+            0xF
         ) &
         (
-          (data & 0x10) === 0 ?
-            this.value & 0xf :
-            0xf
+          hasDirectionKeys ?
+            directionNibble :
+            0xF
         )
       )
     );
+  };
 
-    this.gameboy.cpu.stopped = false;
+  readMemory = () => {
+    return 0b11000000 | this.gameboy.memoryReadNormal(joypadAddress)
   };
 }

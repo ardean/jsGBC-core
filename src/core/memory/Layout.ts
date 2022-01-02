@@ -67,7 +67,7 @@ export const ZERO_PAGE_END = 0xFFFE;
 //  export const IO_TO_GLOBAL_ADDR(A) A + 0xFF00
 
 /*  -------------IO ports/registers ------------------*/
-export const JOYPAD_REG = 0xFF00; /*  Register for reading joy pad info */
+export const joypadAddress = 0xFF00; /*  Register for reading joy pad info */
 export const SERIAL_DATA_REG = 0xFF01; /*  Serial transfer data */
 export const SERIAL_CONTROL_REG = 0xFF02; /*  SIO control */
 export const DIV_REG = 0xFF04; /*  Divider register */

@@ -27,7 +27,7 @@ export default class Memory {
     const reader = this.highReaders[address];
     if (!reader) throw new Error("no_high_reader");
 
-    return reader(address);
+    return reader(0xFF00 | address);
   }
 
   hasReader(address: number): boolean {
@@ -72,7 +72,7 @@ export default class Memory {
     const writer = this.highWriters[address];
     if (!writer) throw new Error("no_high_writer");
 
-    return writer(address, data);
+    return writer(0xFF00 | address, data);
   }
 
   hasWriter(address: number): boolean {
@@ -135,13 +135,11 @@ export default class Memory {
       this.setReaders(MemoryLayout.UNUSABLE_MEM_START, MemoryLayout.UNUSABLE_MEM_END, this.gameboy.memoryReadNormal);
     }
 
-    this.setWriter(MemoryLayout.JOYPAD_REG, this.gameboy.joypad.writeMemory);
-    this.setHighWriter(MemoryLayout.JOYPAD_REG, this.gameboy.joypad.writeMemory);
+    this.setWriter(MemoryLayout.joypadAddress, this.gameboy.joypad.writeMemory);
+    this.setHighWriter(MemoryLayout.joypadAddress, this.gameboy.joypad.writeMemory);
 
-    // top nibble returns as set.
-    const joypadReader = () => 0xc0 | this.gameboy.memoryReadNormal(MemoryLayout.JOYPAD_REG);
-    this.setReader(MemoryLayout.JOYPAD_REG, joypadReader);
-    this.setHighReader(MemoryLayout.JOYPAD_REG, joypadReader);
+    this.setReader(MemoryLayout.joypadAddress, this.gameboy.joypad.readMemory);
+    this.setHighReader(MemoryLayout.joypadAddress, this.gameboy.joypad.readMemory);
 
     const serialDataReader = () =>
       this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_CONTROL_REG) < 0x80 ?

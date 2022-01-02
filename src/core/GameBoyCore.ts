@@ -425,7 +425,7 @@ export default class GameBoyCore {
     this.FZero = this.FSubtract = this.FHalfCarry = this.FCarry = false;
     this.registersHL = 0;
     this.audioController.init();
-    this.memory[MemoryLayout.JOYPAD_REG] = this.joypad.initialValue;
+    this.joypad.init();
   }
 
   disableBootRom() {
