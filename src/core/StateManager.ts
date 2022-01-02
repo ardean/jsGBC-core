@@ -321,7 +321,7 @@ export default class StateManager {
     gameboy.audioController.channel3PatternType = state[index++];
     gameboy.audioController.channel3frequency = state[index++];
     gameboy.audioController.channel3Consecutive = state[index++];
-    gameboy.audioController.channel3PCM = toTypedArray(state[index++], "int8");
+    gameboy.audioController.channel3PcmData = toTypedArray(state[index++], "int8");
     gameboy.audioController.channel4FrequencyPeriod = state[index++];
     gameboy.audioController.channel4LastSampleLookup = state[index++];
     gameboy.audioController.channel4TotalLength = state[index++];

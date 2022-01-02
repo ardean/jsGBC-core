@@ -62,7 +62,7 @@ export default class AudioController {
   channel3Counter: number;
   channel3FrequencyPeriod: number;
   channel3LastSampleLookup: number;
-  channel3PCM: Int8Array;
+  channel3PcmData: Int8Array;
 
   leftChannel4: boolean;
   rightChannel4: boolean;
@@ -117,7 +117,7 @@ export default class AudioController {
   }
 
   initMemory() {
-    this.channel3PCM = new Int8Array(0x20);
+    this.channel3PcmData = new Int8Array(0x20);
   }
 
   init() {
@@ -544,7 +544,7 @@ export default class AudioController {
   }
 
   cacheChannel3Update() {
-    this.cachedChannel3Sample = this.channel3PCM[this.channel3LastSampleLookup] >> this.channel3PatternType;
+    this.cachedChannel3Sample = this.channel3PcmData[this.channel3LastSampleLookup] >> this.channel3PatternType;
     this.cacheChannel3OutputLevel();
   }
 
@@ -1105,65 +1105,65 @@ export default class AudioController {
   }
 
   registerWaveformMemoryWriters() {
-    //WAVE PCM RAM:
+    // WAVE PCM RAM:
     this.gameboy.highMemoryWriter[0x30] = this.gameboy.memoryWriter[0xff30] = (address: number, data: number) => {
-      this.writeWaveformRAM(0, data);
+      this.writeWaveformRam(0, data);
     };
     this.gameboy.highMemoryWriter[0x31] = this.gameboy.memoryWriter[0xff31] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x1, data);
+      this.writeWaveformRam(0x1, data);
     };
     this.gameboy.highMemoryWriter[0x32] = this.gameboy.memoryWriter[0xff32] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x2, data);
+      this.writeWaveformRam(0x2, data);
     };
     this.gameboy.highMemoryWriter[0x33] = this.gameboy.memoryWriter[0xff33] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x3, data);
+      this.writeWaveformRam(0x3, data);
     };
     this.gameboy.highMemoryWriter[0x34] = this.gameboy.memoryWriter[0xff34] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x4, data);
+      this.writeWaveformRam(0x4, data);
     };
     this.gameboy.highMemoryWriter[0x35] = this.gameboy.memoryWriter[0xff35] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x5, data);
+      this.writeWaveformRam(0x5, data);
     };
     this.gameboy.highMemoryWriter[0x36] = this.gameboy.memoryWriter[0xff36] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x6, data);
+      this.writeWaveformRam(0x6, data);
     };
     this.gameboy.highMemoryWriter[0x37] = this.gameboy.memoryWriter[0xff37] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x7, data);
+      this.writeWaveformRam(0x7, data);
     };
     this.gameboy.highMemoryWriter[0x38] = this.gameboy.memoryWriter[0xff38] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x8, data);
+      this.writeWaveformRam(0x8, data);
     };
     this.gameboy.highMemoryWriter[0x39] = this.gameboy.memoryWriter[0xff39] = (address: number, data: number) => {
-      this.writeWaveformRAM(0x9, data);
+      this.writeWaveformRam(0x9, data);
     };
     this.gameboy.highMemoryWriter[0x3a] = this.gameboy.memoryWriter[0xff3a] = (address: number, data: number) => {
-      this.writeWaveformRAM(0xa, data);
+      this.writeWaveformRam(0xa, data);
     };
     this.gameboy.highMemoryWriter[0x3b] = this.gameboy.memoryWriter[0xff3b] = (address: number, data: number) => {
-      this.writeWaveformRAM(0xb, data);
+      this.writeWaveformRam(0xb, data);
     };
     this.gameboy.highMemoryWriter[0x3c] = this.gameboy.memoryWriter[0xff3c] = (address: number, data: number) => {
-      this.writeWaveformRAM(0xc, data);
+      this.writeWaveformRam(0xc, data);
     };
     this.gameboy.highMemoryWriter[0x3d] = this.gameboy.memoryWriter[0xff3d] = (address: number, data: number) => {
-      this.writeWaveformRAM(0xd, data);
+      this.writeWaveformRam(0xd, data);
     };
     this.gameboy.highMemoryWriter[0x3e] = this.gameboy.memoryWriter[0xff3e] = (address: number, data: number) => {
-      this.writeWaveformRAM(0xe, data);
+      this.writeWaveformRam(0xe, data);
     };
     this.gameboy.highMemoryWriter[0x3f] = this.gameboy.memoryWriter[0xff3f] = (address: number, data: number) => {
-      this.writeWaveformRAM(0xf, data);
+      this.writeWaveformRam(0xf, data);
     };
   }
 
-  writeWaveformRAM(address: number, data: number) {
+  writeWaveformRam(address: number, data: number) {
     if (this.channel3CanPlay) {
       this.run();
     }
     this.memory[0xff30 | address] = data;
     address <<= 1;
-    this.channel3PCM[address] = data >> 4;
-    this.channel3PCM[address | 1] = data & 0xf;
+    this.channel3PcmData[address] = data >> 4;
+    this.channel3PcmData[address | 1] = data & 0xf;
   }
 
   channelVolumeControlWriter = (address: number, data: number) => {
