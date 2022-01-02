@@ -93,7 +93,7 @@ export const NR_42_REG = 0xFF21; /*  Envelope */
 export const NR_43_REG = 0xFF22; /*  Polynomial Counter */
 export const NR_44_REG = 0xFF23; /*  Counter/Consecutive; initial */
 
-export const NR_50_REG = 0xFF24; /*  Channel Control/on-off/Volume */
+export const soundChannelVolumeControlAddress = 0xFF24; // NR50
 export const NR_51_REG = 0xFF25; /*  Selection of Sound output terminal */
 export const NR_52_REG = 0xFF26; /*  Sound on/off */
 

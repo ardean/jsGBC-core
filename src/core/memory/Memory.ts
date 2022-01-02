@@ -353,12 +353,12 @@ export default class Memory {
           case 0xff3f:
             this.gameboy.memoryReader[address] = address => {
               return this.gameboy.audioController.channel3CanPlay ?
-                this.gameboy.memory[0xff00 | this.gameboy.audioController.channel3lastSampleLookup >> 1] :
+                this.gameboy.memory[0xff00 | this.gameboy.audioController.channel3LastSampleLookup >> 1] :
                 this.gameboy.memory[address];
             };
             this.gameboy.highMemoryReader[address & 0xff] = address => {
               return this.gameboy.audioController.channel3CanPlay ?
-                this.gameboy.memory[0xff00 | this.gameboy.audioController.channel3lastSampleLookup >> 1] :
+                this.gameboy.memory[0xff00 | this.gameboy.audioController.channel3LastSampleLookup >> 1] :
                 this.gameboy.memory[0xff00 | address];
             };
             break;
@@ -528,14 +528,14 @@ export default class Memory {
             //Undocumented realtime PCM amplitude readback:
             this.gameboy.highMemoryReader[0x76] = this.gameboy.memoryReader[0xff76] = address => {
               this.gameboy.audioController.run();
-              return this.gameboy.audioController.channel2envelopeVolume << 4 | this.gameboy.audioController.channel1envelopeVolume;
+              return this.gameboy.audioController.channel2EnvelopeVolume << 4 | this.gameboy.audioController.channel1EnvelopeVolume;
             };
             break;
           case 0xff77:
             //Undocumented realtime PCM amplitude readback:
             this.gameboy.highMemoryReader[0x77] = this.gameboy.memoryReader[0xff77] = address => {
               this.gameboy.audioController.run();
-              return this.gameboy.audioController.channel4envelopeVolume << 4 | this.gameboy.audioController.channel3envelopeVolume;
+              return this.gameboy.audioController.channel4EnvelopeVolume << 4 | this.gameboy.audioController.channel3envelopeVolume;
             };
             break;
           case 0xff78:
