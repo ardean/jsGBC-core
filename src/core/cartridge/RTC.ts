@@ -1,4 +1,4 @@
-import MBC from "./MBC_";
+import MBC from "./MBC";
 
 export default class RTC {
   lastTime: number;
@@ -27,7 +27,7 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-        this.mbc.currentMBCRAMBank +
+        this.mbc.currentMbcRamBank +
         ") RTC write out of range: " +
         data
       );
@@ -40,7 +40,7 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-        this.mbc.currentMBCRAMBank +
+        this.mbc.currentMbcRamBank +
         ") RTC write out of range: " +
         data
       );
@@ -63,7 +63,7 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-        this.mbc.currentMBCRAMBank +
+        this.mbc.currentMbcRamBank +
         ") RTC write out of range: " +
         data
       );
@@ -92,7 +92,7 @@ export default class RTC {
       this.latchedHDays;
   }
 
-  writeLatch(address, data) {
+  writeLatch = (address: number, data: number) => {
     if (data === 0) {
       this.RTCisLatched = false;
     } else if (!this.RTCisLatched) {
@@ -104,7 +104,7 @@ export default class RTC {
       this.latchedLDays = this.RTCDays & 0xff;
       this.latchedHDays = this.RTCDays >> 8;
     }
-  }
+  };
 
   get() {
     const lastTimeSeconds = Math.round(this.lastTime / 1000);

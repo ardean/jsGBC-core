@@ -1,12 +1,12 @@
-import settings from "../../settings";
+import MBC from "./MBC";
 import ROM from "../ROM";
-import MBC from "./MBC_";
-import MBC1 from "./MBC1_";
-import MBC2 from "./MBC2_";
-import MBC3 from "./MBC3_";
-import MBC5 from "./MBC5_";
-import MBC7 from "./MBC7_";
+import MBC1 from "./MBC1";
+import MBC2 from "./MBC2";
+import MBC3 from "./MBC3";
+import MBC5 from "./MBC5";
+import MBC7 from "./MBC7";
 import RUMBLE from "./RUMBLE";
+import settings from "../../settings";
 import GameBoyCore from "../GameBoyCore";
 
 const gameAndWatchGameCode = "Game and Watch 50";
@@ -21,8 +21,8 @@ export default class Cartridge {
   hasRUMBLE: boolean = false; // does the cartridge have Rumble addressing? (modified MBC5)
   hasCamera: boolean = false; // is the cartridge a GameBoy Camera?
   hasTAMA5: boolean = false; // does the cartridge use TAMA5? (Tamagotchi Cartridge)
-  hasHuC3: boolean = false; // does the cartridge use HuC3? (Hudson Soft / modified MBC3)
-  hasHuC1: boolean = false; // does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
+  hasHuc3: boolean = false; // does the cartridge use HuC3? (Hudson Soft / modified MBC3)
+  hasHuc1: boolean = false; // does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
   hasMMMO1: boolean = false;
   hasRTC: boolean = false; // does the cartridge have a RTC?
   hasBattery: boolean = false;
@@ -263,11 +263,11 @@ export default class Cartridge {
         this.typeName = "TAMA5";
         break;
       case 0xfe:
-        this.hasHuC3 = true;
+        this.hasHuc3 = true;
         this.typeName = "HuC3";
         break;
       case 0xff:
-        this.hasHuC1 = true;
+        this.hasHuc1 = true;
         this.typeName = "HuC1";
         break;
       default:

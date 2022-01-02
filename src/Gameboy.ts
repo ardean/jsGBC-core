@@ -2,9 +2,9 @@ import ROM from "./core/ROM";
 import Actions from "./actions";
 import settings from "./settings";
 import { EventEmitter } from "events";
-import Cartridge from "./core/cartridge/Cartridge_";
 import Storage from "./storages/Storage";
 import GameBoyCore from "./core/GameBoyCore";
+import Cartridge from "./core/cartridge/Cartridge";
 import LocalStorage from "./storages/LocalStorage";
 import { concatArrayBuffers, debounce, Debounced } from "./util";
 

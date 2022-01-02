@@ -1,4 +1,4 @@
-import MBC from "./MBC_";
+import MBC from "./MBC";
 
 export default class MBC7 extends MBC {
   // Gyro
@@ -7,7 +7,7 @@ export default class MBC7 extends MBC {
   highY: number = 127;
   lowY: number = 127;
 
-  applyGyroEvent(x, y) {
+  applyGyroEvent(x: number, y: number) {
     x *= -100;
     x += 2047;
     this.highX = x >> 8;
@@ -42,7 +42,7 @@ export default class MBC7 extends MBC {
         // X Low Byte:
         return this.lowX;
       default:
-        return this.ram[address + this.currentRAMBankPosition];
+        return this.ram[address + this.currentRamBankPosition];
     }
   }
 }

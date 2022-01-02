@@ -1,6 +1,6 @@
-import RTC from "./RTC_";
-import MBC from "./MBC_";
-import Cartridge from "./Cartridge_";
+import RTC from "./RTC";
+import MBC from "./MBC";
+import Cartridge from "./Cartridge";
 
 export default class MBC3 extends MBC {
   rtc: RTC;
@@ -11,29 +11,35 @@ export default class MBC3 extends MBC {
     this.rtc = new RTC(this);
   }
 
-  writeROMBank(address: number, data: number) {
+  writeRomBank = (address: number, data: number) => {
     // MBC3 ROM bank switching:
-    this.ROMBank1Offset = data & 0x7f;
+    this.romBank1Offset = data & 0x7f;
     this.setCurrentROMBank();
-  }
+  };
 
-  writeRAMBank(address: number, data: number) {
-    this.currentMBCRAMBank = data;
+  writeRamBank = (address: number, data: number) => {
+    this.currentMbcRamBank = data;
     if (data < 4) {
       // MBC3 RAM bank switching
-      this.currentRAMBankPosition = (this.currentMBCRAMBank << 13) - 0xa000;
+      this.currentRamBankPosition = (this.currentMbcRamBank << 13) - 0xa000;
     }
-  }
+  };
+
+  writeHuc3RamBank = (address: number, data: number) => {
+    // HuC3 RAM bank switching
+    this.cartridge.mbc.currentMbcRamBank = data & 0x03;
+    this.cartridge.mbc.currentRamBankPosition = (this.cartridge.mbc.currentMbcRamBank << 13) - 0xa000;
+  };
 
   writeRam = (address: number, data: number) => {
     if (this.ramBanksEnabled) {
-      switch (this.currentMBCRAMBank) {
+      switch (this.currentMbcRamBank) {
         case 0x00:
         case 0x01:
         case 0x02:
         case 0x03:
           this.emit("ramWrite");
-          this.ram[address + this.currentRAMBankPosition] = data;
+          this.ram[address + this.currentRamBankPosition] = data;
           break;
         case 0x08:
           this.rtc?.writeSeconds(data);
@@ -51,19 +57,19 @@ export default class MBC3 extends MBC {
           this.rtc?.writeDaysHigh(data);
           break;
         default:
-          console.log("Invalid MBC3 bank address selected: " + this.currentMBCRAMBank);
+          console.log("Invalid MBC3 bank address selected: " + this.currentMbcRamBank);
       }
     }
   };
 
   readRam(address: number) {
     if (this.ramBanksEnabled) {
-      switch (this.currentMBCRAMBank) {
+      switch (this.currentMbcRamBank) {
         case 0x00:
         case 0x01:
         case 0x02:
         case 0x03:
-          return this.ram[address + this.currentRAMBankPosition];
+          return this.ram[address + this.currentRamBankPosition];
         case 0x08:
           if (this.rtc) return this.rtc.readSeconds();
           break;

@@ -4,7 +4,7 @@ import { GameBoy } from "..";
 import Joypad from "./Joypad";
 import * as util from "../util";
 import settings from "../settings";
-import Cartridge from "./cartridge/Cartridge_";
+import Cartridge from "./cartridge/Cartridge";
 import tickTable from "./tickTable";
 import Memory from "./memory/Memory";
 import LcdDevice from "./lcd/device";
@@ -1403,7 +1403,7 @@ export default class GameBoyCore {
     return this.memory[address - 0x2000];
   };
 
-  VRAMDATAReadCGBCPU = (address) => {
+  VRAMDATAReadCGBCPU = (address: number) => {
     // CPU Side Reading The VRAM (Optimized for GameBoy Color)
     return this.modeSTAT > 2 ?
       0xff :
@@ -1414,73 +1414,19 @@ export default class GameBoyCore {
       );
   };
 
-  VRAMDATAReadDMGCPU = (address) => {
+  VRAMDATAReadDMGCPU = (address: number) => {
     // CPU Side Reading The VRAM (Optimized for classic GameBoy)
     return this.modeSTAT > 2 ? 0xff : this.memory[address];
   };
 
-  VRAMCHRReadCGBCPU = (address) => {
+  VRAMCHRReadCGBCPU = (address: number) => {
     // CPU Side Reading the Character Data Map:
     return this.modeSTAT > 2 ? 0xff : this.BGCHRCurrentBank[address & 0x7ff];
   };
 
-  VRAMCHRReadDMGCPU(address) {
+  VRAMCHRReadDMGCPU(address: number) {
     // CPU Side Reading the Character Data Map:
     return this.modeSTAT > 2 ? 0xff : this.BGCHRBank1[address & 0x7ff];
-  }
-
-  MBCWriteEnable = (address: number, data: number) => {
-    this.cartridge.mbc.toggle(address, data);
-  };
-
-  MBC1WriteROMBank(address: number, data: number) {
-    this.cartridge.mbc1.writeROMBank(address, data);
-  }
-
-  MBC1WriteRAMBank(address: number, data: number) {
-    this.cartridge.mbc1.writeRAMBank(address, data);
-  }
-
-  MBC1WriteType(address: number, data: number) {
-    this.cartridge.mbc1.writeType(address, data);
-  }
-
-  MBC2WriteROMBank(address: number, data: number) {
-    this.cartridge.mbc2.writeROMBank(address, data);
-  }
-
-  MBC3WriteROMBank(address: number, data: number) {
-    return this.cartridge.mbc3.writeROMBank(address, data);
-  }
-
-  MBC3WriteRAMBank(address: number, data: number) {
-    return this.cartridge.mbc3.writeRAMBank(address, data);
-  }
-
-  MBC3WriteRTCLatch(address: number, data: number) {
-    return this.cartridge.mbc3.rtc.writeLatch(address, data);
-  }
-
-  MBC5WriteROMBankLow(address: number, data: number) {
-    return this.cartridge.mbc5.writeROMBankLow(address, data);
-  }
-
-  MBC5WriteROMBankHigh(address: number, data: number) {
-    return this.cartridge.mbc5.writeROMBankHigh(address, data);
-  }
-
-  MBC5WriteRAMBank = (address: number, data: number) => {
-    return this.cartridge.mbc5.writeRAMBank(address, data);
-  }
-
-  RUMBLEWriteRAMBank = (address: number, data: number) => {
-    return this.cartridge.rumble.writeRAMBank(address, data);
-  };
-
-  HuC3WriteRAMBank(address: number, data: number) {
-    //HuC3 RAM bank switching
-    this.cartridge.mbc.currentMBCRAMBank = data & 0x03;
-    this.cartridge.mbc.currentRAMBankPosition = (this.cartridge.mbc.currentMBCRAMBank << 13) - 0xa000;
   }
 
   memoryWriteNormal = (address: number, data: number) => {

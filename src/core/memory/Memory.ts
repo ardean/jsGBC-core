@@ -567,31 +567,31 @@ export default class Memory {
       if (address <= MemoryLayout.CART_ROM_SWITCH_BANK_END) {
         if (this.gameboy.cartridge.hasMBC1) {
           if (address < 0x2000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBCWriteEnable;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address < 0x4000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC1WriteROMBank;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc1.writeRomBank;
           } else if (address < 0x6000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC1WriteRAMBank;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc1.writeRamBank;
           } else {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC1WriteType;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc1.writeType;
           }
         } else if (this.gameboy.cartridge.hasMBC2) {
           if (address < 0x1000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBCWriteEnable;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address >= 0x2100 && address < 0x2200) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC2WriteROMBank;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc2.writeRomBank;
           } else {
             this.gameboy.memoryWriter[address] = this.writeIllegal;
           }
         } else if (this.gameboy.cartridge.hasMBC3) {
           if (address < 0x2000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBCWriteEnable;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address < 0x4000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC3WriteROMBank;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc3.writeRomBank;
           } else if (address < 0x6000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC3WriteRAMBank;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc3.writeRamBank;
           } else {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC3WriteRTCLatch;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc3.rtc.writeLatch;
           }
         } else if (
           this.gameboy.cartridge.hasMBC5 ||
@@ -599,25 +599,25 @@ export default class Memory {
           this.gameboy.cartridge.hasMBC7
         ) {
           if (address < 0x2000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBCWriteEnable;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address < 0x3000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC5WriteROMBankLow;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc5.writRomBank;
           } else if (address < 0x4000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC5WriteROMBankHigh;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc5.writeHighRomBank;
           } else if (address < 0x6000) {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.hasRUMBLE ?
-              this.gameboy.RUMBLEWriteRAMBank :
-              this.gameboy.MBC5WriteRAMBank;
+              this.gameboy.cartridge.rumble.writeRamBank :
+              this.gameboy.cartridge.mbc5.writeRamBank;
           } else {
             this.gameboy.memoryWriter[address] = this.writeIllegal;
           }
-        } else if (this.gameboy.cartridge.hasHuC3) {
+        } else if (this.gameboy.cartridge.hasHuc3) {
           if (address < 0x2000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBCWriteEnable;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address < 0x4000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.MBC3WriteROMBank;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc3.writeRomBank;
           } else if (address < 0x6000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.HuC3WriteRAMBank;
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc3.writeHuc3RamBank;
           } else {
             this.gameboy.memoryWriter[address] = this.writeIllegal;
           }

@@ -1,15 +1,15 @@
-import RTC from "./RTC_";
+import RTC from "./RTC";
 import * as util from "../../util";
 import { EventEmitter } from "events";
-import Cartridge from "./Cartridge_";
+import Cartridge from "./Cartridge";
 
 export default class MBC extends EventEmitter {
   currentRomBank: number;
-  ROMBank1Offset: number;
+  romBank1Offset: number;
   ram: Uint8Array;
-  ROMBankEdge: number;
-  currentMBCRAMBank: number;
-  currentRAMBankPosition: number;
+  romBankEdge: number;
+  currentMbcRamBank: number;
+  currentRamBankPosition: number;
   ramBanksEnabled: boolean;
   romSize: number;
   ramSize: number;
@@ -42,9 +42,9 @@ export default class MBC extends EventEmitter {
     super();
     this.cartridge = cartridge;
     this.ramBanksEnabled = false; // MBC RAM Access Control.
-    this.currentRAMBankPosition = -0xa000; // MBC Position Adder;
-    this.currentMBCRAMBank = 0; // MBC Currently Indexed RAM Bank
-    this.ROMBankEdge = Math.floor(cartridge.rom.length / 0x4000);
+    this.currentRamBankPosition = -0xa000; // MBC Position Adder;
+    this.currentMbcRamBank = 0; // MBC Currently Indexed RAM Bank
+    this.romBankEdge = Math.floor(cartridge.rom.length / 0x4000);
   }
 
   setupROM() {
@@ -81,13 +81,13 @@ export default class MBC extends EventEmitter {
 
   readRam(address: number) {
     if (!this.ramBanksEnabled) return 0xff;
-    return this.ram[address + this.currentRAMBankPosition];
+    return this.ram[address + this.currentRamBankPosition];
   }
 
   writeRam = (address: number, data: number) => {
     if (this.ramBanksEnabled) {
       this.emit("ramWrite");
-      this.ram[address + this.currentRAMBankPosition] = data;
+      this.ram[address + this.currentRamBankPosition] = data;
     }
   };
 
@@ -96,13 +96,13 @@ export default class MBC extends EventEmitter {
     // Read the cartridge ROM data from RAM memory:
     // Only map bank 0 to bank 1 here (MBC2 is like MBC1, but can only do 16 banks, so only the bank 0 quirk appears for MBC2):
     this.currentRomBank = Math.max(
-      this.ROMBank1Offset % this.ROMBankEdge - 1,
+      this.romBank1Offset % this.romBankEdge - 1,
       0
     ) << 14;
   }
 
-  toggle(address: number, data: number) {
+  toggle = (address: number, data: number) => {
     // MBC RAM Bank Enable/Disable:
     this.ramBanksEnabled = (data & 0x0f) === 0x0a; // If lower nibble is 0x0A, then enable, otherwise disable.
-  }
+  };
 }
