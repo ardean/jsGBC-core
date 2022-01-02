@@ -257,7 +257,7 @@ export default class StateManager {
     gameboy.gbcRamBank = state[index++];
     gameboy.gbcRamBankPosition = state[index++];
     gameboy.ROMBank1Offset = state[index++];
-    if (gameboy.cartridge) {
+    if (gameboy.cartridge?.mbc) {
       gameboy.cartridge.mbc.currentRomBank = state[index++];
     } else {
       index++;
@@ -283,7 +283,7 @@ export default class StateManager {
     gameboy.serialShiftTimer = state[index++];
     gameboy.serialShiftTimerAllocated = state[index++];
     gameboy.IRQEnableDelay = state[index++];
-    if (gameboy.cartridge && gameboy.cartridge.hasRTC) {
+    if (gameboy.cartridge?.hasRTC) {
       gameboy.cartridge.mbc3.rtc.lastTime = state[index++];
     } else {
       index++;
@@ -291,22 +291,22 @@ export default class StateManager {
     gameboy.drewBlank = state[index++];
     gameboy.frameBuffer = toTypedArray(state[index++], "int32");
     gameboy.backgroundEnabled = state[index++];
-    gameboy.audioController.channel1FrequencyTracker = state[index++];
-    gameboy.audioController.channel1FrequencyCounter = state[index++];
-    gameboy.audioController.channel1TotalLength = state[index++];
-    gameboy.audioController.channel1EnvelopeVolume = state[index++];
-    gameboy.audioController.channel1EnvelopeType = state[index++];
-    gameboy.audioController.channel1EnvelopeSweeps = state[index++];
-    gameboy.audioController.channel1EnvelopeSweepsLast = state[index++];
-    gameboy.audioController.channel1Consecutive = state[index++];
-    gameboy.audioController.channel1Frequency = state[index++];
-    gameboy.audioController.channel1SweepFault = state[index++];
-    gameboy.audioController.channel1ShadowFrequency = state[index++];
-    gameboy.audioController.channel1TimeSweep = state[index++];
-    gameboy.audioController.channel1LastTimeSweep = state[index++];
-    gameboy.audioController.channel1Swept = state[index++];
-    gameboy.audioController.channel1FrequencySweepDivider = state[index++];
-    gameboy.audioController.channel1DecreaseSweep = state[index++];
+    gameboy.audioController.channel1.frequencyTracker = state[index++];
+    gameboy.audioController.channel1.frequencyCounter = state[index++];
+    gameboy.audioController.channel1.totalLength = state[index++];
+    gameboy.audioController.channel1.envelopeVolume = state[index++];
+    gameboy.audioController.channel1.envelopeType = state[index++];
+    gameboy.audioController.channel1.envelopeSweeps = state[index++];
+    gameboy.audioController.channel1.envelopeSweepsLast = state[index++];
+    gameboy.audioController.channel1.consecutive = state[index++];
+    gameboy.audioController.channel1.frequency = state[index++];
+    gameboy.audioController.channel1.sweepFault = state[index++];
+    gameboy.audioController.channel1.shadowFrequency = state[index++];
+    gameboy.audioController.channel1.timeSweep = state[index++];
+    gameboy.audioController.channel1.lastTimeSweep = state[index++];
+    gameboy.audioController.channel1.swept = state[index++];
+    gameboy.audioController.channel1.frequencySweepDivider = state[index++];
+    gameboy.audioController.channel1.decreaseSweep = state[index++];
     gameboy.audioController.channel2FrequencyTracker = state[index++];
     gameboy.audioController.channel2FrequencyCounter = state[index++];
     gameboy.audioController.channel2TotalLength = state[index++];
@@ -335,40 +335,40 @@ export default class StateManager {
     gameboy.audioController.enabled = state[index++];
     gameboy.audioController.cartridgeLeftChannelInputVolume = state[index++];
     gameboy.audioController.cartridgeRightChannelInputVolume = state[index++];
-    gameboy.audioController.leftChannel1 = state[index++];
+    gameboy.audioController.channel1.leftChannelEnabled = state[index++];
     gameboy.audioController.leftChannel2 = state[index++];
     gameboy.audioController.leftChannel3 = state[index++];
     gameboy.audioController.leftChannel4 = state[index++];
-    gameboy.audioController.rightChannel1 = state[index++];
+    gameboy.audioController.channel1.rightChannelEnabled = state[index++];
     gameboy.audioController.rightChannel2 = state[index++];
     gameboy.audioController.rightChannel3 = state[index++];
     gameboy.audioController.rightChannel4 = state[index++];
-    gameboy.audioController.channel1CurrentSampleLeft = state[index++];
-    gameboy.audioController.channel1CurrentSampleRight = state[index++];
+    gameboy.audioController.channel1.currentSampleLeft = state[index++];
+    gameboy.audioController.channel1.currentSampleRight = state[index++];
     gameboy.audioController.channel2CurrentSampleLeft = state[index++];
     gameboy.audioController.channel2CurrentSampleRight = state[index++];
     gameboy.audioController.channel3CurrentSampleLeft = state[index++];
     gameboy.audioController.channel3CurrentSampleRight = state[index++];
     gameboy.audioController.channel4CurrentSampleLeft = state[index++];
     gameboy.audioController.channel4CurrentSampleRight = state[index++];
-    gameboy.audioController.channel1CurrentSampleLeftSecondary = state[index++];
-    gameboy.audioController.channel1CurrentSampleRightSecondary = state[index++];
+    gameboy.audioController.channel1.currentSampleLeftSecondary = state[index++];
+    gameboy.audioController.channel1.currentSampleRightSecondary = state[index++];
     gameboy.audioController.channel2CurrentSampleLeftSecondary = state[index++];
     gameboy.audioController.channel2CurrentSampleRightSecondary = state[index++];
     gameboy.audioController.channel3CurrentSampleLeftSecondary = state[index++];
     gameboy.audioController.channel3CurrentSampleRightSecondary = state[index++];
     gameboy.audioController.channel4CurrentSampleLeftSecondary = state[index++];
     gameboy.audioController.channel4CurrentSampleRightSecondary = state[index++];
-    gameboy.audioController.channel1CurrentSampleLeftTrimary = state[index++];
-    gameboy.audioController.channel1CurrentSampleRightTrimary = state[index++];
+    gameboy.audioController.channel1.currentSampleLeftTrimary = state[index++];
+    gameboy.audioController.channel1.currentSampleRightTrimary = state[index++];
     gameboy.audioController.channel2CurrentSampleLeftTrimary = state[index++];
     gameboy.audioController.channel2CurrentSampleRightTrimary = state[index++];
     gameboy.audioController.mixerOutputCache = state[index++];
-    gameboy.audioController.channel1DutyTracker = state[index++];
-    gameboy.audioController.channel1CachedDuty = state[index++];
+    gameboy.audioController.channel1.dutyTracker = state[index++];
+    gameboy.audioController.channel1.cachedDuty = state[index++];
     gameboy.audioController.channel2DutyTracker = state[index++];
     gameboy.audioController.channel2CachedDuty = state[index++];
-    gameboy.audioController.channel1Enabled = state[index++];
+    gameboy.audioController.channel1.enabled = state[index++];
     gameboy.audioController.channel2Enabled = state[index++];
     gameboy.audioController.channel3Enabled = state[index++];
     gameboy.audioController.channel4Enabled = state[index++];
@@ -383,7 +383,7 @@ export default class StateManager {
     gameboy.actualScanLine = state[index++];
     gameboy.lastUnrenderedLine = state[index++];
     gameboy.queuedScanLines = state[index++];
-    if (gameboy.cartridge && gameboy.cartridge.hasRTC) {
+    if (gameboy.cartridge?.hasRTC) {
       gameboy.cartridge.mbc3.rtc.RTCisLatched = state[index++];
       gameboy.cartridge.mbc3.rtc.latchedSeconds = state[index++];
       gameboy.cartridge.mbc3.rtc.latchedMinutes = state[index++];
