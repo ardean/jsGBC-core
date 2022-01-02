@@ -799,7 +799,7 @@ export default [
   //#0x76:
   function () {
     //See if there's already an IRQ match:
-    if ((this.interruptsEnabled & this.interruptsRequested & 0x1f) > 0) {
+    if ((this.interruptEnabledFlags & this.interruptRequestedFlags & 0x1f) > 0) {
       if (!this.cartridge.useGbcMode && !this.usedBootROM) {
         //HALT bug in the DMG CPU model (Program Counter fails to increment for one instruction after HALT):
         this.skipPCIncrement = true;

@@ -20,9 +20,12 @@ export default class Joypad {
     if (
       this.gameboy.cartridge &&
       !this.gameboy.cartridge.useGbcMode &&
-      (!this.gameboy.usedBootRom || !this.gameboy.usedGbcBootRom)
+      (
+        !this.gameboy.usedBootRom ||
+        !this.gameboy.usedGbcBootRom
+      )
     ) {
-      this.gameboy.interruptsRequested |= 0x10; // A real GBC doesn't set this!
+      this.gameboy.interruptRequestedFlags |= 1 << 4; // A real GBC doesn't set this!
       this.gameboy.remainingClocks = 0;
       this.gameboy.checkIRQMatching();
     }

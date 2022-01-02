@@ -58,7 +58,7 @@ export default class GPU {
         //Make sure the mode 0 handler was run at least once per scan line:
         if (this.gameboy.STATTracker !== 2) {
           if (this.gameboy.STATTracker === 0 && this.gameboy.mode2TriggerSTAT) {
-            this.gameboy.interruptsRequested |= 0x2;
+            this.gameboy.interruptRequestedFlags |= 0x2;
           }
           this.gameboy.incrementScanLineQueue();
         }
@@ -66,7 +66,7 @@ export default class GPU {
           this.gameboy.executeHDMA();
         }
         if (this.gameboy.mode0TriggerSTAT) {
-          this.gameboy.interruptsRequested |= 0x2;
+          this.gameboy.interruptRequestedFlags |= 0x2;
         }
       }
 
@@ -77,7 +77,7 @@ export default class GPU {
       if (this.gameboy.actualScanLine === this.gameboy.memory[0xff45]) {
         this.gameboy.memory[0xff41] |= 0x04;
         if (this.gameboy.LYCMatchTriggerSTAT) {
-          this.gameboy.interruptsRequested |= 0x2;
+          this.gameboy.interruptRequestedFlags |= 0x2;
         }
       } else {
         this.gameboy.memory[0xff41] &= 0x7b;
@@ -105,7 +105,7 @@ export default class GPU {
         //Make sure the mode 0 handler was run at least once per scan line:
         if (this.gameboy.STATTracker !== 2) {
           if (this.gameboy.STATTracker === 0 && this.gameboy.mode2TriggerSTAT) {
-            this.gameboy.interruptsRequested |= 0x2;
+            this.gameboy.interruptRequestedFlags |= 0x2;
           }
           this.gameboy.incrementScanLineQueue();
         }
@@ -113,7 +113,7 @@ export default class GPU {
           this.gameboy.executeHDMA();
         }
         if (this.gameboy.mode0TriggerSTAT) {
-          this.gameboy.interruptsRequested |= 0x2;
+          this.gameboy.interruptRequestedFlags |= 0x2;
         }
       }
       //Update the scanline registers and assert the LYC counter:
@@ -122,7 +122,7 @@ export default class GPU {
       if (this.gameboy.memory[0xff45] === 144) {
         this.gameboy.memory[0xff41] |= 0x04;
         if (this.gameboy.LYCMatchTriggerSTAT) {
-          this.gameboy.interruptsRequested |= 0x2;
+          this.gameboy.interruptRequestedFlags |= 0x2;
         }
       } else {
         this.gameboy.memory[0xff41] &= 0x7b;
@@ -131,7 +131,7 @@ export default class GPU {
       this.gameboy.STATTracker = 0;
       //Update our state for v-blank:
       this.gameboy.modeSTAT = 1;
-      this.gameboy.interruptsRequested |= this.gameboy.mode1TriggerSTAT ? 0x3 : 0x1;
+      this.gameboy.interruptRequestedFlags |= this.gameboy.mode1TriggerSTAT ? 0x3 : 0x1;
       this.gameboy.checkIRQMatching();
       //Attempt to blit out to our canvas:
       if (this.gameboy.drewBlank === 0) {
@@ -159,7 +159,7 @@ export default class GPU {
       if (this.gameboy.actualScanLine === this.gameboy.memory[0xff45]) {
         this.gameboy.memory[0xff41] |= 0x04;
         if (this.gameboy.LYCMatchTriggerSTAT) {
-          this.gameboy.interruptsRequested |= 0x2;
+          this.gameboy.interruptRequestedFlags |= 0x2;
           this.gameboy.checkIRQMatching();
         }
       } else {
@@ -180,7 +180,7 @@ export default class GPU {
         if (this.gameboy.memory[0xff45] === 0) {
           this.gameboy.memory[0xff41] |= 0x04;
           if (this.gameboy.LYCMatchTriggerSTAT) {
-            this.gameboy.interruptsRequested |= 0x2;
+            this.gameboy.interruptRequestedFlags |= 0x2;
             this.gameboy.checkIRQMatching();
           }
         } else {
@@ -188,6 +188,7 @@ export default class GPU {
         }
         this.gameboy.STATTracker = 4;
       }
+
       if (this.gameboy.LCDTicks >= 456) {
         //We reset back to the beginning:
         this.gameboy.LCDTicks -= 456;

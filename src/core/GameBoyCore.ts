@@ -59,8 +59,8 @@ export default class GameBoyCore {
   FCarry: boolean;
   registersHL: number;
   IME: boolean;
-  interruptsRequested: number;
-  interruptsEnabled: number;
+  interruptRequestedFlags: number;
+  interruptEnabledFlags: number;
   hdmaRunning: boolean;
   currentInstructionCycleCount: number;
   STATTracker: number;
@@ -371,8 +371,8 @@ export default class GameBoyCore {
     this.gpu.enableLCD();
     this.IME = false;
     this.IRQLineMatched = 0;
-    this.interruptsRequested = 225;
-    this.interruptsEnabled = 0;
+    this.interruptRequestedFlags = 225;
+    this.interruptEnabledFlags = 0;
     this.hdmaRunning = false;
     this.currentInstructionCycleCount = 12;
     this.STATTracker = 0;
@@ -545,7 +545,7 @@ export default class GameBoyCore {
           this.timerTicks -= this.TACClocker;
           if (++this.memory[0xff05] === 0x100) {
             this.memory[0xff05] = this.memory[0xff06];
-            this.interruptsRequested |= 0x4;
+            this.interruptRequestedFlags |= 0x4;
             this.checkIRQMatching();
           }
         }
@@ -556,7 +556,7 @@ export default class GameBoyCore {
         // IRQ Counter:
         this.serialTimer -= this.currentInstructionCycleCount;
         if (this.serialTimer <= 0) {
-          this.interruptsRequested |= 0x8;
+          this.interruptRequestedFlags |= 0x8;
           this.checkIRQMatching();
         }
 
@@ -565,7 +565,7 @@ export default class GameBoyCore {
         if (this.serialShiftTimer <= 0) {
           this.serialShiftTimer = this.serialShiftTimerAllocated;
           // We could shift in actual link data here if we were to implement such!!!
-          this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01;
+          this.memory[MemoryLayout.serialDataAddress] = this.memory[MemoryLayout.serialDataAddress] << 1 & 0xfe | 0x01;
         }
       }
 
@@ -609,7 +609,7 @@ export default class GameBoyCore {
     //OAM Search Period
     if (this.STATTracker !== 1) {
       if (this.mode2TriggerSTAT) {
-        this.interruptsRequested |= 0x2;
+        this.interruptRequestedFlags |= 0x2;
         this.checkIRQMatching();
       }
       this.STATTracker = 1;
@@ -621,7 +621,7 @@ export default class GameBoyCore {
     //Scan Line Drawing Period
     if (this.modeSTAT !== 3) {
       if (this.STATTracker === 0 && this.mode2TriggerSTAT) {
-        this.interruptsRequested |= 0x2;
+        this.interruptRequestedFlags |= 0x2;
         this.checkIRQMatching();
       }
       this.STATTracker = 1;
@@ -635,7 +635,7 @@ export default class GameBoyCore {
       if (this.STATTracker !== 2) {
         if (this.STATTracker === 0) {
           if (this.mode2TriggerSTAT) {
-            this.interruptsRequested |= 0x2;
+            this.interruptRequestedFlags |= 0x2;
             this.checkIRQMatching();
           }
           this.modeSTAT = 3;
@@ -649,7 +649,7 @@ export default class GameBoyCore {
           this.executeHDMA();
         }
         if (this.mode0TriggerSTAT) {
-          this.interruptsRequested |= 0x2;
+          this.interruptRequestedFlags |= 0x2;
           this.checkIRQMatching();
         }
         this.STATTracker = 3;
@@ -736,7 +736,7 @@ export default class GameBoyCore {
     if (this.memory[0xff44] === this.memory[0xff45]) {
       this.memory[0xff41] |= 0x04;
       if (this.LYCMatchTriggerSTAT) {
-        this.interruptsRequested |= 0x2;
+        this.interruptRequestedFlags |= 0x2;
         this.checkIRQMatching();
       }
     } else {
@@ -761,7 +761,7 @@ export default class GameBoyCore {
         this.timerTicks -= this.TACClocker;
         if (++this.memory[0xff05] === 0x100) {
           this.memory[0xff05] = this.memory[0xff06];
-          this.interruptsRequested |= 0x4;
+          this.interruptRequestedFlags |= 0x4;
           this.checkIRQMatching();
         }
       }
@@ -771,14 +771,14 @@ export default class GameBoyCore {
       //IRQ Counter:
       this.serialTimer -= this.currentInstructionCycleCount;
       if (this.serialTimer <= 0) {
-        this.interruptsRequested |= 0x8;
+        this.interruptRequestedFlags |= 0x8;
         this.checkIRQMatching();
       }
       //Bit Shit Counter:
       this.serialShiftTimer -= this.currentInstructionCycleCount;
       if (this.serialShiftTimer <= 0) {
         this.serialShiftTimer = this.serialShiftTimerAllocated;
-        this.memory[MemoryLayout.SERIAL_DATA_REG] = this.memory[MemoryLayout.SERIAL_DATA_REG] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
+        this.memory[MemoryLayout.serialDataAddress] = this.memory[MemoryLayout.serialDataAddress] << 1 & 0xfe | 0x01; //We could shift in actual link data here if we were to implement such!!!
       }
     }
   }
@@ -1913,7 +1913,7 @@ export default class GameBoyCore {
       //Check to see if an interrupt is enabled AND requested.
       if ((testbit & this.IRQLineMatched) === testbit) {
         this.IME = false; //Reset the interrupt enabling.
-        this.interruptsRequested -= testbit; //Reset the interrupt request.
+        this.interruptRequestedFlags -= testbit; //Reset the interrupt request.
         this.IRQLineMatched = 0; //Reset the IRQ assertion.
         //Interrupts have a certain clock cycle length:
         this.currentInstructionCycleCount = 20;
@@ -1937,7 +1937,7 @@ export default class GameBoyCore {
   */
   checkIRQMatching() {
     if (this.IME) {
-      this.IRQLineMatched = this.interruptsEnabled & this.interruptsRequested & 0x1f;
+      this.IRQLineMatched = this.interruptEnabledFlags & this.interruptRequestedFlags & 0x1f;
     }
   }
 
@@ -1956,17 +1956,17 @@ export default class GameBoyCore {
       var currentClocks = -1;
       if (this.gpu.lcdEnabled) {
         //If the LCD is enabled, then predict the LCD IRQs enabled:
-        if ((this.interruptsEnabled & 0x1) === 0x1) {
+        if (((this.interruptEnabledFlags >> 0) & 1) === 1) {
           currentClocks = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
         }
-        if ((this.interruptsEnabled & 0x2) === 0x2) {
+        if (((this.interruptEnabledFlags >> 1) & 1) === 1) {
           if (this.mode0TriggerSTAT) {
             const temp_var = this.clocksUntilMode0() - this.LCDTicks << this.doubleSpeedShifter;
             if (temp_var <= currentClocks || currentClocks === -1) {
               currentClocks = temp_var;
             }
           }
-          if (this.mode1TriggerSTAT && (this.interruptsEnabled & 0x1) === 0) {
+          if (this.mode1TriggerSTAT && (this.interruptEnabledFlags & 1) === 0) {
             const temp_var = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
             if (temp_var <= currentClocks || currentClocks === -1) {
               currentClocks = temp_var;
@@ -1993,14 +1993,14 @@ export default class GameBoyCore {
           }
         }
       }
-      if (this.TIMAEnabled && (this.interruptsEnabled & 0x4) === 0x4) {
+      if (this.TIMAEnabled && ((this.interruptEnabledFlags >> 2) & 1) === 1) {
         //CPU timer IRQ prediction:
         const temp_var = (0x100 - this.memory[0xff05]) * this.TACClocker - this.timerTicks;
         if (temp_var <= currentClocks || currentClocks === -1) {
           currentClocks = temp_var;
         }
       }
-      if (this.serialTimer > 0 && (this.interruptsEnabled & 0x8) === 0x8) {
+      if (this.serialTimer > 0 && ((this.interruptEnabledFlags >> 3) & 1) === 1) {
         //Serial IRQ prediction:
         if (this.serialTimer <= currentClocks || currentClocks === -1) {
           currentClocks = this.serialTimer;

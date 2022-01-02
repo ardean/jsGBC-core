@@ -1,6 +1,3 @@
-export const WORD_MAX = 0xFFFF;
-export const BYTE_MAX = 0xFF;
-
 // Interrupt service routine addresses
 export const VBLANK_ISR_ADDR = 0x40;
 export const LCDC_ISR_ADDR = 0x48;
@@ -60,16 +57,10 @@ export const IO_PORTS_END = 0xFF7F;
 export const ZERO_PAGE_START = 0xFF80;
 export const ZERO_PAGE_END = 0xFFFE;
 
-/* -------------------------------------*/
-
-// Convert between local IO memory address and global address
-//  export const GLOBAL_TO_IO_ADDR(A) A - 0xFF00
-//  export const IO_TO_GLOBAL_ADDR(A) A + 0xFF00
-
 /*  -------------IO ports/registers ------------------*/
-export const joypadAddress = 0xFF00; /*  Register for reading joy pad info */
-export const SERIAL_DATA_REG = 0xFF01; /*  Serial transfer data */
-export const SERIAL_CONTROL_REG = 0xFF02; /*  SIO control */
+export const joypadAddress = 0xFF00;
+export const serialDataAddress = 0xFF01;
+export const serialControlAddress = 0xFF02;
 export const DIV_REG = 0xFF04; /*  Divider register */
 export const TIMA_REG = 0xFF05; /*  Timer Counter */
 export const TMA_REG = 0xFF06; /*  Timer Modulo  */
@@ -151,4 +142,4 @@ export const undocumentedGbcOnlyAddress = 0xFF6C;
 
 export const SRAM_BANK = 0xFF70; // Register to select internal RAM banks for Gameboy Color
 
-export const INTERRUPT_ENABLE_REG = 0xFFFF; /*  Interrupt Enable Register */
+export const interruptEnableAddress = 0xFFFF;

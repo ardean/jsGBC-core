@@ -142,17 +142,17 @@ export default class Memory {
     this.setHighReader(MemoryLayout.joypadAddress, this.gameboy.joypad.readMemory);
 
     const serialDataReader = () =>
-      this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_CONTROL_REG) < 0x80 ?
-        this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_DATA_REG) :
+      this.gameboy.memoryReadNormal(MemoryLayout.serialControlAddress) < 0x80 ?
+        this.gameboy.memoryReadNormal(MemoryLayout.serialDataAddress) :
         0xff;
-    this.setReader(MemoryLayout.SERIAL_DATA_REG, serialDataReader);
-    this.setHighReader(MemoryLayout.SERIAL_DATA_REG, serialDataReader);
+    this.setReader(MemoryLayout.serialDataAddress, serialDataReader);
+    this.setHighReader(MemoryLayout.serialDataAddress, serialDataReader);
 
     const serialControlReader = this.gameboy.cartridge.useGbcMode ?
-      () => (this.gameboy.serialTimer <= 0 ? 0x7c : 0xfc) | this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_CONTROL_REG) :
-      () => (this.gameboy.serialTimer <= 0 ? 0x7e : 0xfe) | this.gameboy.memoryReadNormal(MemoryLayout.SERIAL_CONTROL_REG);
-    this.setReader(MemoryLayout.SERIAL_CONTROL_REG, serialControlReader);
-    this.setHighReader(MemoryLayout.SERIAL_CONTROL_REG, serialControlReader);
+      () => (this.gameboy.serialTimer <= 0 ? 0x7c : 0xfc) | this.gameboy.memoryReadNormal(MemoryLayout.serialControlAddress) :
+      () => (this.gameboy.serialTimer <= 0 ? 0x7e : 0xfe) | this.gameboy.memoryReadNormal(MemoryLayout.serialControlAddress);
+    this.setReader(MemoryLayout.serialControlAddress, serialControlReader);
+    this.setHighReader(MemoryLayout.serialControlAddress, serialControlReader);
 
     this.setReader(0xff03, this.readBad);
     this.setHighReader(0xff03, this.readBad);
@@ -171,14 +171,14 @@ export default class Memory {
     this.setReader(MemoryLayout.TMA_REG, this.gameboy.memoryReadNormal);
     this.setHighReader(MemoryLayout.TMA_REG, this.gameboy.memoryHighReadNormal);
 
-    const timerControlReader = () => 0xf8 | this.gameboy.memoryReadNormal(MemoryLayout.TIMER_CONTROL_REG);
+    const timerControlReader = () => 0xF8 | this.gameboy.memoryReadNormal(MemoryLayout.TIMER_CONTROL_REG);
     this.setReader(MemoryLayout.TIMER_CONTROL_REG, timerControlReader);
     this.setHighReader(MemoryLayout.TIMER_CONTROL_REG, timerControlReader);
 
-    this.setReaders(0xff08, 0xff0e, this.readBad);
-    this.setHighReaders(0xff08, 0xff0e, this.readBad);
+    this.setReaders(0xFF08, 0xFF0E, this.readBad);
+    this.setHighReaders(0xFF08, 0xFF0E, this.readBad);
 
-    const interruptFlagReader = () => 0xe0 | this.gameboy.interruptsRequested;
+    const interruptFlagReader = () => 0xE0 | this.gameboy.interruptRequestedFlags;
     this.setReader(MemoryLayout.INTERRUPT_FLAG_REG, interruptFlagReader);
     this.setHighReader(MemoryLayout.INTERRUPT_FLAG_REG, interruptFlagReader);
 
@@ -548,8 +548,8 @@ export default class Memory {
           case 0xff7f:
             this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryReader[address] = this.readBad;
             break;
-          case MemoryLayout.INTERRUPT_ENABLE_REG:
-            this.gameboy.highMemoryReader[0xff] = this.gameboy.memoryReader[MemoryLayout.INTERRUPT_ENABLE_REG] = address => this.gameboy.interruptsEnabled;
+          case MemoryLayout.interruptEnableAddress:
+            this.gameboy.highMemoryReader[0xff] = this.gameboy.memoryReader[MemoryLayout.interruptEnableAddress] = address => this.gameboy.interruptEnabledFlags;
             break;
           default:
             this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
@@ -674,37 +674,37 @@ export default class Memory {
 
   registerIOMemoryWriters() {
     // SB (Serial Transfer Data)
-    this.gameboy.highMemoryWriter[0x1] = this.gameboy.memoryWriter[MemoryLayout.SERIAL_DATA_REG] = (address: number, data: number) => {
-      if (this.gameboy.memory[MemoryLayout.SERIAL_CONTROL_REG] < 0x80) {
+    this.gameboy.highMemoryWriter[0x1] = this.gameboy.memoryWriter[MemoryLayout.serialDataAddress] = (address: number, data: number) => {
+      if (this.gameboy.memory[MemoryLayout.serialControlAddress] < 0x80) {
         //Cannot write while a serial transfer is active.
-        this.gameboy.memory[MemoryLayout.SERIAL_DATA_REG] = data;
+        this.gameboy.memory[MemoryLayout.serialDataAddress] = data;
       }
     };
     // SC (Serial Transfer Control):
     this.gameboy.highMemoryWriter[0x2] = this.gameboy.memoryHighWriteNormal;
-    this.gameboy.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = this.gameboy.memoryWriteNormal;
+    this.gameboy.memoryWriter[MemoryLayout.serialControlAddress] = this.gameboy.memoryWriteNormal;
 
     // Unmapped I/O:
     this.gameboy.highMemoryWriter[0x3] = this.gameboy.memoryWriter[0xff03] = this.writeIllegal;
 
     // DIV
-    this.gameboy.highMemoryWriter[0x4] = this.gameboy.memoryWriter[MemoryLayout.DIV_REG] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x4] = this.gameboy.memoryWriter[MemoryLayout.DIV_REG] = (address: number, data: number) => {
       this.gameboy.DIVTicks &= 0xff; // Update DIV for realignment.
       this.gameboy.memory[MemoryLayout.DIV_REG] = 0;
     };
     // TIMA
-    this.gameboy.highMemoryWriter[0x5] = this.gameboy.memoryWriter[0xff05] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x5] = this.gameboy.memoryWriter[0xff05] = (address: number, data: number) => {
       this.gameboy.memory[0xff05] = data;
     };
     // TMA
-    this.gameboy.highMemoryWriter[0x6] = this.gameboy.memoryWriter[0xff06] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x6] = this.gameboy.memoryWriter[0xff06] = (address: number, data: number) => {
       this.gameboy.memory[0xff06] = data;
     };
     // TAC
-    this.gameboy.highMemoryWriter[0x7] = this.gameboy.memoryWriter[0xff07] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x7] = this.gameboy.memoryWriter[0xff07] = (address: number, data: number) => {
       this.gameboy.memory[0xff07] = data & 0x07;
       this.gameboy.TIMAEnabled = (data & 0x04) === 0x04;
-      this.gameboy.TACClocker = Math.pow(4, (data & 0x3) != 0 ? data & 0x3 : 4) << 2; //TODO: Find a way to not make a conditional in here...
+      this.gameboy.TACClocker = Math.pow(4, (data & 0b11) !== 0 ? data & 0b11 : 4) << 2; //TODO: Find a way to not make a conditional in here...
     };
     //Unmapped I/O:
     this.gameboy.highMemoryWriter[0x8] = this.gameboy.memoryWriter[0xff08] = this.writeIllegal;
@@ -715,8 +715,8 @@ export default class Memory {
     this.gameboy.highMemoryWriter[0xd] = this.gameboy.memoryWriter[0xff0d] = this.writeIllegal;
     this.gameboy.highMemoryWriter[0xe] = this.gameboy.memoryWriter[0xff0e] = this.writeIllegal;
     //IF (Interrupt Request)
-    this.gameboy.highMemoryWriter[0xf] = this.gameboy.memoryWriter[0xff0f] = (address, data) => {
-      this.gameboy.interruptsRequested = data;
+    this.gameboy.highMemoryWriter[0xf] = this.gameboy.memoryWriter[0xff0f] = (address: number, data: number) => {
+      this.gameboy.interruptRequestedFlags = data;
       this.gameboy.checkIRQMatching();
     };
 
@@ -736,21 +736,21 @@ export default class Memory {
     this.gameboy.audioController.registerWaveformMemoryWriters();
 
     //SCY
-    this.gameboy.highMemoryWriter[0x42] = this.gameboy.memoryWriter[0xff42] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x42] = this.gameboy.memoryWriter[0xff42] = (address: number, data: number) => {
       if (this.gameboy.backgroundY != data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.backgroundY = data;
       }
     };
     //SCX
-    this.gameboy.highMemoryWriter[0x43] = this.gameboy.memoryWriter[0xff43] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x43] = this.gameboy.memoryWriter[0xff43] = (address: number, data: number) => {
       if (this.gameboy.backgroundX != data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.backgroundX = data;
       }
     };
     //LY
-    this.gameboy.highMemoryWriter[0x44] = this.gameboy.memoryWriter[0xff44] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x44] = this.gameboy.memoryWriter[0xff44] = (address: number, data: number) => {
       //Read Only:
       if (this.gameboy.gpu.lcdEnabled) {
         //Gambatte says to do this.gameboy:
@@ -760,7 +760,7 @@ export default class Memory {
       }
     };
     //LYC
-    this.gameboy.highMemoryWriter[0x45] = this.gameboy.memoryWriter[0xff45] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x45] = this.gameboy.memoryWriter[0xff45] = (address: number, data: number) => {
       if (this.gameboy.memory[0xff45] != data) {
         this.gameboy.memory[0xff45] = data;
         if (this.gameboy.gpu.lcdEnabled) {
@@ -769,33 +769,33 @@ export default class Memory {
       }
     };
     //WY
-    this.gameboy.highMemoryWriter[0x4a] = this.gameboy.memoryWriter[0xff4a] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x4a] = this.gameboy.memoryWriter[0xff4a] = (address: number, data: number) => {
       if (this.gameboy.windowY != data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.windowY = data;
       }
     };
     //WX
-    this.gameboy.highMemoryWriter[0x4b] = this.gameboy.memoryWriter[0xff4b] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x4b] = this.gameboy.memoryWriter[0xff4b] = (address: number, data: number) => {
       if (this.gameboy.memory[0xff4b] != data) {
         this.gameboy.midScanLineJIT();
         this.gameboy.memory[0xff4b] = data;
         this.gameboy.windowX = data - 7;
       }
     };
-    this.gameboy.highMemoryWriter[0x72] = this.gameboy.memoryWriter[0xff72] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x72] = this.gameboy.memoryWriter[0xff72] = (address: number, data: number) => {
       this.gameboy.memory[0xff72] = data;
     };
-    this.gameboy.highMemoryWriter[0x73] = this.gameboy.memoryWriter[0xff73] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x73] = this.gameboy.memoryWriter[0xff73] = (address: number, data: number) => {
       this.gameboy.memory[0xff73] = data;
     };
-    this.gameboy.highMemoryWriter[0x75] = this.gameboy.memoryWriter[0xff75] = (address, data) => {
+    this.gameboy.highMemoryWriter[0x75] = this.gameboy.memoryWriter[0xff75] = (address: number, data: number) => {
       this.gameboy.memory[0xff75] = data;
     };
     this.gameboy.highMemoryWriter[0x76] = this.gameboy.memoryWriter[0xff76] = this.writeIllegal;
     this.gameboy.highMemoryWriter[0x77] = this.gameboy.memoryWriter[0xff77] = this.writeIllegal;
-    this.gameboy.highMemoryWriter[0xff] = this.gameboy.memoryWriter[MemoryLayout.INTERRUPT_ENABLE_REG] = (address, data) => {
-      this.gameboy.interruptsEnabled = data;
+    this.gameboy.highMemoryWriter[0xff] = this.gameboy.memoryWriter[MemoryLayout.interruptEnableAddress] = (address: number, data: number) => {
+      this.gameboy.interruptEnabledFlags = data;
       this.gameboy.checkIRQMatching();
     };
     this.recompileModelSpecificIOWriteHandling();
@@ -806,19 +806,19 @@ export default class Memory {
     if (this.gameboy.cartridge.useGbcMode) {
       // GameBoy Color Specific I/O:
       // SC (Serial Transfer Control Register)
-      this.gameboy.highMemoryWriter[0x2] = this.gameboy.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x2] = this.gameboy.memoryWriter[MemoryLayout.serialControlAddress] = (address: number, data: number) => {
         if ((data & 0x1) === 0x1) {
           // Internal clock:
-          this.gameboy.memory[MemoryLayout.SERIAL_CONTROL_REG] = data & 0x7f;
+          this.gameboy.memory[MemoryLayout.serialControlAddress] = data & 0x7f;
           this.gameboy.serialTimer = (data & 0x2) === 0 ? 4096 : 128; //Set the Serial IRQ counter.
           this.gameboy.serialShiftTimer = this.gameboy.serialShiftTimerAllocated = (data & 0x2) === 0 ? 512 : 16; //Set the transfer data shift counter.
         } else {
           // External clock:
-          this.gameboy.memory[MemoryLayout.SERIAL_CONTROL_REG] = data;
+          this.gameboy.memory[MemoryLayout.serialControlAddress] = data;
           this.gameboy.serialShiftTimer = this.gameboy.serialShiftTimerAllocated = this.gameboy.serialTimer = 0; //Zero the timers, since we're emulating as if nothing is connected.
         }
       };
-      this.gameboy.highMemoryWriter[0x40] = this.gameboy.memoryWriter[0xff40] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x40] = this.gameboy.memoryWriter[0xff40] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff40] !== data) {
           this.gameboy.midScanLineJIT();
           const isLcdOn = data > 0x7f;
@@ -837,7 +837,7 @@ export default class Memory {
               this.gameboy.gpu.disableLCD();
               this.gameboy.lcdDevice.DisplayShowOff();
             }
-            this.gameboy.interruptsRequested &= 0xfd;
+            this.gameboy.interruptRequestedFlags &= 0xfd;
           }
           this.gameboy.gfxWindowCHRBankPosition = (data & 0x40) === 0x40 ? 0x400 : 0;
           this.gameboy.gfxWindowDisplay = (data & 0x20) === 0x20;
@@ -850,14 +850,14 @@ export default class Memory {
           this.gameboy.memory[0xff40] = data;
         }
       };
-      this.gameboy.highMemoryWriter[0x41] = this.gameboy.memoryWriter[0xff41] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x41] = this.gameboy.memoryWriter[0xff41] = (address: number, data: number) => {
         this.gameboy.LYCMatchTriggerSTAT = (data & 0x40) === 0x40;
         this.gameboy.mode2TriggerSTAT = (data & 0x20) === 0x20;
         this.gameboy.mode1TriggerSTAT = (data & 0x10) === 0x10;
         this.gameboy.mode0TriggerSTAT = (data & 0x08) === 0x08;
         this.gameboy.memory[0xff41] = data & 0x78;
       };
-      this.gameboy.highMemoryWriter[0x46] = this.gameboy.memoryWriter[0xff46] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x46] = this.gameboy.memoryWriter[0xff46] = (address: number, data: number) => {
         this.gameboy.memory[0xff46] = data;
         if (data < 0xe0) {
           data <<= 8;
@@ -888,10 +888,10 @@ export default class Memory {
         }
       };
       //KEY1
-      this.gameboy.highMemoryWriter[0x4d] = this.gameboy.memoryWriter[0xff4d] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x4d] = this.gameboy.memoryWriter[0xff4d] = (address: number, data: number) => {
         this.gameboy.memory[0xff4d] = data & 0x7f | this.gameboy.memory[0xff4d] & 0x80;
       };
-      this.gameboy.highMemoryWriter[0x4f] = this.gameboy.memoryWriter[0xff4f] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x4f] = this.gameboy.memoryWriter[0xff4f] = (address: number, data: number) => {
         this.gameboy.currVRAMBank = data & 0x01;
         if (this.gameboy.currVRAMBank > 0) {
           this.gameboy.BGCHRCurrentBank = this.gameboy.BGCHRBank2;
@@ -901,27 +901,27 @@ export default class Memory {
 
         //Only writable by GBC.
       };
-      this.gameboy.highMemoryWriter[0x51] = this.gameboy.memoryWriter[0xff51] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x51] = this.gameboy.memoryWriter[0xff51] = (address: number, data: number) => {
         if (!this.gameboy.hdmaRunning) {
           this.gameboy.memory[0xff51] = data;
         }
       };
-      this.gameboy.highMemoryWriter[0x52] = this.gameboy.memoryWriter[0xff52] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x52] = this.gameboy.memoryWriter[0xff52] = (address: number, data: number) => {
         if (!this.gameboy.hdmaRunning) {
           this.gameboy.memory[0xff52] = data & 0xf0;
         }
       };
-      this.gameboy.highMemoryWriter[0x53] = this.gameboy.memoryWriter[0xff53] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x53] = this.gameboy.memoryWriter[0xff53] = (address: number, data: number) => {
         if (!this.gameboy.hdmaRunning) {
           this.gameboy.memory[0xff53] = data & 0x1f;
         }
       };
-      this.gameboy.highMemoryWriter[0x54] = this.gameboy.memoryWriter[0xff54] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x54] = this.gameboy.memoryWriter[0xff54] = (address: number, data: number) => {
         if (!this.gameboy.hdmaRunning) {
           this.gameboy.memory[0xff54] = data & 0xf0;
         }
       };
-      this.gameboy.highMemoryWriter[0x55] = this.gameboy.memoryWriter[0xff55] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x55] = this.gameboy.memoryWriter[0xff55] = (address: number, data: number) => {
         if (!this.gameboy.hdmaRunning) {
           if ((data & 0x80) === 0) {
             //DMA
@@ -940,11 +940,11 @@ export default class Memory {
           this.gameboy.memory[0xff55] = data & 0x7f;
         }
       };
-      this.gameboy.highMemoryWriter[0x68] = this.gameboy.memoryWriter[0xff68] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x68] = this.gameboy.memoryWriter[0xff68] = (address: number, data: number) => {
         this.gameboy.memory[0xff69] = this.gameboy.gbcBGRawPalette[data & 0x3f];
         this.gameboy.memory[0xff68] = data;
       };
-      this.gameboy.highMemoryWriter[0x69] = this.gameboy.memoryWriter[0xff69] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x69] = this.gameboy.memoryWriter[0xff69] = (address: number, data: number) => {
         this.gameboy.updateGBCBGPalette(this.gameboy.memory[0xff68] & 0x3f, data);
         if (this.gameboy.memory[0xff68] > 0x7f) {
           // high bit = autoincrement
@@ -955,11 +955,11 @@ export default class Memory {
           this.gameboy.memory[0xff69] = data;
         }
       };
-      this.gameboy.highMemoryWriter[0x6a] = this.gameboy.memoryWriter[0xff6a] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x6a] = this.gameboy.memoryWriter[0xff6a] = (address: number, data: number) => {
         this.gameboy.memory[0xff6b] = this.gameboy.gbcOBJRawPalette[data & 0x3f];
         this.gameboy.memory[0xff6a] = data;
       };
-      this.gameboy.highMemoryWriter[0x6b] = this.gameboy.memoryWriter[0xff6b] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x6b] = this.gameboy.memoryWriter[0xff6b] = (address: number, data: number) => {
         this.gameboy.updateGBCOBJPalette(this.gameboy.memory[0xff6a] & 0x3f, data);
         if (this.gameboy.memory[0xff6a] > 0x7f) {
           // high bit = autoincrement
@@ -971,7 +971,7 @@ export default class Memory {
         }
       };
       //SVBK
-      this.gameboy.highMemoryWriter[0x70] = this.gameboy.memoryWriter[0xff70] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x70] = this.gameboy.memoryWriter[0xff70] = (address: number, data: number) => {
         var addressCheck = this.gameboy.memory[0xff51] << 8 | this.gameboy.memory[0xff52]; //Cannot change the RAM bank while WRAM is the source of a running HDMA.
         if (!this.gameboy.hdmaRunning || addressCheck < 0xd000 || addressCheck >= 0xe000) {
           this.gameboy.gbcRamBank = Math.max(data & 0x07, 1); //Bank range is from 1-7
@@ -980,25 +980,25 @@ export default class Memory {
         }
         this.gameboy.memory[0xff70] = data; //Bit 6 cannot be written to.
       };
-      this.gameboy.highMemoryWriter[0x74] = this.gameboy.memoryWriter[0xff74] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x74] = this.gameboy.memoryWriter[0xff74] = (address: number, data: number) => {
         this.gameboy.memory[0xff74] = data;
       };
     } else {
       //Fill in the GameBoy Color I/O registers as normal RAM for GameBoy compatibility:
       //SC (Serial Transfer Control Register)
-      this.gameboy.highMemoryWriter[0x2] = this.gameboy.memoryWriter[MemoryLayout.SERIAL_CONTROL_REG] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x2] = this.gameboy.memoryWriter[MemoryLayout.serialControlAddress] = (address: number, data: number) => {
         if ((data & 0x1) === 0x1) {
           //Internal clock:
-          this.gameboy.memory[MemoryLayout.SERIAL_CONTROL_REG] = data & 0x7f;
+          this.gameboy.memory[MemoryLayout.serialControlAddress] = data & 0x7f;
           this.gameboy.serialTimer = 4096; //Set the Serial IRQ counter.
           this.gameboy.serialShiftTimer = this.gameboy.serialShiftTimerAllocated = 512; //Set the transfer data shift counter.
         } else {
           //External clock:
-          this.gameboy.memory[MemoryLayout.SERIAL_CONTROL_REG] = data;
+          this.gameboy.memory[MemoryLayout.serialControlAddress] = data;
           this.gameboy.serialShiftTimer = this.gameboy.serialShiftTimerAllocated = this.gameboy.serialTimer = 0; //Zero the timers, since we're emulating as if nothing is connected.
         }
       };
-      this.gameboy.highMemoryWriter[0x40] = this.gameboy.memoryWriter[0xff40] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x40] = this.gameboy.memoryWriter[0xff40] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff40] != data) {
           this.gameboy.midScanLineJIT();
           const newState = data > 0x7f;
@@ -1017,7 +1017,7 @@ export default class Memory {
               this.gameboy.gpu.disableLCD();
               this.gameboy.lcdDevice.DisplayShowOff();
             }
-            this.gameboy.interruptsRequested &= 0xfd;
+            this.gameboy.interruptRequestedFlags &= 0xfd;
           }
           this.gameboy.gfxWindowCHRBankPosition = (data & 0x40) === 0x40 ? 0x400 : 0;
           this.gameboy.gfxWindowDisplay = (data & 0x20) === 0x20;
@@ -1029,18 +1029,18 @@ export default class Memory {
           this.gameboy.memory[0xff40] = data;
         }
       };
-      this.gameboy.highMemoryWriter[0x41] = this.gameboy.memoryWriter[0xff41] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x41] = this.gameboy.memoryWriter[0xff41] = (address: number, data: number) => {
         this.gameboy.LYCMatchTriggerSTAT = (data & 0x40) === 0x40;
         this.gameboy.mode2TriggerSTAT = (data & 0x20) === 0x20;
         this.gameboy.mode1TriggerSTAT = (data & 0x10) === 0x10;
         this.gameboy.mode0TriggerSTAT = (data & 0x08) === 0x08;
         this.gameboy.memory[0xff41] = data & 0x78;
         if ((!this.gameboy.usedBootRom || !this.gameboy.usedGbcBootRom) && this.gameboy.gpu.lcdEnabled && this.gameboy.modeSTAT < 2) {
-          this.gameboy.interruptsRequested |= 0x2;
+          this.gameboy.interruptRequestedFlags |= 0x2;
           this.gameboy.checkIRQMatching();
         }
       };
-      this.gameboy.highMemoryWriter[0x46] = this.gameboy.memoryWriter[0xff46] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x46] = this.gameboy.memoryWriter[0xff46] = (address: number, data: number) => {
         this.gameboy.memory[0xff46] = data;
         if (data > 0x7f && data < 0xe0) {
           //DMG cannot DMA from the ROM banks.
@@ -1071,28 +1071,28 @@ export default class Memory {
           this.gameboy.modeSTAT = stat;
         }
       };
-      this.gameboy.highMemoryWriter[0x47] = this.gameboy.memoryWriter[0xff47] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x47] = this.gameboy.memoryWriter[0xff47] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff47] != data) {
           this.gameboy.midScanLineJIT();
           this.gameboy.updateGBBGPalette(data);
           this.gameboy.memory[0xff47] = data;
         }
       };
-      this.gameboy.highMemoryWriter[0x48] = this.gameboy.memoryWriter[0xff48] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x48] = this.gameboy.memoryWriter[0xff48] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff48] != data) {
           this.gameboy.midScanLineJIT();
           this.gameboy.updateGBOBJPalette(0, data);
           this.gameboy.memory[0xff48] = data;
         }
       };
-      this.gameboy.highMemoryWriter[0x49] = this.gameboy.memoryWriter[0xff49] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x49] = this.gameboy.memoryWriter[0xff49] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff49] != data) {
           this.gameboy.midScanLineJIT();
           this.gameboy.updateGBOBJPalette(4, data);
           this.gameboy.memory[0xff49] = data;
         }
       };
-      this.gameboy.highMemoryWriter[0x4d] = this.gameboy.memoryWriter[0xff4d] = (address, data) => {
+      this.gameboy.highMemoryWriter[0x4d] = this.gameboy.memoryWriter[0xff4d] = (address: number, data: number) => {
         this.gameboy.memory[0xff4d] = data;
       };
       this.gameboy.highMemoryWriter[0x4f] = this.gameboy.memoryWriter[0xff4f] = this.writeIllegal; // Not writable in DMG mode.

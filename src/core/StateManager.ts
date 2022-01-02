@@ -210,8 +210,8 @@ export default class StateManager {
     //   fromTypedArray(gameboy.BGCHRBank1),
     //   fromTypedArray(gameboy.BGCHRBank2),
     //   gameboy.haltPostClocks,
-    //   gameboy.interruptsRequested,
-    //   gameboy.interruptsEnabled,
+    //   gameboy.interruptRequestedFlags,
+    //   gameboy.interruptEnabledFlags,
     //   gameboy.remainingClocks,
     //   gameboy.colorizedGBPalettes,
     //   gameboy.backgroundY,
@@ -424,8 +424,8 @@ export default class StateManager {
     gameboy.BGCHRBank1 = toTypedArray(state[index++], "uint8");
     gameboy.BGCHRBank2 = toTypedArray(state[index++], "uint8");
     gameboy.haltPostClocks = state[index++];
-    gameboy.interruptsRequested = state[index++];
-    gameboy.interruptsEnabled = state[index++];
+    gameboy.interruptRequestedFlags = state[index++];
+    gameboy.interruptEnabledFlags = state[index++];
     gameboy.checkIRQMatching();
     gameboy.remainingClocks = state[index++];
     gameboy.colorizedGBPalettes = state[index++];
