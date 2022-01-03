@@ -28,9 +28,10 @@ export type Action = (
 );
 
 export const actions: Action[] = [
-  "Start", "Select",
+  "Right", "Left",
+  "Up", "Down",
   "A", "B",
-  "Up", "Down", "Left", "Right"
+  "Select", "Start"
 ];
 
 export default class GameBoy extends EventEmitter {
@@ -223,23 +224,23 @@ export default class GameBoy extends EventEmitter {
   }
 
   registerActions() {
-    for (const button of actions) {
-      const index = actions.indexOf(button);
+    for (const action of actions) {
+      const index = actions.indexOf(action);
       this.actions
-        .register(button)
-        .addListener("down-" + button, () => {
+        .register(action)
+        .addListener("Down" + action, () => {
           this.joypad.down(index);
         })
-        .addListener("up-" + button, () => {
+        .addListener("Up" + action, () => {
           this.joypad.up(index);
         });
     }
 
     this.actions
       .register("Speed")
-      .addListener("down-speed", options => this.handleSpeed(options))
-      .addListener("change-speed", options => this.handleSpeed(options))
-      .addListener("up-speed", () => {
+      .addListener("DownSpeed", options => this.handleSpeed(options))
+      .addListener("ChangeSpeed", options => this.handleSpeed(options))
+      .addListener("UpSpeed", () => {
         this.setSpeed(1);
       });
   }

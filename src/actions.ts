@@ -17,14 +17,14 @@ export default class Actions extends EventEmitter {
   }
 
   down(action: string, options) {
-    this.emit("down-" + action, options);
+    this.emit("Down" + action, options);
   }
 
   change(action: string, options) {
-    this.emit("change-" + action, options);
+    this.emit("Change" + action, options);
   }
 
   up(action: string, options) {
-    this.emit("up-" + action, options);
+    this.emit("Up" + action, options);
   }
 }
