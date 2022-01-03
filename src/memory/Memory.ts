@@ -1,4 +1,4 @@
-import GameBoy from "../GameBoy_";
+import GameBoy from "../GameBoy";
 import * as MemoryLayout from "./Layout";
 
 export type WriterFunction = (address: number, value: number) => void;
@@ -110,37 +110,37 @@ export default class Memory {
           address
         )
     );
-    this.setReaders(MemoryLayout.TILE_SET_0_START, MemoryLayout.TILE_SET_1_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMDATAReadCGBCPU : this.gameboy.VRAMDATAReadDMGCPU);
-    this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMCHRReadCGBCPU : this.gameboy.VRAMCHRReadDMGCPU);
+    this.setReaders(MemoryLayout.TILE_SET_0_START, MemoryLayout.TILE_SET_1_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.readGbcVideoRam : this.gameboy.readVideoRam);
+    this.setReaders(MemoryLayout.cartridgeRamStartAddress, MemoryLayout.cartridgeRamEndAddress, this.gameboy.cartridge.useGbcMode ? this.gameboy.readGbcCharacterVideoRam : this.gameboy.readCharacterVideoRam);
 
     if (this.gameboy.cartridge.mbc?.ramSize === 0) {
-      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.readBad);
-    } else if (this.gameboy.cartridge.hasMBC7) {
-      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.mbc?.readRam || this.readBad);
-    } else if (this.gameboy.cartridge.hasMBC3) {
-      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.mbc?.readRam || this.readBad);
+      this.setReaders(MemoryLayout.cartridgeRamStartAddress, MemoryLayout.cartridgeRamEndAddress, this.readBad);
+    } else if (this.gameboy.cartridge.hasMbc7) {
+      this.setReaders(MemoryLayout.cartridgeRamStartAddress, MemoryLayout.cartridgeRamEndAddress, this.gameboy.cartridge.mbc?.readRam || this.readBad);
+    } else if (this.gameboy.cartridge.hasMbc3) {
+      this.setReaders(MemoryLayout.cartridgeRamStartAddress, MemoryLayout.cartridgeRamEndAddress, this.gameboy.cartridge.mbc?.readRam || this.readBad);
     } else {
-      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.mbc?.readRam || this.readBad);
+      this.setReaders(MemoryLayout.cartridgeRamStartAddress, MemoryLayout.cartridgeRamEndAddress, this.gameboy.cartridge.mbc?.readRam || this.readBad);
     }
 
-    this.setReaders(MemoryLayout.INTERNAL_RAM_BANK0_START, MemoryLayout.INTERNAL_RAM_BANK0_END, this.gameboy.memoryReadNormal);
+    this.setReaders(MemoryLayout.INTERNAL_RAM_BANK0_START, MemoryLayout.INTERNAL_RAM_BANK0_END, this.readDirectly);
     if (this.gameboy.cartridge.useGbcMode) {
       this.setReaders(MemoryLayout.INTERNAL_RAM_SWITCH_BANK_START, MemoryLayout.INTERNAL_RAM_SWITCH_BANK_END, this.gameboy.memoryReadGBCMemory);
     } else {
-      this.setReaders(MemoryLayout.INTERNAL_RAM_SWITCH_BANK_START, MemoryLayout.INTERNAL_RAM_SWITCH_BANK_END, this.gameboy.memoryReadNormal);
+      this.setReaders(MemoryLayout.INTERNAL_RAM_SWITCH_BANK_START, MemoryLayout.INTERNAL_RAM_SWITCH_BANK_END, this.readDirectly);
     }
 
-    this.setReaders(MemoryLayout.ECHO_RAM_START, 0xEFFF, this.gameboy.memoryReadECHONormal);
+    this.setReaders(MemoryLayout.echoRamStartAddress, 0xEFFF, this.gameboy.readEchoRam);
     if (this.gameboy.cartridge.useGbcMode) {
-      this.setReaders(0xF000, MemoryLayout.ECHO_RAM_END, this.gameboy.memoryReadECHOGBCMemory);
+      this.setReaders(0xF000, MemoryLayout.echoRamEndAddress, this.gameboy.readGbcEchoRam);
     } else {
-      this.setReaders(0xF000, MemoryLayout.ECHO_RAM_END, this.gameboy.memoryReadECHONormal);
+      this.setReaders(0xF000, MemoryLayout.echoRamEndAddress, this.gameboy.readEchoRam);
     }
 
     this.setReaders(MemoryLayout.SPRITE_ATTRIBUTE_TABLE_START, MemoryLayout.SPRITE_ATTRIBUTE_TABLE_END, this.gameboy.memoryReadOAM);
 
     if (this.gameboy.cartridge.useGbcMode) {
-      this.setReaders(MemoryLayout.UNUSABLE_MEM_START, MemoryLayout.UNUSABLE_MEM_END, this.gameboy.memoryReadNormal);
+      this.setReaders(MemoryLayout.unusableMemoryStartAddress, MemoryLayout.unusableMemoryEndAddress, this.readDirectly);
     }
 
     this.setWriter(MemoryLayout.joypadAddress, this.gameboy.joypad.writeMemory);
@@ -150,15 +150,27 @@ export default class Memory {
     this.setHighReader(MemoryLayout.joypadAddress, this.gameboy.joypad.readMemory);
 
     const serialDataReader = () =>
-      this.gameboy.memoryReadNormal(MemoryLayout.serialControlAddress) < 0x80 ?
-        this.gameboy.memoryReadNormal(MemoryLayout.serialDataAddress) :
+      this.readDirectly(MemoryLayout.serialControlAddress) < 0x80 ?
+        this.readDirectly(MemoryLayout.serialDataAddress) :
         0xff;
     this.setReader(MemoryLayout.serialDataAddress, serialDataReader);
     this.setHighReader(MemoryLayout.serialDataAddress, serialDataReader);
 
     const serialControlReader = this.gameboy.cartridge.useGbcMode ?
-      () => (this.gameboy.serialTimer <= 0 ? 0x7c : 0xfc) | this.gameboy.memoryReadNormal(MemoryLayout.serialControlAddress) :
-      () => (this.gameboy.serialTimer <= 0 ? 0x7e : 0xfe) | this.gameboy.memoryReadNormal(MemoryLayout.serialControlAddress);
+      () => (
+        (
+          this.gameboy.serialTimer <= 0 ?
+            0x7c :
+            0xfc
+        ) | this.readDirectly(MemoryLayout.serialControlAddress)
+      ) :
+      () => (
+        (
+          this.gameboy.serialTimer <= 0 ?
+            0x7e :
+            0xfe
+        ) | this.readDirectly(MemoryLayout.serialControlAddress)
+      );
     this.setReader(MemoryLayout.serialControlAddress, serialControlReader);
     this.setHighReader(MemoryLayout.serialControlAddress, serialControlReader);
 
@@ -166,22 +178,22 @@ export default class Memory {
     this.setHighReader(0xff03, this.readBad);
 
     const divReader = () => {
-      this.gameboy.memory[MemoryLayout.DIV_REG] = this.gameboy.memoryReadNormal(MemoryLayout.DIV_REG) + (this.gameboy.DIVTicks >> 8) & 0xff;
+      this.gameboy.memory[MemoryLayout.divAddress] = this.readDirectly(MemoryLayout.divAddress) + (this.gameboy.DIVTicks >> 8) & 0xff;
       this.gameboy.DIVTicks &= 0xff;
-      return this.gameboy.memoryReadNormal(MemoryLayout.DIV_REG);
+      return this.readDirectly(MemoryLayout.divAddress);
     };
-    this.setReader(MemoryLayout.DIV_REG, divReader);
-    this.setHighReader(MemoryLayout.DIV_REG, divReader);
+    this.setReader(MemoryLayout.divAddress, divReader);
+    this.setHighReader(MemoryLayout.divAddress, divReader);
 
-    this.setReader(MemoryLayout.TIMA_REG, this.gameboy.memoryReadNormal);
+    this.setReader(MemoryLayout.TIMA_REG, this.readDirectly);
     this.setHighReader(MemoryLayout.TIMA_REG, this.gameboy.memoryHighReadNormal);
 
-    this.setReader(MemoryLayout.TMA_REG, this.gameboy.memoryReadNormal);
+    this.setReader(MemoryLayout.TMA_REG, this.readDirectly);
     this.setHighReader(MemoryLayout.TMA_REG, this.gameboy.memoryHighReadNormal);
 
-    const timerControlReader = () => 0xF8 | this.gameboy.memoryReadNormal(MemoryLayout.TIMER_CONTROL_REG);
-    this.setReader(MemoryLayout.TIMER_CONTROL_REG, timerControlReader);
-    this.setHighReader(MemoryLayout.TIMER_CONTROL_REG, timerControlReader);
+    const timerControlReader = () => 0xF8 | this.readDirectly(MemoryLayout.timerControlAddress);
+    this.setReader(MemoryLayout.timerControlAddress, timerControlReader);
+    this.setHighReader(MemoryLayout.timerControlAddress, timerControlReader);
 
     this.setReaders(0xFF08, 0xFF0E, this.readBad);
     this.setHighReaders(0xFF08, 0xFF0E, this.readBad);
@@ -241,6 +253,10 @@ export default class Memory {
     return 0xFF;
   };
 
+  readDirectly = (address: number) => {
+    return this.data[address];
+  };
+
   memoryReadJumpCompile() {
     for (let address = 0x0000; address <= 0xffff; address++) {
       if (address >= 0xff00) {
@@ -257,7 +273,7 @@ export default class Memory {
             break;
           case 0xff12:
             this.gameboy.highMemoryReader[0x12] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[0xff12] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[0xff12] = this.readDirectly;
             break;
           case 0xff13:
             this.gameboy.highMemoryReader[0x13] = this.gameboy.memoryReader[0xff13] = this.readBad;
@@ -278,7 +294,7 @@ export default class Memory {
             break;
           case 0xff17:
             this.gameboy.highMemoryReader[0x17] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[0xff17] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[0xff17] = this.readDirectly;
             break;
           case 0xff18:
             this.gameboy.highMemoryReader[0x18] = this.gameboy.memoryReader[0xff18] = this.readBad;
@@ -316,7 +332,7 @@ export default class Memory {
           case 0xff21:
           case 0xff22:
             this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[address] = this.readDirectly;
             break;
           case 0xff23:
             this.gameboy.highMemoryReader[0x23] = this.gameboy.memoryReader[0xff23] = address => {
@@ -326,7 +342,7 @@ export default class Memory {
           case 0xff24:
           case 0xff25:
             this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[address] = this.readDirectly;
             break;
           case 0xff26:
             this.gameboy.highMemoryReader[0x26] = this.gameboy.memoryReader[0xff26] = address => {
@@ -374,7 +390,7 @@ export default class Memory {
             break;
           case 0xff40:
             this.gameboy.highMemoryReader[0x40] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[0xff40] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[0xff40] = this.readDirectly;
             break;
           case 0xff41:
             this.gameboy.highMemoryReader[0x41] = this.gameboy.memoryReader[0xff41] = address => {
@@ -402,7 +418,7 @@ export default class Memory {
           case 0xff48:
           case 0xff49:
             this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[address] = this.readDirectly;
             break;
           case 0xff4a:
             //WY
@@ -412,14 +428,14 @@ export default class Memory {
             break;
           case 0xff4b:
             this.gameboy.highMemoryReader[0x4b] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[0xff4b] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[0xff4b] = this.readDirectly;
             break;
           case 0xff4c:
             this.gameboy.highMemoryReader[0x4c] = this.gameboy.memoryReader[0xff4c] = this.readBad;
             break;
           case 0xff4d:
             this.gameboy.highMemoryReader[0x4d] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[0xff4d] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[0xff4d] = this.readDirectly;
             break;
           case 0xff4e:
             this.gameboy.highMemoryReader[0x4e] = this.gameboy.memoryReader[0xff4e] = this.readBad;
@@ -435,7 +451,7 @@ export default class Memory {
           case 0xff53:
           case 0xff54:
             this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[address] = this.readDirectly;
             break;
           case 0xff55:
             if (this.gameboy.cartridge.useGbcMode) {
@@ -450,7 +466,7 @@ export default class Memory {
                 return this.gameboy.memory[0xff55];
               };
             } else {
-              this.gameboy.memoryReader[0xff55] = this.gameboy.memoryReadNormal;
+              this.gameboy.memoryReader[0xff55] = this.readDirectly;
               this.gameboy.highMemoryReader[0x55] = this.gameboy.memoryHighReadNormal;
             }
             break;
@@ -461,7 +477,7 @@ export default class Memory {
                 return 0x3c | (this.gameboy.memory[0xff56] >= 0xc0 ? 0x2 | this.gameboy.memory[0xff56] & 0xc1 : this.gameboy.memory[0xff56] & 0xc3);
               };
             } else {
-              this.gameboy.memoryReader[0xff56] = this.gameboy.memoryReadNormal;
+              this.gameboy.memoryReader[0xff56] = this.readDirectly;
               this.gameboy.highMemoryReader[0x56] = this.gameboy.memoryHighReadNormal;
             }
             break;
@@ -489,7 +505,7 @@ export default class Memory {
           case 0xff6a:
           case 0xff6b:
             this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryHighReadNormal;
-            this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[address] = this.readDirectly;
             break;
           case 0xff6c:
             if (this.gameboy.cartridge.useGbcMode) {
@@ -520,11 +536,11 @@ export default class Memory {
             break;
           case 0xff72:
           case 0xff73:
-            this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
+            this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryReader[address] = this.readDirectly;
             break;
           case 0xff74:
             if (this.gameboy.cartridge.useGbcMode) {
-              this.gameboy.highMemoryReader[0x74] = this.gameboy.memoryReader[0xff74] = this.gameboy.memoryReadNormal;
+              this.gameboy.highMemoryReader[0x74] = this.gameboy.memoryReader[0xff74] = this.readDirectly;
             } else {
               this.gameboy.highMemoryReader[0x74] = this.gameboy.memoryReader[0xff74] = this.readBad;
             }
@@ -562,7 +578,7 @@ export default class Memory {
             this.gameboy.highMemoryReader[0xff] = this.gameboy.memoryReader[MemoryLayout.interruptEnableAddress] = address => this.gameboy.interruptEnabledFlags;
             break;
           default:
-            this.gameboy.memoryReader[address] = this.gameboy.memoryReadNormal;
+            this.gameboy.memoryReader[address] = this.readDirectly;
             this.gameboy.highMemoryReader[address & 0xff] = this.gameboy.memoryHighReadNormal;
         }
       } else {
@@ -575,7 +591,7 @@ export default class Memory {
     // Faster in some browsers, since we are doing less conditionals overall by implementing them in advance.
     for (let address = 0x0000; address <= 0xffff; address++) {
       if (address <= MemoryLayout.CART_ROM_SWITCH_BANK_END) {
-        if (this.gameboy.cartridge.hasMBC1) {
+        if (this.gameboy.cartridge.hasMbc1) {
           if (address < 0x2000) {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address < 0x4000) {
@@ -585,7 +601,7 @@ export default class Memory {
           } else {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc1.writeType;
           }
-        } else if (this.gameboy.cartridge.hasMBC2) {
+        } else if (this.gameboy.cartridge.hasMbc2) {
           if (address < 0x1000) {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address >= 0x2100 && address < 0x2200) {
@@ -593,7 +609,7 @@ export default class Memory {
           } else {
             this.gameboy.memoryWriter[address] = this.writeIllegal;
           }
-        } else if (this.gameboy.cartridge.hasMBC3) {
+        } else if (this.gameboy.cartridge.hasMbc3) {
           if (address < 0x2000) {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
           } else if (address < 0x4000) {
@@ -604,9 +620,9 @@ export default class Memory {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc3.rtc.writeLatch;
           }
         } else if (
-          this.gameboy.cartridge.hasMBC5 ||
-          this.gameboy.cartridge.hasRUMBLE ||
-          this.gameboy.cartridge.hasMBC7
+          this.gameboy.cartridge.hasMbc5 ||
+          this.gameboy.cartridge.hasRumble ||
+          this.gameboy.cartridge.hasMbc7
         ) {
           if (address < 0x2000) {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc.toggle;
@@ -615,7 +631,7 @@ export default class Memory {
           } else if (address < 0x4000) {
             this.gameboy.memoryWriter[address] = this.gameboy.cartridge.mbc5.writeHighRomBank;
           } else if (address < 0x6000) {
-            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.hasRUMBLE ?
+            this.gameboy.memoryWriter[address] = this.gameboy.cartridge.hasRumble ?
               this.gameboy.cartridge.rumble.writeRamBank :
               this.gameboy.cartridge.mbc5.writeRamBank;
           } else {
@@ -693,9 +709,9 @@ export default class Memory {
     this.gameboy.highMemoryWriter[0x3] = this.gameboy.memoryWriter[0xff03] = this.writeIllegal;
 
     // DIV
-    this.gameboy.highMemoryWriter[0x4] = this.gameboy.memoryWriter[MemoryLayout.DIV_REG] = (address: number, data: number) => {
+    this.gameboy.highMemoryWriter[0x4] = this.gameboy.memoryWriter[MemoryLayout.divAddress] = (address: number, data: number) => {
       this.gameboy.DIVTicks &= 0xff; // Update DIV for realignment.
-      this.gameboy.memory[MemoryLayout.DIV_REG] = 0;
+      this.gameboy.memory[MemoryLayout.divAddress] = 0;
     };
     // TIMA
     this.gameboy.highMemoryWriter[0x5] = this.gameboy.memoryWriter[0xff05] = (address: number, data: number) => {
@@ -722,7 +738,7 @@ export default class Memory {
     //IF (Interrupt Request)
     this.gameboy.highMemoryWriter[0xf] = this.gameboy.memoryWriter[0xff0f] = (address: number, data: number) => {
       this.gameboy.interruptRequestedFlags = data;
-      this.gameboy.checkIRQMatching();
+      this.gameboy.checkIrqMatching();
     };
 
     this.gameboy.audioController.registerMemoryWriters();
@@ -801,7 +817,7 @@ export default class Memory {
     this.gameboy.highMemoryWriter[0x77] = this.gameboy.memoryWriter[0xff77] = this.writeIllegal;
     this.gameboy.highMemoryWriter[0xff] = this.gameboy.memoryWriter[MemoryLayout.interruptEnableAddress] = (address: number, data: number) => {
       this.gameboy.interruptEnabledFlags = data;
-      this.gameboy.checkIRQMatching();
+      this.gameboy.checkIrqMatching();
     };
     this.recompileModelSpecificIOWriteHandling();
     this.updateIORegisters();
@@ -878,7 +894,7 @@ export default class Memory {
           const stat = this.gameboy.modeSTAT;
           this.gameboy.modeSTAT = 0;
           do {
-            const newData = this.gameboy.readMemory(data++);
+            const newData = this.readDirectly(data++);
             if (newData !== this.gameboy.memory[address]) {
               // JIT the graphics render queue:
               this.gameboy.modeSTAT = stat;
@@ -890,10 +906,10 @@ export default class Memory {
           } while (++address < 0xfea0);
           if (address < 0xfea0) {
             do {
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
             } while (address < 0xfea0);
           }
           this.gameboy.modeSTAT = stat;
@@ -988,7 +1004,7 @@ export default class Memory {
         if (!this.gameboy.hdmaRunning || addressCheck < 0xd000 || addressCheck >= 0xe000) {
           this.gameboy.gbcRamBank = Math.max(data & 0x07, 1); //Bank range is from 1-7
           this.gameboy.gbcRamBankPosition = (this.gameboy.gbcRamBank - 1 << 12) - 0xd000;
-          this.gameboy.gbcRamBankPositionECHO = this.gameboy.gbcRamBankPosition - 0x2000;
+          this.gameboy.gbcEchoRamBankPosition = this.gameboy.gbcRamBankPosition - 0x2000;
         }
         this.gameboy.memory[0xff70] = data; //Bit 6 cannot be written to.
       };
@@ -1049,7 +1065,7 @@ export default class Memory {
         this.gameboy.memory[0xff41] = data & 0x78;
         if ((!this.gameboy.usedBootRom || !this.gameboy.usedGbcBootRom) && this.gameboy.gpu.lcdEnabled && this.gameboy.modeSTAT < 2) {
           this.gameboy.interruptRequestedFlags |= 0x2;
-          this.gameboy.checkIRQMatching();
+          this.gameboy.checkIrqMatching();
         }
       };
       this.gameboy.highMemoryWriter[0x46] = this.gameboy.memoryWriter[0xff46] = (address: number, data: number) => {
@@ -1062,7 +1078,7 @@ export default class Memory {
           this.gameboy.modeSTAT = 0;
           var newData = 0;
           do {
-            newData = this.gameboy.readMemory(data++);
+            newData = this.readDirectly(data++);
             if (newData !== this.gameboy.memory[address]) {
               //JIT the graphics render queue:
               this.gameboy.modeSTAT = stat;
@@ -1074,10 +1090,10 @@ export default class Memory {
           } while (++address < 0xfea0);
           if (address < 0xfea0) {
             do {
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
-              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
+              this.gameboy.memory[address++] = this.readDirectly(data++);
             } while (address < 0xfea0);
           }
           this.gameboy.modeSTAT = stat;

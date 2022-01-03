@@ -1,6 +1,6 @@
 import CPU from "../CPU";
 import * as util from "../util";
-import GameBoy from "../GameBoy_";
+import GameBoy from "../GameBoy";
 import settings from "../settings";
 import AudioDevice from "./AudioDevice";
 import * as MemoryLayout from "../memory/Layout";

@@ -1,7 +1,7 @@
 import * as util from "./util";
-import GameBoy from "./GameBoy_";
+import GameBoy from "./GameBoy";
 
-export default class LcdDevice {
+export default class LCD {
   context: any;
   offscreenContext: any;
   offscreenWidth: number;

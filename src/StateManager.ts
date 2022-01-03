@@ -1,4 +1,4 @@
-import GameBoy from "./GameBoy_";
+import GameBoy from "./GameBoy";
 import initialState from "./initialState";
 import { toTypedArray, concatArrayBuffers } from "./util";
 
@@ -400,7 +400,7 @@ export default class StateManager {
     gameboy.usedBootRom = state[index++];
     gameboy.skipPCIncrement = state[index++];
     gameboy.STATTracker = state[index++];
-    gameboy.gbcRamBankPositionECHO = state[index++];
+    gameboy.gbcEchoRamBankPosition = state[index++];
     gameboy.windowY = state[index++];
     gameboy.windowX = state[index++];
     gameboy.gbcOBJRawPalette = toTypedArray(state[index++], "uint8");
@@ -424,7 +424,7 @@ export default class StateManager {
     gameboy.haltPostClocks = state[index++];
     gameboy.interruptRequestedFlags = state[index++];
     gameboy.interruptEnabledFlags = state[index++];
-    gameboy.checkIRQMatching();
+    gameboy.checkIrqMatching();
     gameboy.remainingClocks = state[index++];
     gameboy.colorizedGBPalettes = state[index++];
     gameboy.backgroundY = state[index++];

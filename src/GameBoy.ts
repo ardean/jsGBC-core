@@ -1,12 +1,11 @@
-
 import CPU from "./CPU";
 import ROM from "./ROM";
+import LCD from "./LCD";
 import Joypad from "./Joypad";
 import * as util from "./util";
 import Actions from "./actions";
 import settings from "./settings";
 import tickTable from "./tickTable";
-import LcdDevice from "./LCD";
 import Memory from "./memory/Memory";
 import { EventEmitter } from "events";
 import Storage from "./storages/Storage";
@@ -22,10 +21,21 @@ import MemoryStorage from "./storages/MemoryStorage";
 import AudioController from "./audio/AudioController";
 import { concatArrayBuffers, debounce, Debounced } from "./util";
 
+export type Action = (
+  "Start" | "Select" |
+  "A" | "B" |
+  "Up" | "Down" | "Left" | "Right"
+);
+
+export const actions: Action[] = [
+  "Start", "Select",
+  "A", "B",
+  "Up", "Down", "Left", "Right"
+];
+
 export default class GameBoy extends EventEmitter {
   interval: number;
   debouncedAutoSave: Debounced;
-  buttons = ["right", "left", "up", "down", "a", "b", "select", "start"];
   core: GameBoy;
   isOn: boolean;
   actions: Actions;
@@ -33,13 +43,12 @@ export default class GameBoy extends EventEmitter {
   cartridge: Cartridge;
   lastRun: number;
 
-
   // Graphics Variables
   midScanlineOffset = -1; //mid-scanline rendering offset.
   currentX = 0; //The x-coord we left off at for mid-scanline rendering.
 
   stopEmulator = 3; // Has the emulation been paused or a frame has ended?
-  IRQLineMatched = 0; // CPU IRQ assertion.
+  matchedIrqLines = 0; // CPU IRQ assertion.
 
   ROMBank1Offset: number;
   haltPostClocks: number;
@@ -129,10 +138,10 @@ export default class GameBoy extends EventEmitter {
   queuedScanlines: number;
   remainingClocks: number;
   gbcRamBankPosition: number;
-  gbcRamBankPositionECHO: number;
+  gbcEchoRamBankPosition: number;
   gbcRamBank: number;
   stateManager: StateManager;
-  lcdDevice: LcdDevice;
+  lcdDevice: LCD;
   joypad: Joypad;
   audioController: AudioController;
   audioDevice: AudioDevice;
@@ -190,7 +199,7 @@ export default class GameBoy extends EventEmitter {
       gameboy: this
     });
     this.joypad = new Joypad(this);
-    this.lcdDevice = new LcdDevice(
+    this.lcdDevice = new LCD(
       this,
       options.lcd
     );
@@ -214,8 +223,8 @@ export default class GameBoy extends EventEmitter {
   }
 
   registerActions() {
-    for (const button of this.buttons) {
-      const index = this.buttons.indexOf(button);
+    for (const button of actions) {
+      const index = actions.indexOf(button);
       this.actions
         .register(button)
         .addListener("down-" + button, () => {
@@ -227,7 +236,7 @@ export default class GameBoy extends EventEmitter {
     }
 
     this.actions
-      .register("speed")
+      .register("Speed")
       .addListener("down-speed", options => this.handleSpeed(options))
       .addListener("change-speed", options => this.handleSpeed(options))
       .addListener("up-speed", () => {
@@ -318,15 +327,15 @@ export default class GameBoy extends EventEmitter {
     this.cartridge = cartridge;
   }
 
-  actionDown(action, options?) {
+  actionDown(action: Action, options?) {
     this.actions.down(action, options);
   }
 
-  actionChange(action, options) {
+  actionChange(action: Action, options) {
     this.actions.change(action, options);
   }
 
-  actionUp(action, options?) {
+  actionUp(action: Action, options?) {
     this.actions.up(action, options);
   }
 
@@ -619,7 +628,7 @@ export default class GameBoy extends EventEmitter {
     }
 
     // Check for IRQ matching upon initialization:
-    this.checkIRQMatching();
+    this.checkIrqMatching();
   }
 
   generateCacheArray(tileAmount: number) {
@@ -684,7 +693,7 @@ export default class GameBoy extends EventEmitter {
     this.registersHL = 0x014d;
     this.gpu.enableLCD();
     this.IME = false;
-    this.IRQLineMatched = 0;
+    this.matchedIrqLines = 0;
     this.interruptRequestedFlags = 225;
     this.interruptEnabledFlags = 0;
     this.hdmaRunning = false;
@@ -808,7 +817,7 @@ export default class GameBoy extends EventEmitter {
       switch (this.IRQEnableDelay) {
         case 1:
           this.IME = true;
-          this.checkIRQMatching();
+          this.checkIrqMatching();
           --this.IRQEnableDelay;
           break;
         case 2:
@@ -818,7 +827,7 @@ export default class GameBoy extends EventEmitter {
           break;
       }
       //Is an IRQ set to fire?:
-      if (this.IRQLineMatched > 0) {
+      if (this.matchedIrqLines > 0) {
         //IME is true and and interrupt was matched:
         this.launchIRQ();
       }
@@ -857,7 +866,7 @@ export default class GameBoy extends EventEmitter {
           if (++this.memory[0xff05] === 0x100) {
             this.memory[0xff05] = this.memory[0xff06];
             this.interruptRequestedFlags |= 0x4;
-            this.checkIRQMatching();
+            this.checkIrqMatching();
           }
         }
       }
@@ -868,7 +877,7 @@ export default class GameBoy extends EventEmitter {
         this.serialTimer -= this.currentInstructionCycleCount;
         if (this.serialTimer <= 0) {
           this.interruptRequestedFlags |= 0x8;
-          this.checkIRQMatching();
+          this.checkIrqMatching();
         }
 
         // Bit Shift Counter:
@@ -891,7 +900,7 @@ export default class GameBoy extends EventEmitter {
     if ((this.stopEmulator & 0x1) === 0) {
       this.audioController.run(); // make sure we at least output once per iteration.
       // update DIV Alignment (Integer overflow safety):
-      this.memory[MemoryLayout.DIV_REG] = this.memory[MemoryLayout.DIV_REG] + (this.DIVTicks >> 8) & 0xff;
+      this.memory[MemoryLayout.divAddress] = this.memory[MemoryLayout.divAddress] + (this.DIVTicks >> 8) & 0xff;
       this.DIVTicks &= 0xff;
       // update emulator flags:
       this.stopEmulator |= 1; // end current loop.
@@ -921,7 +930,7 @@ export default class GameBoy extends EventEmitter {
     if (this.STATTracker !== 1) {
       if (this.mode2TriggerSTAT) {
         this.interruptRequestedFlags |= 0x2;
-        this.checkIRQMatching();
+        this.checkIrqMatching();
       }
       this.STATTracker = 1;
       this.modeSTAT = 2;
@@ -933,7 +942,7 @@ export default class GameBoy extends EventEmitter {
     if (this.modeSTAT !== 3) {
       if (this.STATTracker === 0 && this.mode2TriggerSTAT) {
         this.interruptRequestedFlags |= 0x2;
-        this.checkIRQMatching();
+        this.checkIrqMatching();
       }
       this.STATTracker = 1;
       this.modeSTAT = 3;
@@ -947,7 +956,7 @@ export default class GameBoy extends EventEmitter {
         if (this.STATTracker === 0) {
           if (this.mode2TriggerSTAT) {
             this.interruptRequestedFlags |= 0x2;
-            this.checkIRQMatching();
+            this.checkIrqMatching();
           }
           this.modeSTAT = 3;
         }
@@ -961,7 +970,7 @@ export default class GameBoy extends EventEmitter {
         }
         if (this.mode0TriggerSTAT) {
           this.interruptRequestedFlags |= 0x2;
-          this.checkIRQMatching();
+          this.checkIrqMatching();
         }
         this.STATTracker = 3;
         this.modeSTAT = 0;
@@ -1048,7 +1057,7 @@ export default class GameBoy extends EventEmitter {
       this.memory[0xff41] |= 0x04;
       if (this.LYCMatchTriggerSTAT) {
         this.interruptRequestedFlags |= 0x2;
-        this.checkIRQMatching();
+        this.checkIrqMatching();
       }
     } else {
       this.memory[0xff41] &= 0x7b;
@@ -1073,7 +1082,7 @@ export default class GameBoy extends EventEmitter {
         if (++this.memory[0xff05] === 0x100) {
           this.memory[0xff05] = this.memory[0xff06];
           this.interruptRequestedFlags |= 0x4;
-          this.checkIRQMatching();
+          this.checkIrqMatching();
         }
       }
     }
@@ -1083,7 +1092,7 @@ export default class GameBoy extends EventEmitter {
       this.serialTimer -= this.currentInstructionCycleCount;
       if (this.serialTimer <= 0) {
         this.interruptRequestedFlags |= 0x8;
-        this.checkIRQMatching();
+        this.checkIrqMatching();
       }
       //Bit Shit Counter:
       this.serialShiftTimer -= this.currentInstructionCycleCount;
@@ -1544,10 +1553,10 @@ export default class GameBoy extends EventEmitter {
     var testbit = 1;
     do {
       //Check to see if an interrupt is enabled AND requested.
-      if ((testbit & this.IRQLineMatched) === testbit) {
+      if ((testbit & this.matchedIrqLines) === testbit) {
         this.IME = false; //Reset the interrupt enabling.
         this.interruptRequestedFlags -= testbit; //Reset the interrupt request.
-        this.IRQLineMatched = 0; //Reset the IRQ assertion.
+        this.matchedIrqLines = 0; //Reset the IRQ assertion.
         //Interrupts have a certain clock cycle length:
         this.currentInstructionCycleCount = 20;
         //Set the stack pointer to the current program counter value:
@@ -1568,10 +1577,10 @@ export default class GameBoy extends EventEmitter {
   /*
     Check for IRQs to be fired while not in HALT:
   */
-  checkIRQMatching() {
-    if (this.IME) {
-      this.IRQLineMatched = this.interruptEnabledFlags & this.interruptRequestedFlags & 0x1f;
-    }
+  checkIrqMatching() {
+    if (!this.IME) return;
+
+    this.matchedIrqLines = this.interruptEnabledFlags & this.interruptRequestedFlags & 0x1f;
   }
 
   /*
@@ -1664,11 +1673,11 @@ export default class GameBoy extends EventEmitter {
   }
 
   // Memory Reading:
-  readMemory(address: number) {
+  readMemory = (address: number) => {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
     if (this.memoryNew.hasReader(address)) return this.memoryNew.read(address);
     return this.memoryReader[address].apply(this, [address]);
-  }
+  };
 
   memoryHighRead(address: number) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
@@ -1690,10 +1699,6 @@ export default class GameBoy extends EventEmitter {
     return this.highMemoryWriter[address].apply(this, [address, data]);
   }
 
-  memoryReadNormal = (address: number) => {
-    return this.memory[address];
-  };
-
   memoryHighReadNormal = (address: number) => {
     return this.memory[0xff00 | address];
   };
@@ -1706,15 +1711,15 @@ export default class GameBoy extends EventEmitter {
     return this.modeSTAT > 1 ? 0xff : this.memory[address];
   };
 
-  memoryReadECHOGBCMemory = (address: number) => {
-    return this.GBCMemory[address + this.gbcRamBankPositionECHO];
+  readGbcEchoRam = (address: number) => {
+    return this.GBCMemory[address + this.gbcEchoRamBankPosition];
   };
 
-  memoryReadECHONormal = (address: number) => {
+  readEchoRam = (address: number) => {
     return this.memory[address - 0x2000];
   };
 
-  VRAMDATAReadCGBCPU = (address: number) => {
+  readGbcVideoRam = (address: number) => {
     // CPU Side Reading The VRAM (Optimized for GameBoy Color)
     return this.modeSTAT > 2 ?
       0xff :
@@ -1725,7 +1730,7 @@ export default class GameBoy extends EventEmitter {
       );
   };
 
-  VRAMDATAReadDMGCPU = (address: number) => {
+  readVideoRam = (address: number) => {
     // CPU Side Reading The VRAM (Optimized for classic GameBoy)
     return (
       this.modeSTAT > 2 ?
@@ -1734,7 +1739,7 @@ export default class GameBoy extends EventEmitter {
     );
   };
 
-  VRAMCHRReadCGBCPU = (address: number) => {
+  readGbcCharacterVideoRam = (address: number) => {
     // CPU Side Reading the Character Data Map:
     return (
       this.modeSTAT > 2 ?
@@ -1743,14 +1748,14 @@ export default class GameBoy extends EventEmitter {
     );
   };
 
-  VRAMCHRReadDMGCPU(address: number) {
+  readCharacterVideoRam = (address: number) => {
     // CPU Side Reading the Character Data Map:
     return (
       this.modeSTAT > 2 ?
         0xff :
         this.BGCHRBank1[address & 0x7ff]
     );
-  }
+  };
 
   memoryWriteNormal = (address: number, data: number) => {
     this.memory[address] = data;
@@ -1775,7 +1780,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   memoryWriteECHOGBCRAM(address: number, data: number) {
-    this.GBCMemory[address + this.gbcRamBankPositionECHO] = data;
+    this.GBCMemory[address + this.gbcEchoRamBankPosition] = data;
   }
 
   memoryWriteECHONormal = (address: number, data: number) => {
@@ -1808,10 +1813,10 @@ export default class GameBoy extends EventEmitter {
 
   VRAMGBCDATAWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
-      //VRAM cannot be written to during mode 3
+      // VRAM cannot be written to during mode 3
       if (this.currentVideoRamBank === 0) {
         if (this.memory[address] !== data) {
-          //JIT the graphics render queue:
+          // JIT the graphics render queue:
           this.graphicsJIT();
           this.memory[address] = data;
           this.generateGBCTileLineBank1(address);
@@ -1819,7 +1824,7 @@ export default class GameBoy extends EventEmitter {
       } else {
         address &= 0x1fff;
         if (this.videoRam[address] !== data) {
-          //JIT the graphics render queue:
+          // JIT the graphics render queue:
           this.graphicsJIT();
           this.videoRam[address] = data;
           this.generateGBCTileLineBank2(address);

@@ -1,4 +1,4 @@
-import GameBoy from "../GameBoy_";
+import GameBoy from "../GameBoy";
 
 export default class AudioChannel {
   enabled: boolean = false;

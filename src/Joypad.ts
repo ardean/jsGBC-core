@@ -1,4 +1,4 @@
-import GameBoy from "./GameBoy_";
+import GameBoy from "./GameBoy";
 import { joypadAddress } from "./memory/Layout";
 
 const initialValue = 0xF;
@@ -27,7 +27,7 @@ export default class Joypad {
     ) {
       this.gameboy.interruptRequestedFlags |= 1 << 4; // A real GBC doesn't set this!
       this.gameboy.remainingClocks = 0;
-      this.gameboy.checkIRQMatching();
+      this.gameboy.checkIrqMatching();
     }
 
     this.writeMemory(joypadAddress, this.gameboy.memory[joypadAddress]);
@@ -68,7 +68,8 @@ export default class Joypad {
     );
   };
 
-  readMemory = () => {
-    return 0b11000000 | this.gameboy.memoryReadNormal(joypadAddress)
-  };
+  readMemory = () => (
+    0b11000000 |
+    this.gameboy.memoryNew.readDirectly(joypadAddress)
+  );
 }

@@ -1,23 +1,23 @@
 import { GameBoy, util } from "../src";
 
 const keyMap = {
-  13: "start",
-  16: "select",
-  38: "up",
-  87: "up",
-  39: "right",
-  68: "right",
-  40: "down",
-  83: "down",
-  37: "left",
-  65: "left",
-  76: "a",
-  86: "a",
-  88: "b",
-  75: "b",
-  49: "save",
-  48: "load",
-  80: "speed"
+  "Enter": "Start",
+  "Shift": "Select",
+  "ArrowUp": "Up",
+  "w": "Up",
+  "ArrowRight": "Right",
+  "d": "Right",
+  "ArrowDown": "Down",
+  "s": "Down",
+  "ArrowLeft": "Left",
+  "a": "Left",
+  "l": "A",
+  "v": "A",
+  "x": "B",
+  "k": "B",
+  "1": "Save",
+  "0": "Load",
+  "p": "Speed"
 };
 
 const canvas = document.querySelector(".lcd");
@@ -28,14 +28,14 @@ const gameboy = new GameBoy({
 
 (window as any).gameboy = gameboy;
 
-window.addEventListener("keydown", ({ keyCode }) => {
-  if (keyMap[keyCode]) {
-    gameboy.actionDown(keyMap[keyCode]);
+window.addEventListener("keydown", ({ key }) => {
+  if (keyMap[key]) {
+    gameboy.actionDown(keyMap[key]);
   }
 });
-window.addEventListener("keyup", ({ keyCode }) => {
-  if (keyMap[keyCode]) {
-    gameboy.actionUp(keyMap[keyCode]);
+window.addEventListener("keyup", ({ key }) => {
+  if (keyMap[key]) {
+    gameboy.actionUp(keyMap[key]);
   }
 });
 

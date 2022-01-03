@@ -31,8 +31,8 @@ export const BG_MAP_DATA0_END = 0x9BFF;
 export const BG_MAP_DATA1_START = 0x9C00;
 export const BG_MAP_DATA1_END = 0x9FFF;
 
-export const CART_RAM_START = 0xA000;
-export const CART_RAM_END = 0xBFFF;
+export const cartridgeRamStartAddress = 0xA000;
+export const cartridgeRamEndAddress = 0xBFFF;
 
 export const INTERNAL_RAM_BANK0_START = 0xC000;
 export const INTERNAL_RAM_BANK0_END = 0xCFFF;
@@ -40,31 +40,24 @@ export const INTERNAL_RAM_BANK0_END = 0xCFFF;
 export const INTERNAL_RAM_SWITCH_BANK_START = 0xD000;
 export const INTERNAL_RAM_SWITCH_BANK_END = 0xDFFF;
 
-// Mirrored Memory
-export const ECHO_RAM_START = 0xE000;
-export const ECHO_RAM_END = 0xFDFF;
+export const echoRamStartAddress = 0xE000;
+export const echoRamEndAddress = 0xFDFF;
 
 /*--------------- HIGH MEM-------------- */
 export const SPRITE_ATTRIBUTE_TABLE_START = 0xFE00;
 export const SPRITE_ATTRIBUTE_TABLE_END = 0xFE9F;
 
-export const UNUSABLE_MEM_START = 0xFEA0;
-export const UNUSABLE_MEM_END = 0xFEFF;
-
-export const IO_PORTS_START = 0xFF00;
-export const IO_PORTS_END = 0xFF7F;
-
-export const ZERO_PAGE_START = 0xFF80;
-export const ZERO_PAGE_END = 0xFFFE;
+export const unusableMemoryStartAddress = 0xFEA0;
+export const unusableMemoryEndAddress = 0xFEFF;
 
 /*  -------------IO ports/registers ------------------*/
 export const joypadAddress = 0xFF00;
 export const serialDataAddress = 0xFF01;
 export const serialControlAddress = 0xFF02;
-export const DIV_REG = 0xFF04; /*  Divider register */
+export const divAddress = 0xFF04; /*  Divider register */
 export const TIMA_REG = 0xFF05; /*  Timer Counter */
 export const TMA_REG = 0xFF06; /*  Timer Modulo  */
-export const TIMER_CONTROL_REG = 0xFF07; /*  Timer Control */
+export const timerControlAddress = 0xFF07; /*  Timer Control */
 export const INTERRUPT_FLAG_REG = 0xFF0F; /*  Interrupt Flag */
 
 /*   Sound Mode 1 registers */

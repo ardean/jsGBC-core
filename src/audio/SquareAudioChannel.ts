@@ -1,4 +1,4 @@
-import GameBoy from "../GameBoy_";
+import GameBoy from "../GameBoy";
 import settings from "../settings";
 import dutyLookup from "../dutyLookup";
 import AudioChannel from "./AudioChannel";

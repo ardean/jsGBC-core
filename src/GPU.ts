@@ -1,4 +1,4 @@
-import GameBoy from "./GameBoy_";
+import GameBoy from "./GameBoy";
 
 export const totalScanlineCount = 154;
 
@@ -773,7 +773,7 @@ export default class GPU {
       } else {
         this.gameboy.memory[0xff41] &= 0x7b;
       }
-      this.gameboy.checkIRQMatching();
+      this.gameboy.checkIrqMatching();
       //Reset our mode contingency variables:
       this.gameboy.STATTracker = 0;
       this.gameboy.modeSTAT = 2;
@@ -823,7 +823,7 @@ export default class GPU {
       //Update our state for v-blank:
       this.gameboy.modeSTAT = 1;
       this.gameboy.interruptRequestedFlags |= this.gameboy.mode1TriggerSTAT ? 0x3 : 0x1;
-      this.gameboy.checkIRQMatching();
+      this.gameboy.checkIrqMatching();
       //Attempt to blit out to our canvas:
       if (this.gameboy.drewBlank === 0) {
         //Ensure JIT framing alignment:
@@ -851,7 +851,7 @@ export default class GPU {
         this.gameboy.memory[0xff41] |= 0x04;
         if (this.gameboy.LYCMatchTriggerSTAT) {
           this.gameboy.interruptRequestedFlags |= 0x2;
-          this.gameboy.checkIRQMatching();
+          this.gameboy.checkIrqMatching();
         }
       } else {
         this.gameboy.memory[0xff41] &= 0x7b;
@@ -872,7 +872,7 @@ export default class GPU {
           this.gameboy.memory[0xff41] |= 0x04;
           if (this.gameboy.LYCMatchTriggerSTAT) {
             this.gameboy.interruptRequestedFlags |= 0x2;
-            this.gameboy.checkIRQMatching();
+            this.gameboy.checkIrqMatching();
           }
         } else {
           this.gameboy.memory[0xff41] &= 0x7b;
