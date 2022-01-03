@@ -229,7 +229,9 @@ export default class Memory {
     // console.warn(`Not allowed to write address 0x${address.toString(16)} with data: ${data.toString(2)}`);
   };
 
-  readBad = () => 0xFF;
+  readBad = (address: number) => {
+    return 0xFF;
+  };
 
   memoryReadJumpCompile() {
     for (let address = 0x0000; address <= 0xffff; address++) {

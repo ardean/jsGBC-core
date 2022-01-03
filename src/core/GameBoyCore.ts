@@ -19,14 +19,14 @@ import AudioController from "./audio/AudioController";
 
 export default class GameBoyCore {
   // Graphics Variables
-  drewFrame = false; //Throttle how many draws we can do to once per iteration.
   midScanlineOffset = -1; //mid-scanline rendering offset.
   currentX = 0; //The x-coord we left off at for mid-scanline rendering.
+
   stopEmulator = 3; // Has the emulation been paused or a frame has ended?
   IRQLineMatched = 0; // CPU IRQ assertion.
 
-  ROMBank1Offset: any;
-  haltPostClocks: any;
+  ROMBank1Offset: number;
+  haltPostClocks: number;
   spriteCount: number = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
   BGCHRCurrentBank: any; // BG Tile Pointer Caches:
   tileCache: any; // Tile Data Cache
@@ -44,6 +44,7 @@ export default class GameBoyCore {
   GBCMemory: Uint8Array;
   frameBuffer: Int32Array;
   BGCHRBank1: Uint8Array;
+
   registerA: number;
   registerB: number;
   registerC: number;
@@ -54,6 +55,9 @@ export default class GameBoyCore {
   FHalfCarry: boolean;
   FCarry: boolean;
   registersHL: number;
+  programCounter: number;
+  stackPointer: number;
+
   IME: boolean;
   interruptRequestedFlags: number;
   interruptEnabledFlags: number;
@@ -87,8 +91,6 @@ export default class GameBoyCore {
   windowY: number;
   windowX: number;
   drewBlank: number;
-  programCounter: number;
-  stackPointer: number;
   halt: any;
   skipPCIncrement: any;
   doubleSpeedShifter: number;
