@@ -849,7 +849,7 @@ export default class Memory {
           this.gameboy.gfxSpriteNormalHeight = (data & 0x04) === 0;
           this.gameboy.gfxSpriteShow = (data & 0x02) === 0x02;
           this.gameboy.hasBGPriority = (data & 0x01) === 0x01;
-          this.gameboy.gpu.initRenderFunctions(); // Special case the priority flagging as an optimization.
+          this.gameboy.gpu.initRenderer();
           this.gameboy.memory[0xff40] = data;
         }
       };
@@ -865,11 +865,10 @@ export default class Memory {
         if (data < 0xe0) {
           data <<= 8;
           address = 0xfe00;
-          var stat = this.gameboy.modeSTAT;
+          const stat = this.gameboy.modeSTAT;
           this.gameboy.modeSTAT = 0;
-          var newData = 0;
           do {
-            newData = this.gameboy.readMemory(data++);
+            const newData = this.gameboy.readMemory(data++);
             if (newData !== this.gameboy.memory[address]) {
               // JIT the graphics render queue:
               this.gameboy.modeSTAT = stat;

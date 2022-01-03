@@ -16,7 +16,7 @@ export default class GPU {
     this.disableLCD();
   }
 
-  initRenderFunctions() {
+  initRenderer() {
     if (!this.gameboy.cartridge.useGbcMode) {
       this.renderBackgroundLayer = this.renderGbBackgroundLayer;
       this.renderWindowLayer = this.renderGbWindowLayer;

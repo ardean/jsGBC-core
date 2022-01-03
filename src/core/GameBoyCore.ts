@@ -13,9 +13,9 @@ import AudioDevice from "./audio/AudioDevice";
 import Cartridge from "./cartridge/Cartridge";
 import * as MemoryLayout from "./memory/Layout";
 import GPU, { totalScanlineCount } from "./GPU";
+import postBootRomState from "./postBootRomState";
 import mainInstructions from "./MainInstructions";
 import AudioController from "./audio/AudioController";
-import postBootRegisterState from "./postBootRegisterState";
 
 export default class GameBoyCore {
   // Graphics Variables
@@ -172,7 +172,7 @@ export default class GameBoyCore {
   loadState(state) {
     this.stateManager.load(state);
 
-    this.initializeReferencesFromSaveState();
+    this.initReferencesFromSaveState();
     this.memoryNew.init();
     this.lcdDevice.init();
     this.audioController.noiseSampleTable = this.audioController.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
@@ -293,13 +293,14 @@ export default class GameBoyCore {
       this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
       this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
     }
-    this.gpu.initRenderFunctions();
+
+    this.gpu.initRenderer();
 
     if (!this.usedBootRom) {
       this.isBootingRom = false;
-      this.initSkipBootstrap();
+      this.skipBootRom();
     } else {
-      this.initBootstrap();
+      this.initBootRom();
     }
 
     // Check for IRQ matching upon initialization:
@@ -315,13 +316,13 @@ export default class GameBoyCore {
     return tileArray;
   }
 
-  initSkipBootstrap() {
+  skipBootRom() {
     // Fill in the boot ROM set register values
     // Default values to the GB boot ROM values, then fill in the GBC boot ROM values after ROM loading
     var index = 0xff;
     while (index >= 0) {
       if (index >= 0x30 && index < 0x40) {
-        this.writeMemory(0xff00 | index, postBootRegisterState[index]);
+        this.writeMemory(0xff00 | index, postBootRomState[index]);
       } else {
         switch (index) {
           case 0x00:
@@ -331,10 +332,10 @@ export default class GameBoyCore {
           case 0x07:
           case 0x0f:
           case 0xff:
-            this.writeMemory(0xff00 | index, postBootRegisterState[index]);
+            this.writeMemory(0xff00 | index, postBootRomState[index]);
             break;
           default:
-            this.memory[0xff00 | index] = postBootRegisterState[index];
+            this.memory[0xff00 | index] = postBootRomState[index];
         }
       }
       --index;
@@ -403,8 +404,8 @@ export default class GameBoyCore {
     this.currentX = 0;
   }
 
-  initBootstrap() {
-    console.log("Starting selected boot ROM");
+  initBootRom() {
+    console.log("Starting boot rom");
 
     this.programCounter = 0;
     this.stackPointer = 0;
@@ -884,11 +885,11 @@ export default class GameBoyCore {
     }
     this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
     this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
-    this.gpu.initRenderFunctions();
+    this.gpu.initRenderer();
     this.memoryNew.init();
   }
 
-  initializeReferencesFromSaveState() {
+  initReferencesFromSaveState() {
     if (!this.cartridge.useGbcMode) {
       if (this.colorizedGBPalettes) {
         this.BGPalette = this.gbBGColorizedPalette;
@@ -919,7 +920,7 @@ export default class GameBoyCore {
         this.generateGBCTileBank2(tileIndex);
       }
     }
-    this.gpu.initRenderFunctions();
+    this.gpu.initRenderer();
   }
 
   adjustRGBTint(value: number) {
@@ -956,14 +957,14 @@ export default class GameBoyCore {
     this.colorizedGBPalettes = true;
   }
 
-  updateGBRegularBGPalette(data) {
+  updateGBRegularBGPalette(data: number) {
     this.gbBGPalette[0] = this.colors[data & 0x03] | 0x2000000;
     this.gbBGPalette[1] = this.colors[data >> 2 & 0x03];
     this.gbBGPalette[2] = this.colors[data >> 4 & 0x03];
     this.gbBGPalette[3] = this.colors[data >> 6];
   }
 
-  updateGBColorizedBGPalette(data) {
+  updateGBColorizedBGPalette(data: number) {
     // GB colorization:
     this.gbBGColorizedPalette[0] = this.cachedBGPaletteConversion[data & 0x03] | 0x2000000;
     this.gbBGColorizedPalette[1] = this.cachedBGPaletteConversion[data >> 2 & 0x03];
@@ -1017,12 +1018,12 @@ export default class GameBoyCore {
     }
   }
 
-  findLowestSpriteDrawable(scanlineToRender, drawableRange) {
+  findLowestSpriteDrawable(scanline: number, drawableRange) {
     var address = 0xfe00;
     var spriteCount = 0;
     var diff = 0;
     while (address < 0xfea0 && spriteCount < 10) {
-      diff = scanlineToRender - this.memory[address];
+      diff = scanline - this.memory[address];
       if ((diff & drawableRange) === diff) {
         this.OAMAddressCache[spriteCount++] = address;
       }
