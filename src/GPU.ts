@@ -128,7 +128,7 @@ export default class GPU {
       var texel = scrollXAdjusted & 0x7; texel < 8 && pixelPosition < pixelPositionEnd && scrollXAdjusted < 0x100;
       ++scrollXAdjusted
     ) {
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[tileYLine | texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[tileYLine | texel++]];
     }
     var scrollXAdjustedAligned = Math.min(pixelPositionEnd - pixelPosition, 0x100 - scrollXAdjusted) >> 3;
     scrollXAdjusted += scrollXAdjustedAligned << 3;
@@ -140,14 +140,14 @@ export default class GPU {
       }
       tile = this.gameboy.tileCache[chrCode];
       texel = tileYLine;
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+      this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel]];
     }
     if (pixelPosition < pixelPositionEnd) {
       if (scrollXAdjusted < 0x100) {
@@ -157,7 +157,7 @@ export default class GPU {
         }
         tile = this.gameboy.tileCache[chrCode];
         for (texel = tileYLine - 1; pixelPosition < pixelPositionEnd && scrollXAdjusted < 0x100; ++scrollXAdjusted) {
-          this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[++texel]];
+          this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[++texel]];
         }
       }
       scrollXAdjustedAligned = (pixelPositionEnd - pixelPosition >> 3) + tileYDown;
@@ -168,14 +168,14 @@ export default class GPU {
         }
         tile = this.gameboy.tileCache[chrCode];
         texel = tileYLine;
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+        this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel]];
       }
       if (pixelPosition < pixelPositionEnd) {
         chrCode = this.gameboy.BGCHRBank1[tileYDown];
@@ -185,19 +185,19 @@ export default class GPU {
         tile = this.gameboy.tileCache[chrCode];
         switch (pixelPositionEnd - pixelPosition) {
           case 7:
-            this.gameboy.frameBuffer[pixelPosition + 6] = this.gameboy.BGPalette[tile[tileYLine | 6]];
+            this.gameboy.frameBuffer[pixelPosition + 6] = this.gameboy.backgroundPalette[tile[tileYLine | 6]];
           case 6:
-            this.gameboy.frameBuffer[pixelPosition + 5] = this.gameboy.BGPalette[tile[tileYLine | 5]];
+            this.gameboy.frameBuffer[pixelPosition + 5] = this.gameboy.backgroundPalette[tile[tileYLine | 5]];
           case 5:
-            this.gameboy.frameBuffer[pixelPosition + 4] = this.gameboy.BGPalette[tile[tileYLine | 4]];
+            this.gameboy.frameBuffer[pixelPosition + 4] = this.gameboy.backgroundPalette[tile[tileYLine | 4]];
           case 4:
-            this.gameboy.frameBuffer[pixelPosition + 3] = this.gameboy.BGPalette[tile[tileYLine | 3]];
+            this.gameboy.frameBuffer[pixelPosition + 3] = this.gameboy.backgroundPalette[tile[tileYLine | 3]];
           case 3:
-            this.gameboy.frameBuffer[pixelPosition + 2] = this.gameboy.BGPalette[tile[tileYLine | 2]];
+            this.gameboy.frameBuffer[pixelPosition + 2] = this.gameboy.backgroundPalette[tile[tileYLine | 2]];
           case 2:
-            this.gameboy.frameBuffer[pixelPosition + 1] = this.gameboy.BGPalette[tile[tileYLine | 1]];
+            this.gameboy.frameBuffer[pixelPosition + 1] = this.gameboy.backgroundPalette[tile[tileYLine | 1]];
           case 1:
-            this.gameboy.frameBuffer[pixelPosition] = this.gameboy.BGPalette[tile[tileYLine]];
+            this.gameboy.frameBuffer[pixelPosition] = this.gameboy.backgroundPalette[tile[tileYLine]];
         }
       }
     }
@@ -323,7 +323,7 @@ export default class GPU {
           var texel = scrollXRangeAdjusted - this.gameboy.windowX & 0x7;
           scrollXRangeAdjusted = Math.min(8, texel + pixelPositionEnd - pixelPosition);
           while (texel < scrollXRangeAdjusted) {
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[tileYLine | texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[tileYLine | texel++]];
           }
           scrollXRangeAdjusted = tileNumber +
             (pixelPositionEnd - pixelPosition >> 3);
@@ -334,14 +334,14 @@ export default class GPU {
             }
             tile = this.gameboy.tileCache[chrCode];
             texel = tileYLine;
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel++]];
-            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.BGPalette[tile[texel]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel++]];
+            this.gameboy.frameBuffer[pixelPosition++] = this.gameboy.backgroundPalette[tile[texel]];
           }
           if (pixelPosition < pixelPositionEnd) {
             chrCode = this.gameboy.BGCHRBank1[++tileNumber];
@@ -351,19 +351,19 @@ export default class GPU {
             tile = this.gameboy.tileCache[chrCode];
             switch (pixelPositionEnd - pixelPosition) {
               case 7:
-                this.gameboy.frameBuffer[pixelPosition + 6] = this.gameboy.BGPalette[tile[tileYLine | 6]];
+                this.gameboy.frameBuffer[pixelPosition + 6] = this.gameboy.backgroundPalette[tile[tileYLine | 6]];
               case 6:
-                this.gameboy.frameBuffer[pixelPosition + 5] = this.gameboy.BGPalette[tile[tileYLine | 5]];
+                this.gameboy.frameBuffer[pixelPosition + 5] = this.gameboy.backgroundPalette[tile[tileYLine | 5]];
               case 5:
-                this.gameboy.frameBuffer[pixelPosition + 4] = this.gameboy.BGPalette[tile[tileYLine | 4]];
+                this.gameboy.frameBuffer[pixelPosition + 4] = this.gameboy.backgroundPalette[tile[tileYLine | 4]];
               case 4:
-                this.gameboy.frameBuffer[pixelPosition + 3] = this.gameboy.BGPalette[tile[tileYLine | 3]];
+                this.gameboy.frameBuffer[pixelPosition + 3] = this.gameboy.backgroundPalette[tile[tileYLine | 3]];
               case 3:
-                this.gameboy.frameBuffer[pixelPosition + 2] = this.gameboy.BGPalette[tile[tileYLine | 2]];
+                this.gameboy.frameBuffer[pixelPosition + 2] = this.gameboy.backgroundPalette[tile[tileYLine | 2]];
               case 2:
-                this.gameboy.frameBuffer[pixelPosition + 1] = this.gameboy.BGPalette[tile[tileYLine | 1]];
+                this.gameboy.frameBuffer[pixelPosition + 1] = this.gameboy.backgroundPalette[tile[tileYLine | 1]];
               case 1:
-                this.gameboy.frameBuffer[pixelPosition] = this.gameboy.BGPalette[tile[tileYLine]];
+                this.gameboy.frameBuffer[pixelPosition] = this.gameboy.backgroundPalette[tile[tileYLine]];
             }
           }
         }
@@ -777,7 +777,7 @@ export default class GPU {
       //Reset our mode contingency variables:
       this.gameboy.STATTracker = 0;
       this.gameboy.modeSTAT = 2;
-      this.scanlineProcessors[this.gameboy.actualScanline].apply(this.gameboy); //Scan Line and STAT Mode Control.
+      this.scanlineProcessors[this.gameboy.actualScanline](); //Scan Line and STAT Mode Control.
     }
   };
 
@@ -837,7 +837,7 @@ export default class GPU {
         //LCD off takes at least 2 frames:
         --this.gameboy.drewBlank;
       }
-      this.scanlineProcessors[144].apply(this.gameboy); //Scan Line and STAT Mode Control.
+      this.scanlineProcessors[144](); // Scanline and STAT Mode Control.
     }
   };
 
@@ -856,7 +856,7 @@ export default class GPU {
       } else {
         this.gameboy.memory[0xff41] &= 0x7b;
       }
-      this.scanlineProcessors[this.gameboy.actualScanline].apply(this.gameboy); // Scan Line and STAT Mode Control.
+      this.scanlineProcessors[this.gameboy.actualScanline](); // Scan Line and STAT Mode Control.
     }
   };
 
@@ -884,7 +884,7 @@ export default class GPU {
         // We reset back to the beginning:
         this.gameboy.LCDTicks -= 456;
         this.gameboy.STATTracker = this.gameboy.actualScanline = 0;
-        this.scanlineProcessors[0].apply(this.gameboy); // Scan Line and STAT Mode Control.
+        this.scanlineProcessors[0](); // Scan Line and STAT Mode Control.
       }
     }
   };

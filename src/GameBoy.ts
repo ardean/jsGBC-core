@@ -58,7 +58,7 @@ export default class GameBoy extends EventEmitter {
   tileCache: any; // Tile Data Cache
   colors: number[] = [0xefffde, 0xadd794, 0x529273, 0x183442]; // "Classic" GameBoy palette colors.
   OBJPalette: Int32Array;
-  BGPalette: Int32Array;
+  backgroundPalette: Int32Array;
   updateGBBGPalette: (data: any) => void;
   updateGBOBJPalette: (index: any, data: any) => void;
   pixelStart: number = 0; // Temp variable for holding the current working framebuffer offset.
@@ -66,7 +66,7 @@ export default class GameBoy extends EventEmitter {
   memory: Uint8Array;
   isBootingRom: boolean = true;
   videoRam: Uint8Array;
-  GBCMemory: Uint8Array;
+  gbcMemory: Uint8Array;
   frameBuffer: Int32Array;
   BGCHRBank1: Uint8Array;
 
@@ -594,7 +594,7 @@ export default class GameBoy extends EventEmitter {
     // Setup the RAM for GBC mode.
     if (this.cartridge.useGbcMode) {
       this.videoRam = new Uint8Array(0x2000);
-      this.GBCMemory = new Uint8Array(0x7000);
+      this.gbcMemory = new Uint8Array(0x7000);
     }
 
     this.memoryNew.init();
@@ -612,7 +612,7 @@ export default class GameBoy extends EventEmitter {
     } else {
       this.gbOBJPalette = new Int32Array(8);
       this.gbBGPalette = new Int32Array(4);
-      this.BGPalette = this.gbBGPalette;
+      this.backgroundPalette = this.gbBGPalette;
       this.OBJPalette = this.gbOBJPalette;
       this.tileCache = this.generateCacheArray(0x700);
       this.sortBuffer = new Uint8Array(0x100);
@@ -758,12 +758,12 @@ export default class GameBoy extends EventEmitter {
     if (this.usedGbcBootRom) {
       if (!this.cartridge.useGbcMode) {
         // Clean up the post-boot (GB mode only) state:
-        this.adjustGBCtoGBMode();
+        this.adjustGbctoGbMode();
       } else {
-        this.memoryNew.updateIORegisters();
+        this.memoryNew.updateIoRegisters();
       }
     } else {
-      this.memoryNew.updateIORegisters();
+      this.memoryNew.updateIoRegisters();
     }
   }
 
@@ -1190,9 +1190,9 @@ export default class GameBoy extends EventEmitter {
     }
   }
 
-  adjustGBCtoGBMode() {
+  adjustGbctoGbMode() {
     console.log("Stepping down from GBC mode.");
-    this.videoRam = this.GBCMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = undefined;
+    this.videoRam = this.gbcMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = undefined;
 
     this.tileCache.length = 0x700;
 
@@ -1201,14 +1201,14 @@ export default class GameBoy extends EventEmitter {
       this.gbOBJColorizedPalette = new Int32Array(8);
       this.cachedBGPaletteConversion = new Int32Array(4);
       this.cachedOBJPaletteConversion = new Int32Array(8);
-      this.BGPalette = this.gbBGColorizedPalette;
+      this.backgroundPalette = this.gbBGColorizedPalette;
       this.OBJPalette = this.gbOBJColorizedPalette;
       this.gbOBJPalette = this.gbBGPalette = undefined;
       this.getGBCColor();
     } else {
       this.gbOBJPalette = new Int32Array(8);
       this.gbBGPalette = new Int32Array(4);
-      this.BGPalette = this.gbBGPalette;
+      this.backgroundPalette = this.gbBGPalette;
       this.OBJPalette = this.gbOBJPalette;
     }
 
@@ -1221,12 +1221,12 @@ export default class GameBoy extends EventEmitter {
   initReferencesFromSaveState() {
     if (!this.cartridge.useGbcMode) {
       if (this.colorizedGBPalettes) {
-        this.BGPalette = this.gbBGColorizedPalette;
+        this.backgroundPalette = this.gbBGColorizedPalette;
         this.OBJPalette = this.gbOBJColorizedPalette;
         this.updateGBBGPalette = this.updateGBColorizedBGPalette;
         this.updateGBOBJPalette = this.updateGBColorizedOBJPalette;
       } else {
-        this.BGPalette = this.gbBGPalette;
+        this.backgroundPalette = this.gbBGPalette;
         this.OBJPalette = this.gbOBJPalette;
       }
 
@@ -1705,7 +1705,7 @@ export default class GameBoy extends EventEmitter {
   };
 
   memoryReadGBCMemory = (address: number) => {
-    return this.GBCMemory[address + this.gbcRamBankPosition];
+    return this.gbcMemory[address + this.gbcRamBankPosition];
   };
 
   memoryReadOAM = (address: number) => {
@@ -1713,7 +1713,7 @@ export default class GameBoy extends EventEmitter {
   };
 
   readGbcEchoRam = (address: number) => {
-    return this.GBCMemory[address + this.gbcEchoRamBankPosition];
+    return this.gbcMemory[address + this.gbcEchoRamBankPosition];
   };
 
   readEchoRam = (address: number) => {
@@ -1767,7 +1767,7 @@ export default class GameBoy extends EventEmitter {
   };
 
   memoryWriteGBCRAM = (address: number, data: number) => {
-    this.GBCMemory[address + this.gbcRamBankPosition] = data;
+    this.gbcMemory[address + this.gbcRamBankPosition] = data;
   };
 
   memoryWriteOAMRAM(address: number, data: number) {
@@ -1781,7 +1781,7 @@ export default class GameBoy extends EventEmitter {
   }
 
   memoryWriteECHOGBCRAM(address: number, data: number) {
-    this.GBCMemory[address + this.gbcEchoRamBankPosition] = data;
+    this.gbcMemory[address + this.gbcEchoRamBankPosition] = data;
   }
 
   memoryWriteECHONormal = (address: number, data: number) => {

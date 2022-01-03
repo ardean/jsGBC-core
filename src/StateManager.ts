@@ -251,7 +251,7 @@ export default class StateManager {
     gameboy.memory = toTypedArray(state[index++], "uint8");
     gameboy.videoRam = toTypedArray(state[index++], "uint8");
     gameboy.currentVideoRamBank = state[index++];
-    gameboy.GBCMemory = toTypedArray(state[index++], "uint8");
+    gameboy.gbcMemory = toTypedArray(state[index++], "uint8");
     gameboy.gbcRamBank = state[index++];
     gameboy.gbcRamBankPosition = state[index++];
     gameboy.ROMBank1Offset = state[index++];
