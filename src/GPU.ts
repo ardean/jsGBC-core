@@ -618,89 +618,108 @@ export default class GPU {
   }
 
   renderGbSpriteLayer = (scanlineToRender: number) => {
-    if (this.gameboy.gfxSpriteShow) {
-      const lineAdjusted = scanlineToRender + 0x10;
-      let OAMAddress = 0xfe00;
-      let yoffset = 0;
-      let xcoord = 1;
-      let xCoordStart = 0;
-      let xCoordEnd = 0;
-      let attrCode = 0;
-      let palette = 0;
-      let tile = null;
-      let data = 0;
-      let spriteCount = 0;
-      let currentPixel = 0;
-      let linePixel = 0;
-      //Clear our x-coord sort buffer:
-      while (xcoord < 168) {
-        this.gameboy.sortBuffer[xcoord++] = 0xff;
-      }
-      if (this.gameboy.gfxSpriteNormalHeight) {
-        //Draw the visible sprites:
-        for (let length = this.gameboy.findLowestSpriteDrawable(lineAdjusted, 0x7); spriteCount < length; ++spriteCount) {
-          OAMAddress = this.gameboy.OAMAddressCache[spriteCount];
-          yoffset = lineAdjusted - this.gameboy.memory[OAMAddress] << 3;
-          attrCode = this.gameboy.memory[OAMAddress | 3];
-          palette = (attrCode & 0x10) >> 2;
-          tile = this.gameboy.tileCache[(attrCode & 0x60) << 4 | this.gameboy.memory[OAMAddress | 0x2]];
-          linePixel = xCoordStart = this.gameboy.memory[OAMAddress | 1];
-          xCoordEnd = Math.min(168 - linePixel, 8);
-          xcoord = linePixel > 7 ? 0 : 8 - linePixel;
-          for (currentPixel = this.gameboy.pixelStart + (linePixel > 8 ? linePixel - 8 : 0); xcoord < xCoordEnd; ++xcoord, ++currentPixel, ++linePixel) {
-            if (this.gameboy.sortBuffer[linePixel] > xCoordStart) {
-              if (this.gameboy.frameBuffer[currentPixel] >= 0x2000000) {
-                data = tile[yoffset | xcoord];
-                if (data > 0) {
-                  this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
-                  this.gameboy.sortBuffer[linePixel] = xCoordStart;
-                }
-              } else if (this.gameboy.frameBuffer[currentPixel] < 0x1000000) {
-                data = tile[yoffset | xcoord];
-                if (data > 0 && attrCode < 0x80) {
-                  this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
-                  this.gameboy.sortBuffer[linePixel] = xCoordStart;
-                }
+    if (!this.gameboy.gfxSpriteShow) return;
+
+    const lineAdjusted = scanlineToRender + 0x10;
+    let OAMAddress = 0xfe00;
+    let yoffset = 0;
+    let xcoord = 1;
+    let xCoordStart = 0;
+    let xCoordEnd = 0;
+    let attrCode = 0;
+    let palette = 0;
+    let tile = null;
+    let data = 0;
+    let spriteCount = 0;
+    let currentPixel = 0;
+    let linePixel = 0;
+    //Clear our x-coord sort buffer:
+    while (xcoord < 168) {
+      this.gameboy.sortBuffer[xcoord++] = 0xff;
+    }
+    if (this.gameboy.gfxSpriteNormalHeight) {
+      //Draw the visible sprites:
+      for (
+        let length = this.gameboy.findLowestSpriteDrawable(lineAdjusted, 0x7);
+        spriteCount < length;
+        ++spriteCount
+      ) {
+        OAMAddress = this.gameboy.OAMAddressCache[spriteCount];
+        yoffset = lineAdjusted - this.gameboy.memory[OAMAddress] << 3;
+        attrCode = this.gameboy.memory[OAMAddress | 3];
+        palette = (attrCode & 0x10) >> 2;
+        tile = this.gameboy.tileCache[(attrCode & 0x60) << 4 | this.gameboy.memory[OAMAddress | 0x2]];
+        linePixel = xCoordStart = this.gameboy.memory[OAMAddress | 1];
+        xCoordEnd = Math.min(168 - linePixel, 8);
+        xcoord = linePixel > 7 ?
+          0 :
+          8 - linePixel;
+        for (
+          currentPixel = this.gameboy.pixelStart + (linePixel > 8 ? linePixel - 8 : 0);
+          xcoord < xCoordEnd;
+          ++xcoord, ++currentPixel, ++linePixel
+        ) {
+          if (this.gameboy.sortBuffer[linePixel] > xCoordStart) {
+            if (this.gameboy.frameBuffer[currentPixel] >= 0x2000000) {
+              data = tile[yoffset | xcoord];
+              if (data > 0) {
+                this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
+                this.gameboy.sortBuffer[linePixel] = xCoordStart;
+              }
+            } else if (this.gameboy.frameBuffer[currentPixel] < 0x1000000) {
+              data = tile[yoffset | xcoord];
+              if (data > 0 && attrCode < 0x80) {
+                this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
+                this.gameboy.sortBuffer[linePixel] = xCoordStart;
               }
             }
           }
         }
-      } else {
-        //Draw the visible sprites:
-        for (let length = this.gameboy.findLowestSpriteDrawable(lineAdjusted, 0xf); spriteCount < length; ++spriteCount) {
-          OAMAddress = this.gameboy.OAMAddressCache[spriteCount];
-          yoffset = lineAdjusted - this.gameboy.memory[OAMAddress] << 3;
-          attrCode = this.gameboy.memory[OAMAddress | 3];
-          palette = (attrCode & 0x10) >> 2;
-          if ((attrCode & 0x40) === (0x40 & yoffset)) {
-            tile = this.gameboy.tileCache[(attrCode & 0x60) << 4 | this.gameboy.memory[OAMAddress | 0x2] & 0xfe];
-          } else {
-            tile = this.gameboy.tileCache[(attrCode & 0x60) << 4 | this.gameboy.memory[OAMAddress | 0x2] | 1];
-          }
-          yoffset &= 0x3f;
-          linePixel = xCoordStart = this.gameboy.memory[OAMAddress | 1];
-          xCoordEnd = Math.min(168 - linePixel, 8);
-          xcoord = linePixel > 7 ? 0 : 8 - linePixel;
-          for (currentPixel = this.gameboy.pixelStart + (linePixel > 8 ? linePixel - 8 : 0); xcoord < xCoordEnd; ++xcoord, ++currentPixel, ++linePixel) {
-            if (this.gameboy.sortBuffer[linePixel] > xCoordStart) {
-              if (this.gameboy.frameBuffer[currentPixel] >= 0x2000000) {
-                data = tile[yoffset | xcoord];
-                if (data > 0) {
-                  this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
-                  this.gameboy.sortBuffer[linePixel] = xCoordStart;
-                }
-              } else if (this.gameboy.frameBuffer[currentPixel] < 0x1000000) {
-                data = tile[yoffset | xcoord];
-                if (data > 0 && attrCode < 0x80) {
-                  this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
-                  this.gameboy.sortBuffer[linePixel] = xCoordStart;
-                }
+      }
+    } else {
+      //Draw the visible sprites:
+      for (
+        let length = this.gameboy.findLowestSpriteDrawable(lineAdjusted, 0xf);
+        spriteCount < length;
+        ++spriteCount
+      ) {
+        OAMAddress = this.gameboy.OAMAddressCache[spriteCount];
+        yoffset = lineAdjusted - this.gameboy.memory[OAMAddress] << 3;
+        attrCode = this.gameboy.memory[OAMAddress | 3];
+        palette = (attrCode & 0x10) >> 2;
+        if ((attrCode & 0x40) === (0x40 & yoffset)) {
+          tile = this.gameboy.tileCache[(attrCode & 0x60) << 4 | this.gameboy.memory[OAMAddress | 0x2] & 0xfe];
+        } else {
+          tile = this.gameboy.tileCache[(attrCode & 0x60) << 4 | this.gameboy.memory[OAMAddress | 0x2] | 1];
+        }
+        yoffset &= 0x3f;
+        linePixel = xCoordStart = this.gameboy.memory[OAMAddress | 1];
+        xCoordEnd = Math.min(168 - linePixel, 8);
+        xcoord = linePixel > 7 ? 0 : 8 - linePixel;
+        for (
+          currentPixel = this.gameboy.pixelStart + (linePixel > 8 ? linePixel - 8 : 0);
+          xcoord < xCoordEnd;
+          ++xcoord, ++currentPixel, ++linePixel
+        ) {
+          if (this.gameboy.sortBuffer[linePixel] > xCoordStart) {
+            if (this.gameboy.frameBuffer[currentPixel] >= 0x2000000) {
+              data = tile[yoffset | xcoord];
+              if (data > 0) {
+                this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
+                this.gameboy.sortBuffer[linePixel] = xCoordStart;
+              }
+            } else if (this.gameboy.frameBuffer[currentPixel] < 0x1000000) {
+              data = tile[yoffset | xcoord];
+              if (data > 0 && attrCode < 0x80) {
+                this.gameboy.frameBuffer[currentPixel] = this.gameboy.OBJPalette[palette | data];
+                this.gameboy.sortBuffer[linePixel] = xCoordStart;
               }
             }
           }
         }
       }
     }
+
   };
 
   runScanline(lineNumber: number) {

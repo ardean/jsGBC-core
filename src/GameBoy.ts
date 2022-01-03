@@ -1360,10 +1360,10 @@ export default class GameBoy extends EventEmitter {
     }
   }
 
-  findLowestSpriteDrawable(scanline: number, drawableRange) {
-    var address = 0xfe00;
-    var spriteCount = 0;
-    var diff = 0;
+  findLowestSpriteDrawable(scanline: number, drawableRange: number) {
+    let address = 0xfe00;
+    let spriteCount = 0;
+    let diff = 0;
     while (address < 0xfea0 && spriteCount < 10) {
       diff = scanline - this.memory[address];
       if ((diff & drawableRange) === diff) {
