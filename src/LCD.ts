@@ -1,10 +1,9 @@
-import * as util from "../../util";
-import GameBoyCore from "../GameBoyCore";
+import * as util from "./util";
+import GameBoy from "./GameBoy_";
 
 export default class LcdDevice {
   context: any;
   offscreenContext: any;
-  gameboy: GameBoyCore;
   offscreenWidth: number;
   offscreenHeight: number;
   offscreenRgbaCount: number;
@@ -20,15 +19,17 @@ export default class LcdDevice {
   canvas: any;
   offscreenRgbCount: number;
 
-  constructor({
-    canvas,
-    context,
-    offscreenCanvas,
-    offscreenContext,
-    gameboy,
-    width,
-    height
-  }) {
+  constructor(
+    private gameboy: GameBoy,
+    {
+      canvas,
+      context,
+      offscreenCanvas,
+      offscreenContext,
+      width,
+      height
+    }
+  ) {
     this.canvas = canvas;
     this.context = context;
     this.offscreenCanvas = offscreenCanvas;
@@ -85,6 +86,12 @@ export default class LcdDevice {
       this.offscreenHeight
     );
 
+    this.swizzledFrame = util.getTypedArray(
+      this.offscreenRgbCount,
+      0xff,
+      "uint8"
+    ) as Uint8Array;
+
     let index = this.offscreenRgbaCount;
     while (index > 0) {
       index -= 4;
@@ -94,22 +101,12 @@ export default class LcdDevice {
       this.canvasBuffer.data[index + 3] = 0xff; // opacity
     }
 
-    this.copyToCanvas();
-
-    if (!this.swizzledFrame) {
-      this.swizzledFrame = util.getTypedArray(
-        this.offscreenRgbCount,
-        0xff,
-        "uint8"
-      ) as Uint8Array;
-    }
-
     // Test the draw system and browser vblank latching:
-    this.newFrameAvailable = true; // Copy the latest graphics to buffer.
-    this.requestDraw();
+    this.newFrameAvailable = true;
+    this.draw();
   }
 
-  copyToCanvas() {
+  drawToCanvas() {
     if (
       this.offscreenWidth === this.width &&
       this.offscreenHeight === this.height
@@ -127,18 +124,13 @@ export default class LcdDevice {
     }
   }
 
-  requestDraw() {
-    if (this.newFrameAvailable) {
-      if (this.offscreenRgbaCount > 0) {
-        // We actually updated the graphics internally, so copy out:
-        if (this.offscreenRgbaCount === 92160) {
-          this.processDraw();
-        }
-      }
-    }
-  }
+  draw() {
+    if (
+      !this.newFrameAvailable ||
+      this.offscreenRgbaCount !== 92160
+    ) return;
 
-  processDraw() {
+    // We actually updated the graphics internally, so copy out:
     const canvasData = this.canvasBuffer.data;
     let bufferIndex = 0;
     let canvasIndex = 0;
@@ -150,17 +142,11 @@ export default class LcdDevice {
       ++canvasIndex;
     }
 
-    this.copyToCanvas();
+    this.drawToCanvas();
     this.newFrameAvailable = false;
   }
 
-  prepareFrame() {
-    // Copy the internal frame buffer to the output buffer:
-    this.swizzleFrameBuffer();
-    this.newFrameAvailable = true;
-  }
-
-  swizzleFrameBuffer() {
+  outputFrameBuffer() {
     // Convert our dirty 24-bit (24-bit, with internal render flags above it) framebuffer to an 8-bit buffer with separate indices for the RGB channels:
     const frameBuffer = this.gameboy.frameBuffer;
     const swizzledFrame = this.swizzledFrame;
@@ -172,6 +158,7 @@ export default class LcdDevice {
       swizzledFrame[canvasIndex++] = frameBuffer[bufferIndex] & 0xff; // blue
       ++bufferIndex;
     }
+    this.newFrameAvailable = true;
   }
 
   turnOff() {

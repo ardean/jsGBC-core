@@ -1,13 +1,15 @@
+
 import CPU from "./CPU";
 import ROM from "./ROM";
-import { GameBoy } from "..";
 import Joypad from "./Joypad";
-import * as util from "../util";
-import settings from "../settings";
+import * as util from "./util";
+import Actions from "./actions";
+import settings from "./settings";
 import tickTable from "./tickTable";
+import LcdDevice from "./LCD";
 import Memory from "./memory/Memory";
-import LcdDevice from "./lcd/device";
 import { EventEmitter } from "events";
+import Storage from "./storages/Storage";
 import StateManager from "./StateManager";
 import AudioDevice from "./audio/AudioDevice";
 import Cartridge from "./cartridge/Cartridge";
@@ -15,9 +17,23 @@ import * as MemoryLayout from "./memory/Layout";
 import GPU, { totalScanlineCount } from "./GPU";
 import postBootRomState from "./postBootRomState";
 import mainInstructions from "./MainInstructions";
+import LocalStorage from "./storages/LocalStorage";
+import MemoryStorage from "./storages/MemoryStorage";
 import AudioController from "./audio/AudioController";
+import { concatArrayBuffers, debounce, Debounced } from "./util";
 
-export default class GameBoyCore {
+export default class GameBoy extends EventEmitter {
+  interval: number;
+  debouncedAutoSave: Debounced;
+  buttons = ["right", "left", "up", "down", "a", "b", "select", "start"];
+  core: GameBoy;
+  isOn: boolean;
+  actions: Actions;
+  storage: Storage;
+  cartridge: Cartridge;
+  lastRun: number;
+
+
   // Graphics Variables
   midScanlineOffset = -1; //mid-scanline rendering offset.
   currentX = 0; //The x-coord we left off at for mid-scanline rendering.
@@ -28,19 +44,18 @@ export default class GameBoyCore {
   ROMBank1Offset: number;
   haltPostClocks: number;
   spriteCount: number = 252; // Mode 3 extra clocking counter (Depends on how many sprites are on the current line.).
-  BGCHRCurrentBank: any; // BG Tile Pointer Caches:
+  BGCHRCurrentBank: Uint8Array; // BG Tile Pointer Caches:
   tileCache: any; // Tile Data Cache
   colors: number[] = [0xefffde, 0xadd794, 0x529273, 0x183442]; // "Classic" GameBoy palette colors.
-  OBJPalette: any;
-  BGPalette: any;
+  OBJPalette: Int32Array;
+  BGPalette: Int32Array;
   updateGBBGPalette: (data: any) => void;
   updateGBOBJPalette: (index: any, data: any) => void;
   pixelStart: number = 0; // Temp variable for holding the current working framebuffer offset.
   pixelEnd: number = 0; // track the x-coord limit for line rendering (mid-scanline usage).
-  cartridge: Cartridge;
   memory: Uint8Array;
   isBootingRom: boolean = true;
-  VRAM: Uint8Array;
+  videoRam: Uint8Array;
   GBCMemory: Uint8Array;
   frameBuffer: Int32Array;
   BGCHRBank1: Uint8Array;
@@ -78,43 +93,43 @@ export default class GameBoyCore {
   serialShiftTimer: number;
   serialShiftTimerAllocated: number;
   IRQEnableDelay: number;
-  actualScanLine: number;
+  actualScanline: number;
   lastUnrenderedLine: number;
   gfxWindowDisplay: boolean;
   gfxSpriteShow: boolean;
   gfxSpriteNormalHeight: boolean;
   backgroundEnabled: boolean;
-  hasBGPriority: boolean;
+  hasBackgroundPriority: boolean;
   gfxWindowCHRBankPosition: number;
   gfxBackgroundCHRBankPosition: number;
   gfxBackgroundBankOffset: number;
   windowY: number;
   windowX: number;
   drewBlank: number;
-  halt: any;
-  skipPCIncrement: any;
+  halt: boolean;
+  skipPCIncrement: boolean;
   doubleSpeedShifter: number;
-  colorizedGBPalettes: any;
+  colorizedGBPalettes: boolean;
   backgroundX: number;
   gbcOBJRawPalette: Uint8Array;
   gbcBGRawPalette: Uint8Array;
-  gbcOBJPalette: util.TypedArray;
-  gbcBGPalette: util.TypedArray;
-  BGCHRBank2: util.TypedArray;
-  currVRAMBank: number;
-  gbOBJPalette: util.TypedArray;
-  gbBGPalette: util.TypedArray;
-  sortBuffer: util.TypedArray;
-  OAMAddressCache: util.TypedArray;
-  gbBGColorizedPalette: util.TypedArray;
-  gbOBJColorizedPalette: util.TypedArray;
-  cachedBGPaletteConversion: util.TypedArray;
-  cachedOBJPaletteConversion: util.TypedArray;
-  backgroundY: any;
-  queuedScanLines: number;
+  gbcOBJPalette: Int32Array;
+  gbcBGPalette: Int32Array;
+  BGCHRBank2: Uint8Array;
+  currentVideoRamBank: number;
+  gbOBJPalette: Int32Array;
+  gbBGPalette: Int32Array;
+  sortBuffer: Uint8Array;
+  OAMAddressCache: Int32Array;
+  gbBGColorizedPalette: Int32Array;
+  gbOBJColorizedPalette: Int32Array;
+  cachedBGPaletteConversion: Int32Array;
+  cachedOBJPaletteConversion: Int32Array;
+  backgroundY: number;
+  queuedScanlines: number;
   remainingClocks: number;
-  gbcRamBankPosition: any;
-  gbcRamBankPositionECHO: any;
+  gbcRamBankPosition: number;
+  gbcRamBankPositionECHO: number;
   gbcRamBank: number;
   stateManager: StateManager;
   lcdDevice: LcdDevice;
@@ -124,8 +139,6 @@ export default class GameBoyCore {
   cpu: CPU;
   gpu: GPU;
   memoryNew: Memory;
-  events: EventEmitter;
-  api: GameBoy;
 
   usedBootRom: boolean;
 
@@ -139,22 +152,37 @@ export default class GameBoyCore {
   highMemoryWriter = []; // Array of functions mapped to write to 0xFFXX memory
 
   constructor(
-    {
-      api,
-      audio: audioOptions = {},
-      lcd: lcdOptions = {}
-    }: any
+    options: {
+      audio?: any;
+      lcd?: any;
+      bootRom?: ArrayBuffer;
+    } = {}
   ) {
-    this.api = api;
+    super();
 
-    this.events = new EventEmitter(); // TODO: use as super
+    this.debouncedAutoSave = debounce(
+      this.autoSave.bind(this),
+      100
+    );
+    this.addListener("mbcRamWrite", () => {
+      if (!this.cartridge) return;
+      this.debouncedAutoSave();
+    });
 
-    lcdOptions.gameboy = this;
+    this.isOn = false;
+    this.actions = new Actions();
+    this.registerActions();
+
+    if (typeof document !== "undefined") {
+      this.storage = new LocalStorage();
+    } else {
+      this.storage = new MemoryStorage();
+    }
 
     this.cpu = new CPU();
     this.gpu = new GPU(this);
     this.audioDevice = new AudioDevice({
-      context: audioOptions.context,
+      context: options.audio?.context,
       channels: 2
     });
     this.audioController = new AudioController({
@@ -162,7 +190,10 @@ export default class GameBoyCore {
       gameboy: this
     });
     this.joypad = new Joypad(this);
-    this.lcdDevice = new LcdDevice(lcdOptions);
+    this.lcdDevice = new LcdDevice(
+      this,
+      options.lcd
+    );
     this.stateManager = new StateManager(this);
     this.stateManager.init();
 
@@ -171,30 +202,309 @@ export default class GameBoyCore {
     this.updateGBOBJPalette = this.updateGBRegularOBJPalette;
   }
 
+  isPaused() {
+    return (
+      typeof document !== "undefined" &&
+      document.hidden
+    );
+  }
+
+  setStorage(storage: Storage) {
+    this.storage = storage;
+  }
+
+  registerActions() {
+    for (const button of this.buttons) {
+      const index = this.buttons.indexOf(button);
+      this.actions
+        .register(button)
+        .addListener("down-" + button, () => {
+          this.joypad.down(index);
+        })
+        .addListener("up-" + button, () => {
+          this.joypad.up(index);
+        });
+    }
+
+    this.actions
+      .register("speed")
+      .addListener("down-speed", options => this.handleSpeed(options))
+      .addListener("change-speed", options => this.handleSpeed(options))
+      .addListener("up-speed", () => {
+        this.setSpeed(1);
+      });
+  }
+
+  handleSpeed(options) {
+    let multiplier = 2;
+    if (options && typeof options.value === "number") {
+      multiplier = options.value * 2 + 1;
+    }
+
+    this.setSpeed(multiplier);
+  }
+
+  turnOn() {
+    if (this.isOn) return;
+    this.isOn = true;
+
+    this.start(this.cartridge);
+    this.stopEmulator = 1;
+
+    this.requestFrame(this.frameHandler);
+  }
+
+  frameHandler = (now: number) => {
+    if (this.isPaused()) return;
+
+    if (
+      !this.lastRun ||
+      this.lastRun < now - settings.runInterval
+    ) {
+      this.run();
+      this.lastRun = now;
+    }
+
+    this.requestFrame(this.frameHandler);
+  };
+
+  turnOff() {
+    if (!this.isOn) return;
+    this.isOn = false;
+
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+  }
+
+  restart() {
+    this.turnOff();
+    this.turnOn();
+  }
+
+  setGbBootRom(rom: ROM | ArrayBuffer | Uint8Array) {
+    if (!(rom instanceof ROM)) {
+      rom = new ROM(rom);
+    }
+
+    this.gbBootRom = rom;
+  }
+
+  setGbcBootRom(rom: ROM | ArrayBuffer | Uint8Array) {
+    if (!(rom instanceof ROM)) {
+      rom = new ROM(rom);
+    }
+
+    this.gbcBootRom = rom;
+  }
+
+  replaceCartridge(cartridge: Cartridge | ArrayBuffer | Uint8Array) {
+    this.turnOff();
+    this.removeCartridge();
+    this.insertCartridge(cartridge);
+    this.turnOn();
+  }
+
+  removeCartridge() {
+    this.cartridge = null;
+  }
+
+  insertCartridge(cartridge: Cartridge | ArrayBuffer | Uint8Array) {
+    if (!(cartridge instanceof Cartridge)) {
+      cartridge = new Cartridge(cartridge);
+    }
+
+    this.cartridge = cartridge;
+  }
+
+  actionDown(action, options?) {
+    this.actions.down(action, options);
+  }
+
+  actionChange(action, options) {
+    this.actions.change(action, options);
+  }
+
+  actionUp(action, options?) {
+    this.actions.up(action, options);
+  }
+
+  autoSave() {
+    this.saveRam();
+    this.saveRtc();
+  }
+
+  async saveState(state) {
+    if (
+      !this.storage ||
+      !this.cartridge
+    ) return;
+    const name = this.cartridge.name;
+
+    if (!state) {
+      state = this.stateManager.get();
+      if (!state) return false;
+    }
+
+    await this.storage.setState(name, state);
+    this.emit("stateSaved", { name, state });
+  }
+
+  async saveRam(ram?) {
+    if (
+      !this.storage ||
+      !this.cartridge?.mbc
+    ) return;
+    const name = this.cartridge.name;
+
+    if (!ram) {
+      ram = this.cartridge.mbc.getRam();
+      if (!ram) return false;
+    }
+
+    await this.storage.setRam(name, ram.buffer);
+    this.emit("ramSaved", { name, ram });
+  }
+
+  async saveRtc(rtc?) {
+    if (
+      !this.storage ||
+      !this.cartridge?.mbc?.rtc
+    ) return;
+
+    const name = this.cartridge.name;
+
+    if (!rtc) {
+      rtc = this.cartridge.mbc.rtc.get();
+      if (!rtc) return false;
+    }
+
+    await this.storage.setRtc(name, rtc.buffer);
+    this.emit("rtcSaved", { name, rtc });
+  }
+
   loadState(state) {
+    if (
+      !this.storage ||
+      !this.cartridge
+    ) return;
+
+    const name = this.cartridge.name;
+
+    if (!state) {
+      state = this.storage.getState(name);
+      if (!state) return false;
+    }
+
     this.stateManager.load(state);
 
     this.initReferencesFromSaveState();
     this.memoryNew.init();
     this.lcdDevice.init();
-    this.audioController.noiseSampleTable = this.audioController.channel4BitRange === 0x7fff ? this.audioController.LSFR15Table : this.audioController.LSFR7Table;
-    this.audioController.channel4VolumeShifter = this.audioController.channel4BitRange === 0x7fff ? 15 : 7;
+    this.audioController.noiseSampleTable = (
+      this.audioController.channel4BitRange === 0x7fff ?
+        this.audioController.LSFR15Table :
+        this.audioController.LSFR7Table
+    );
+    this.audioController.channel4VolumeShifter = (
+      this.audioController.channel4BitRange === 0x7fff ?
+        15 :
+        7
+    );
+
+    this.emit("stateLoaded", { name, state });
+  }
+
+  loadRam(ram?) {
+    if (
+      !this.storage ||
+      !this.cartridge
+    ) return;
+
+    const name = this.cartridge.name;
+
+    if (!ram) {
+      ram = this.storage.getRam(name);
+      if (!ram) return false;
+      ram = new Uint8Array(ram);
+    }
+
+    this.cartridge.mbc.loadRam(ram);
+    this.emit("ramLoaded", { name, ram });
+  }
+
+  loadRtc(rtc?) {
+    if (
+      !this.storage ||
+      !this.core?.cartridge?.hasRtc
+    ) return;
+
+    const name = this.cartridge.name;
+
+    if (!rtc) {
+      rtc = this.storage.getRtc(name);
+      if (!rtc) return false;
+      rtc = new Uint32Array(rtc);
+    }
+
+    this.cartridge.mbc.rtc.load(rtc);
+    this.emit("rtcLoaded", { name, rtc });
+  }
+
+  getBatteryFileArrayBuffer(): ArrayBuffer {
+    if (!this.cartridge?.mbc) return;
+
+    const ram = this.cartridge.mbc.getRam();
+    const rtc = this.cartridge.mbc.rtc?.get();
+
+    return (
+      rtc ?
+        concatArrayBuffers(ram.buffer, rtc.buffer) :
+        ram.buffer
+    );
+  }
+
+  async loadBatteryFileArrayBuffer(data: ArrayBuffer) {
+    if (!this.cartridge?.mbc) return;
+
+    const ram = this.cartridge.mbc.cutSRAMFromBatteryFileArray(data);
+    const rtc = this.cartridge.mbc.rtc?.cutBatteryFileArray(data);
+
+    this.cartridge.mbc.loadRam(ram);
+    if (rtc) this.cartridge.mbc.rtc.load(rtc);
+
+    await this.saveRam(ram);
+    if (rtc) await this.saveRtc(rtc);
+
+    this.restart();
+  }
+
+  requestFrame(fn: (now: number) => void) {
+    if (
+      typeof window !== "undefined" &&
+      window.requestAnimationFrame
+    ) {
+      window.requestAnimationFrame(fn);
+    } else {
+      const now = (typeof performance !== "undefined" ? performance : Date).now();
+      setTimeout(() => fn(now), 0);
+    }
   }
 
   connectCartridge(cartridge: Cartridge) {
-    this.cartridge?.mbc?.removeListener("rumble", this.onRumble);
+    this.cartridge?.mbc
+      ?.removeListener("rumble", this.rumble)
+      ?.removeListener("ramWrite", this.onMbcRamWrite);
 
     this.cartridge?.disconnect();
     cartridge.connect(this);
 
     cartridge.interpret();
-    if (cartridge?.mbc) {
-      cartridge.mbc.addListener("rumble", this.onRumble);
-      cartridge.mbc.setupROM();
-      cartridge.mbc.on("ramWrite", () => {
-        this.events.emit("mbcRamWrite");
-      });
-    }
+    cartridge.mbc
+      ?.addListener("rumble", this.rumble)
+      ?.addListener("ramWrite", this.onMbcRamWrite);
+    cartridge.mbc?.setupRom();
 
     this.cartridge = cartridge;
 
@@ -203,7 +513,7 @@ export default class GameBoyCore {
     else if (this.gbBootRom) this.loadGbBootRomIntoMemory();
   }
 
-  onRumble() {
+  rumble() {
     if (
       typeof window !== "undefined" &&
       "vibrate" in window.navigator
@@ -211,6 +521,10 @@ export default class GameBoyCore {
       window.navigator.vibrate(200);
     }
   }
+
+  onMbcRamWrite = () => {
+    this.emit("mbcRamWrite");
+  };
 
   loadGbcBootRomIntoMemory() {
     let address = 0;
@@ -251,7 +565,6 @@ export default class GameBoyCore {
   start(cartridge: Cartridge) {
     this.stateManager.init();
 
-    // Initialize the RAM:
     this.memory = new Uint8Array(0x10000);
     this.audioController.setMemory(this.memory);
     this.frameBuffer = util.getTypedArray(23040, 0xf8f8f8, "int32") as Int32Array;
@@ -260,7 +573,7 @@ export default class GameBoyCore {
 
     this.memoryNew = new Memory(this, this.memory);
 
-    this.lcdDevice.init(); // Initialize the graphics.
+    this.lcdDevice.init();
 
     this.audioController.connectDevice(this.audioDevice);
 
@@ -270,7 +583,7 @@ export default class GameBoyCore {
 
     // Setup the RAM for GBC mode.
     if (this.cartridge.useGbcMode) {
-      this.VRAM = new Uint8Array(0x2000);
+      this.videoRam = new Uint8Array(0x2000);
       this.GBCMemory = new Uint8Array(0x7000);
     }
 
@@ -279,21 +592,21 @@ export default class GameBoyCore {
     if (this.cartridge.useGbcMode) {
       this.gbcOBJRawPalette = new Uint8Array(0x40);
       this.gbcBGRawPalette = new Uint8Array(0x40);
-      this.gbcOBJPalette = util.getTypedArray(0x20, 0x1000000, "int32");
-      this.gbcBGPalette = util.getTypedArray(0x40, 0, "int32");
-      this.BGCHRBank2 = util.getTypedArray(0x800, 0, "uint8");
-      this.BGCHRCurrentBank = this.currVRAMBank > 0 ?
+      this.gbcOBJPalette = util.getTypedArray(0x20, 0x1000000, "int32") as Int32Array;
+      this.gbcBGPalette = new Int32Array(0x40);
+      this.BGCHRBank2 = new Uint8Array(0x800);
+      this.BGCHRCurrentBank = this.currentVideoRamBank > 0 ?
         this.BGCHRBank2 :
         this.BGCHRBank1;
       this.tileCache = this.generateCacheArray(0xf80);
     } else {
-      this.gbOBJPalette = util.getTypedArray(8, 0, "int32");
-      this.gbBGPalette = util.getTypedArray(4, 0, "int32");
+      this.gbOBJPalette = new Int32Array(8);
+      this.gbBGPalette = new Int32Array(4);
       this.BGPalette = this.gbBGPalette;
       this.OBJPalette = this.gbOBJPalette;
       this.tileCache = this.generateCacheArray(0x700);
-      this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
-      this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
+      this.sortBuffer = new Uint8Array(0x100);
+      this.OAMAddressCache = new Int32Array(10);
     }
 
     this.gpu.initRenderer();
@@ -355,7 +668,11 @@ export default class GameBoyCore {
 
     // Start as an unset device:
     console.log("Starting without the GBC boot ROM.");
-    this.registerA = this.cartridge.useGbcMode ? 0x11 : 0x1;
+    this.registerA = (
+      this.cartridge.useGbcMode ?
+        0x11 :
+        0x1
+    );
     this.registerB = 0;
     this.registerC = 0x13;
     this.registerD = 0;
@@ -389,13 +706,13 @@ export default class GameBoyCore {
     this.serialShiftTimer = 0;
     this.serialShiftTimerAllocated = 0;
     this.IRQEnableDelay = 0;
-    this.actualScanLine = 144;
+    this.actualScanline = 144;
     this.lastUnrenderedLine = 0;
     this.gfxWindowDisplay = false;
     this.gfxSpriteShow = false;
     this.gfxSpriteNormalHeight = true;
     this.backgroundEnabled = true;
-    this.hasBGPriority = true;
+    this.hasBackgroundPriority = true;
     this.gfxWindowCHRBankPosition = 0;
     this.gfxBackgroundCHRBankPosition = 0;
     this.gfxBackgroundBankOffset = 0;
@@ -447,33 +764,30 @@ export default class GameBoyCore {
 
   run() {
     // The preprocessing before the actual iteration loop:
-    if ((this.stopEmulator & 2) === 0) {
-      if ((this.stopEmulator & 1) === 1) {
+    if ((this.stopEmulator & 0b10) === 0) {
+      if ((this.stopEmulator & 0b1) === 1) {
         if (!this.cpu.stopped) {
           this.stopEmulator = 0;
 
           this.audioController.adjustUnderrun();
+          this.cartridge.mbc?.rtc?.updateClock();
 
-          if (this.cartridge?.hasRTC) {
-            this.cartridge.mbc?.rtc?.updateClock();
-          }
-
-          if (!this.halt) {
-            this.executeIteration();
-          } else {
+          if (this.halt) {
             // Finish the HALT rundown execution.
             this.currentInstructionCycleCount = 0;
             this.calculateHALTPeriod();
 
-            if (!this.halt) {
-              this.executeIteration();
-            } else {
+            if (this.halt) {
               this.updateCore();
               this.iterationEndRoutine();
+            } else {
+              this.executeIteration();
             }
+          } else {
+            this.executeIteration();
           }
-          // Request the graphics target to be updated:
-          this.lcdDevice.requestDraw();
+
+          this.lcdDevice.draw();
         } else {
           this.audioController.adjustUnderrun();
           this.audioController.audioTicks += this.cpu.cyclesTotal;
@@ -528,7 +842,7 @@ export default class GameBoyCore {
       const timedTicks = this.currentInstructionCycleCount >> this.doubleSpeedShifter;
       this.LCDTicks += timedTicks; //LCD Timing
 
-      this.gpu.runScanline(this.actualScanLine); // Scan Line and STAT Mode Control
+      this.gpu.runScanline(this.actualScanline); // Scan Line and STAT Mode Control
 
       //Single-speed relative timing for A/V emulation:
       this.audioController.audioTicks += timedTicks; //Audio Timing
@@ -637,8 +951,8 @@ export default class GameBoyCore {
           }
           this.modeSTAT = 3;
         }
-        this.incrementScanLineQueue();
-        this.updateSpriteCount(this.actualScanLine);
+        this.incrementScanlineQueue();
+        this.updateSpriteCount(this.actualScanline);
         this.STATTracker = 2;
       }
       if (this.LCDTicks >= this.spriteCount) {
@@ -657,12 +971,12 @@ export default class GameBoyCore {
 
   clocksUntilLYCMatch() {
     if (this.memory[0xff45] !== 0) {
-      if (this.memory[0xff45] > this.actualScanLine) {
+      if (this.memory[0xff45] > this.actualScanline) {
         return (
           456 *
           (
             this.memory[0xff45] -
-            this.actualScanLine
+            this.actualScanline
           )
         );
       }
@@ -671,7 +985,7 @@ export default class GameBoyCore {
         456 *
         (
           totalScanlineCount -
-          this.actualScanLine +
+          this.actualScanline +
           this.memory[0xff45]
         )
       );
@@ -681,11 +995,11 @@ export default class GameBoyCore {
       456 *
       (
         (
-          this.actualScanLine === 153 &&
+          this.actualScanline === 153 &&
           this.memory[0xff44] === 0
         ) ?
           totalScanlineCount :
-          153 - this.actualScanLine
+          153 - this.actualScanline
       ) +
       8
     );
@@ -694,19 +1008,19 @@ export default class GameBoyCore {
   clocksUntilMode0() {
     switch (this.modeSTAT) {
       case 0:
-        if (this.actualScanLine === 143) {
+        if (this.actualScanline === 143) {
           this.updateSpriteCount(0);
           return this.spriteCount + 5016;
         }
-        this.updateSpriteCount(this.actualScanLine + 1);
+        this.updateSpriteCount(this.actualScanline + 1);
         return this.spriteCount + 456;
       case 2:
       case 3:
-        this.updateSpriteCount(this.actualScanLine);
+        this.updateSpriteCount(this.actualScanline);
         return this.spriteCount;
       case 1:
         this.updateSpriteCount(0);
-        return this.spriteCount + 456 * (totalScanlineCount - this.actualScanLine);
+        return this.spriteCount + 456 * (totalScanlineCount - this.actualScanline);
     }
   }
 
@@ -744,7 +1058,7 @@ export default class GameBoyCore {
   updateCore() {
     //Update the clocking for the LCD emulation:
     this.LCDTicks += this.currentInstructionCycleCount >> this.doubleSpeedShifter; // LCD Timing
-    this.gpu.runScanline(this.actualScanLine); //Scan Line and STAT Mode Control
+    this.gpu.runScanline(this.actualScanline); //Scan Line and STAT Mode Control
     //Single-speed relative timing for A/V emulation:
     var timedTicks = this.currentInstructionCycleCount >> this.doubleSpeedShifter; // CPU clocking can be updated from the LCD handling.
     this.audioController.audioTicks += timedTicks; // Audio Timing
@@ -811,7 +1125,7 @@ export default class GameBoyCore {
     }
   }
 
-  renderScanLine(scanline: number) {
+  renderScanline(scanline: number) {
     this.pixelStart = scanline * 160;
     if (this.backgroundEnabled) {
       this.pixelEnd = 160;
@@ -829,8 +1143,8 @@ export default class GameBoyCore {
     this.midScanlineOffset = -1;
   }
 
-  renderMidScanLine() {
-    if (this.actualScanLine < 144 && this.modeSTAT === 3) {
+  renderMidScanline() {
+    if (this.actualScanline < 144 && this.modeSTAT === 3) {
       // TODO: Get this accurate:
       if (this.midScanlineOffset === -1) {
         this.midScanlineOffset = this.backgroundX & 0x7;
@@ -868,25 +1182,28 @@ export default class GameBoyCore {
 
   adjustGBCtoGBMode() {
     console.log("Stepping down from GBC mode.");
-    this.VRAM = this.GBCMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = undefined;
+    this.videoRam = this.GBCMemory = this.BGCHRCurrentBank = this.BGCHRBank2 = undefined;
+
     this.tileCache.length = 0x700;
+
     if (settings.colorizeGBMode) {
-      this.gbBGColorizedPalette = util.getTypedArray(4, 0, "int32");
-      this.gbOBJColorizedPalette = util.getTypedArray(8, 0, "int32");
-      this.cachedBGPaletteConversion = util.getTypedArray(4, 0, "int32");
-      this.cachedOBJPaletteConversion = util.getTypedArray(8, 0, "int32");
+      this.gbBGColorizedPalette = new Int32Array(4);
+      this.gbOBJColorizedPalette = new Int32Array(8);
+      this.cachedBGPaletteConversion = new Int32Array(4);
+      this.cachedOBJPaletteConversion = new Int32Array(8);
       this.BGPalette = this.gbBGColorizedPalette;
       this.OBJPalette = this.gbOBJColorizedPalette;
       this.gbOBJPalette = this.gbBGPalette = undefined;
       this.getGBCColor();
     } else {
-      this.gbOBJPalette = util.getTypedArray(8, 0, "int32");
-      this.gbBGPalette = util.getTypedArray(4, 0, "int32");
+      this.gbOBJPalette = new Int32Array(8);
+      this.gbBGPalette = new Int32Array(4);
       this.BGPalette = this.gbBGPalette;
       this.OBJPalette = this.gbOBJPalette;
     }
-    this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
-    this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
+
+    this.sortBuffer = new Uint8Array(0x100);
+    this.OAMAddressCache = new Int32Array(10);
     this.gpu.initRenderer();
     this.memoryNew.init();
   }
@@ -912,10 +1229,10 @@ export default class GameBoyCore {
         this.generateGBTileLine(tileIndex);
       }
 
-      this.sortBuffer = util.getTypedArray(0x100, 0, "uint8");
-      this.OAMAddressCache = util.getTypedArray(10, 0, "int32");
+      this.sortBuffer = new Uint8Array(0x100);
+      this.OAMAddressCache = new Int32Array(10);
     } else {
-      this.BGCHRCurrentBank = this.currVRAMBank > 0 ? this.BGCHRBank2 : this.BGCHRBank1;
+      this.BGCHRCurrentBank = this.currentVideoRamBank > 0 ? this.BGCHRBank2 : this.BGCHRBank1;
       this.tileCache = this.generateCacheArray(0xf80);
       for (let tileIndex = 0; tileIndex < 0x1800; tileIndex += 0x10) {
         this.generateGBCTileBank1(tileIndex);
@@ -927,10 +1244,14 @@ export default class GameBoyCore {
 
   adjustRGBTint(value: number) {
     // Adjustment for the GBC's tinting (According to Gambatte):
-    const red = value & 0x1f;
-    const green = value >> 5 & 0x1f;
-    const blue = value >> 10 & 0x1f;
-    return red * 13 + green * 2 + blue >> 1 << 16 | green * 3 + blue << 9 | red * 3 + green * 2 + blue * 11 >> 1;
+    const red = value & 0x1F;
+    const green = value >> 5 & 0x1F;
+    const blue = value >> 10 & 0x1F;
+    return (
+      red * 13 + green * 2 + blue >> 1 << 16 |
+      green * 3 + blue << 9 |
+      red * 3 + green * 2 + blue * 11 >> 1
+    );
   }
 
   getGBCColor() {
@@ -939,15 +1260,24 @@ export default class GameBoyCore {
     for (let counter = 0; counter < 4; counter++) {
       const adjustedIndex = counter << 1;
       // BG
-      this.cachedBGPaletteConversion[counter] = this.adjustRGBTint(this.gbcBGRawPalette[adjustedIndex | 1] << 8 | this.gbcBGRawPalette[adjustedIndex]);
+      this.cachedBGPaletteConversion[counter] = this.adjustRGBTint(
+        this.gbcBGRawPalette[adjustedIndex | 1] << 8 |
+        this.gbcBGRawPalette[adjustedIndex]
+      );
       // OBJ 1
-      this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(this.gbcOBJRawPalette[adjustedIndex | 1] << 8 | this.gbcOBJRawPalette[adjustedIndex]);
+      this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(
+        this.gbcOBJRawPalette[adjustedIndex | 1] << 8 |
+        this.gbcOBJRawPalette[adjustedIndex]
+      );
     }
 
     // OBJ 2
     for (let counter = 4; counter < 8; counter++) {
       const adjustedIndex = counter << 1;
-      this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(this.gbcOBJRawPalette[adjustedIndex | 1] << 8 | this.gbcOBJRawPalette[adjustedIndex]);
+      this.cachedOBJPaletteConversion[counter] = this.adjustRGBTint(
+        this.gbcOBJRawPalette[adjustedIndex | 1] << 8 |
+        this.gbcOBJRawPalette[adjustedIndex]
+      );
     }
 
     // Update the palette entries:
@@ -988,8 +1318,8 @@ export default class GameBoyCore {
   }
 
   updateGBCBGPalette(address: number, data: number) {
-    if (this.gbcBGRawPalette[address] != data) {
-      this.midScanLineJIT();
+    if (this.gbcBGRawPalette[address] !== data) {
+      this.midScanlineJIT();
       //Update the color palette for BG tiles since it changed:
       this.gbcBGRawPalette[address] = data;
       if ((address & 0x06) === 0) {
@@ -1014,7 +1344,7 @@ export default class GameBoyCore {
       this.gbcOBJRawPalette[address] = data;
       if ((address & 0x06) > 0) {
         //Regular Palettes (No special crap)
-        this.midScanLineJIT();
+        this.midScanlineJIT();
         this.gbcOBJPalette[address >> 1] = 0x1000000 | this.adjustRGBTint(this.gbcOBJRawPalette[address | 1] << 8 | this.gbcOBJRawPalette[address & 0x3e]);
       }
     }
@@ -1098,7 +1428,7 @@ export default class GameBoyCore {
 
   //Generate only a single tile line for the GBC tile cache mode (Bank 2):
   generateGBCTileLineBank2(address: number) {
-    var lineCopy = this.VRAM[0x1 | address] << 8 | this.VRAM[0x1ffe & address];
+    var lineCopy = this.videoRam[0x1 | address] << 8 | this.videoRam[0x1ffe & address];
     var tileBlock1 = this.tileCache[0x800 | address >> 4];
     var tileBlock2 = this.tileCache[0xa00 | address >> 4];
     var tileBlock3 = this.tileCache[0xc00 | address >> 4];
@@ -1126,7 +1456,7 @@ export default class GameBoyCore {
     address = 0;
     var addressFlipped = 56;
     do {
-      lineCopy = this.VRAM[0x1 | vramAddress] << 8 | this.VRAM[vramAddress];
+      lineCopy = this.videoRam[0x1 | vramAddress] << 8 | this.videoRam[vramAddress];
       tileBlock4[addressFlipped] = tileBlock2[address] = tileBlock3[addressFlipped | 7] = tileBlock1[address | 7] = (lineCopy & 0x100) >> 7 | lineCopy & 0x1;
       tileBlock4[addressFlipped | 1] = tileBlock2[address | 1] = tileBlock3[addressFlipped | 6] = tileBlock1[address | 6] = (lineCopy & 0x200) >> 8 | (lineCopy & 0x2) >> 1;
       tileBlock4[addressFlipped | 2] = tileBlock2[address | 2] = tileBlock3[addressFlipped | 5] = tileBlock1[address | 5] = (lineCopy & 0x400) >> 9 | (lineCopy & 0x4) >> 2;
@@ -1166,32 +1496,32 @@ export default class GameBoyCore {
   graphicsJIT() {
     if (this.gpu.lcdEnabled) {
       this.cpu.totalLinesPassed = 0; //Mark frame for ensuring a JIT pass for the next framebuffer output.
-      this.graphicsJITScanlineGroup();
+      this.renderQueuedScanlines();
     }
   }
 
   graphicsJITVBlank() {
     // JIT the graphics to v-blank framing:
-    this.cpu.totalLinesPassed += this.queuedScanLines;
-    this.graphicsJITScanlineGroup();
+    this.cpu.totalLinesPassed += this.queuedScanlines;
+    this.renderQueuedScanlines();
   }
 
-  graphicsJITScanlineGroup() {
+  renderQueuedScanlines() {
     // Normal rendering JIT, where we try to do groups of scanlines at once:
-    while (this.queuedScanLines > 0) {
-      this.renderScanLine(this.lastUnrenderedLine);
+    while (this.queuedScanlines > 0) {
+      this.renderScanline(this.lastUnrenderedLine);
       if (this.lastUnrenderedLine < 143) {
         ++this.lastUnrenderedLine;
       } else {
         this.lastUnrenderedLine = 0;
       }
-      --this.queuedScanLines;
+      --this.queuedScanlines;
     }
   }
 
-  incrementScanLineQueue() {
-    if (this.queuedScanLines < 144) {
-      ++this.queuedScanLines;
+  incrementScanlineQueue() {
+    if (this.queuedScanlines < 144) {
+      ++this.queuedScanlines;
     } else {
       this.currentX = 0;
       this.midScanlineOffset = -1;
@@ -1203,9 +1533,9 @@ export default class GameBoyCore {
     }
   }
 
-  midScanLineJIT() {
+  midScanlineJIT() {
     this.graphicsJIT();
-    this.renderMidScanLine();
+    this.renderMidScanline();
   }
 
   //Check for the highest priority IRQ to fire:
@@ -1260,7 +1590,7 @@ export default class GameBoyCore {
       if (this.gpu.lcdEnabled) {
         //If the LCD is enabled, then predict the LCD IRQs enabled:
         if (((this.interruptEnabledFlags >> 0) & 1) === 1) {
-          currentClocks = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
+          currentClocks = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanline) - this.LCDTicks << this.doubleSpeedShifter;
         }
         if (((this.interruptEnabledFlags >> 1) & 1) === 1) {
           if (this.mode0TriggerSTAT) {
@@ -1270,7 +1600,7 @@ export default class GameBoyCore {
             }
           }
           if (this.mode1TriggerSTAT && (this.interruptEnabledFlags & 1) === 0) {
-            const temp_var = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanLine) - this.LCDTicks << this.doubleSpeedShifter;
+            const temp_var = 456 * ((this.modeSTAT === 1 ? 298 : 144) - this.actualScanline) - this.LCDTicks << this.doubleSpeedShifter;
             if (temp_var <= currentClocks || currentClocks === -1) {
               currentClocks = temp_var;
             }
@@ -1278,8 +1608,8 @@ export default class GameBoyCore {
           if (this.mode2TriggerSTAT) {
             const temp_var = (
               (
-                this.actualScanLine >= 143 ?
-                  456 * (totalScanlineCount - this.actualScanLine) :
+                this.actualScanline >= 143 ?
+                  456 * (totalScanlineCount - this.actualScanline) :
                   456
               ) -
               this.LCDTicks << this.doubleSpeedShifter
@@ -1368,25 +1698,6 @@ export default class GameBoyCore {
     return this.memory[0xff00 | address];
   };
 
-  memoryReadROM = (address: number) => {
-    return this.cartridge.rom.getByte(
-      this.cartridge.mbc.currentRomBank +
-      address
-    );
-  };
-
-  memoryReadMBC = (address: number) => {
-    return this.cartridge.mbc.readRam(address);
-  };
-
-  memoryReadMBC7 = (address: number) => {
-    return this.cartridge.mbc.readRam(address);
-  };
-
-  memoryReadMBC3 = (address: number) => {
-    return this.cartridge.mbc.readRam(address);
-  };
-
   memoryReadGBCMemory = (address: number) => {
     return this.GBCMemory[address + this.gbcRamBankPosition];
   };
@@ -1408,25 +1719,37 @@ export default class GameBoyCore {
     return this.modeSTAT > 2 ?
       0xff :
       (
-        this.currVRAMBank === 0 ?
+        this.currentVideoRamBank === 0 ?
           this.memory[address] :
-          this.VRAM[address & 0x1fff]
+          this.videoRam[address & 0x1fff]
       );
   };
 
   VRAMDATAReadDMGCPU = (address: number) => {
     // CPU Side Reading The VRAM (Optimized for classic GameBoy)
-    return this.modeSTAT > 2 ? 0xff : this.memory[address];
+    return (
+      this.modeSTAT > 2 ?
+        0xff :
+        this.memory[address]
+    );
   };
 
   VRAMCHRReadCGBCPU = (address: number) => {
     // CPU Side Reading the Character Data Map:
-    return this.modeSTAT > 2 ? 0xff : this.BGCHRCurrentBank[address & 0x7ff];
+    return (
+      this.modeSTAT > 2 ?
+        0xff :
+        this.BGCHRCurrentBank[address & 0x7ff]
+    );
   };
 
   VRAMCHRReadDMGCPU(address: number) {
     // CPU Side Reading the Character Data Map:
-    return this.modeSTAT > 2 ? 0xff : this.BGCHRBank1[address & 0x7ff];
+    return (
+      this.modeSTAT > 2 ?
+        0xff :
+        this.BGCHRBank1[address & 0x7ff]
+    );
   }
 
   memoryWriteNormal = (address: number, data: number) => {
@@ -1444,7 +1767,7 @@ export default class GameBoyCore {
   memoryWriteOAMRAM(address: number, data: number) {
     if (this.modeSTAT < 2) {
       //OAM RAM cannot be written to in mode 2 & 3
-      if (this.memory[address] != data) {
+      if (this.memory[address] !== data) {
         this.graphicsJIT();
         this.memory[address] = data;
       }
@@ -1462,7 +1785,7 @@ export default class GameBoyCore {
   VRAMGBDATAWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
-      if (this.memory[address] != data) {
+      if (this.memory[address] !== data) {
         //JIT the graphics render queue:
         this.graphicsJIT();
         this.memory[address] = data;
@@ -1474,7 +1797,7 @@ export default class GameBoyCore {
   VRAMGBDATAUpperWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
-      if (this.memory[address] != data) {
+      if (this.memory[address] !== data) {
         //JIT the graphics render queue:
         this.graphicsJIT();
         this.memory[address] = data;
@@ -1486,8 +1809,8 @@ export default class GameBoyCore {
   VRAMGBCDATAWrite(address: number, data: number) {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
-      if (this.currVRAMBank === 0) {
-        if (this.memory[address] != data) {
+      if (this.currentVideoRamBank === 0) {
+        if (this.memory[address] !== data) {
           //JIT the graphics render queue:
           this.graphicsJIT();
           this.memory[address] = data;
@@ -1495,10 +1818,10 @@ export default class GameBoyCore {
         }
       } else {
         address &= 0x1fff;
-        if (this.VRAM[address] != data) {
+        if (this.videoRam[address] !== data) {
           //JIT the graphics render queue:
           this.graphicsJIT();
-          this.VRAM[address] = data;
+          this.videoRam[address] = data;
           this.generateGBCTileLineBank2(address);
         }
       }
@@ -1509,7 +1832,7 @@ export default class GameBoyCore {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
       address &= 0x7ff;
-      if (this.BGCHRBank1[address] != data) {
+      if (this.BGCHRBank1[address] !== data) {
         //JIT the graphics render queue:
         this.graphicsJIT();
         this.BGCHRBank1[address] = data;
@@ -1521,7 +1844,7 @@ export default class GameBoyCore {
     if (this.modeSTAT < 3) {
       //VRAM cannot be written to during mode 3
       address &= 0x7ff;
-      if (this.BGCHRCurrentBank[address] != data) {
+      if (this.BGCHRCurrentBank[address] !== data) {
         //JIT the graphics render queue:
         this.graphicsJIT();
         this.BGCHRCurrentBank[address] = data;
@@ -1535,14 +1858,14 @@ export default class GameBoyCore {
       this.currentInstructionCycleCount += 4 | tilesToTransfer << 5 << this.doubleSpeedShifter;
     }
     // Source address of the transfer:
-    var source = this.memory[0xff51] << 8 | this.memory[0xff52];
+    let source = this.memory[0xff51] << 8 | this.memory[0xff52];
     // Destination address in the VRAM memory range:
-    var destination = this.memory[0xff53] << 8 | this.memory[0xff54];
+    let destination = this.memory[0xff53] << 8 | this.memory[0xff54];
     // JIT the graphics render queue:
     this.graphicsJIT();
-    var memory = this.memory;
+    const memory = this.memory;
     // Determining which bank we're working on so we can optimize:
-    if (this.currVRAMBank === 0) {
+    if (this.currentVideoRamBank === 0) {
       // DMA transfer for VRAM bank 0:
       do {
         if (destination < 0x1800) {
@@ -1588,7 +1911,7 @@ export default class GameBoyCore {
         --tilesToTransfer;
       } while (tilesToTransfer > 0);
     } else {
-      var VRAM = this.VRAM;
+      var VRAM = this.videoRam;
       //DMA transfer for VRAM bank 1:
       do {
         if (destination < 0x1800) {

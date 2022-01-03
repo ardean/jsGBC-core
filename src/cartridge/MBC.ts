@@ -1,7 +1,7 @@
 import RTC from "./RTC";
-import * as util from "../../util";
-import { EventEmitter } from "events";
+import * as util from "../util";
 import Cartridge from "./Cartridge";
+import { EventEmitter } from "events";
 
 export default class MBC extends EventEmitter {
   currentRomBank: number;
@@ -47,7 +47,7 @@ export default class MBC extends EventEmitter {
     this.romBankEdge = Math.floor(cartridge.rom.length / 0x4000);
   }
 
-  setupROM() {
+  setupRom() {
     this.romSize = this.romSizes[this.cartridge.romSizeType];
     console.log("ROM size 0x" + this.romSize.toString(16));
   }
@@ -58,12 +58,12 @@ export default class MBC extends EventEmitter {
     this.ram = new Uint8Array(this.ramSize); // Switchable RAM (Used by games for more RAM) for the main memory range 0xA000 - 0xC000.
   }
 
-  loadSRAM(data: Uint8Array) {
+  loadRam(data: Uint8Array) {
     if (data.byteLength !== this.ramSize) return;
     this.ram = data.slice(0);
   }
 
-  getSRAM() {
+  getRam() {
     return new Uint8Array(this.ram.buffer.slice(0, this.ramSize));
   }
 
@@ -79,10 +79,10 @@ export default class MBC extends EventEmitter {
     return util.fromTypedArray(this.ram);
   }
 
-  readRam(address: number) {
+  readRam = (address: number) => {
     if (!this.ramBanksEnabled) return 0xff;
     return this.ram[address + this.currentRamBankPosition];
-  }
+  };
 
   writeRam = (address: number, data: number) => {
     if (!this.ramBanksEnabled) return;

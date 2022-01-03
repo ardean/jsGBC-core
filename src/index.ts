@@ -1,6 +1,6 @@
 import "./types";
 import * as util from "./util";
-import GameBoy from "./Gameboy";
+import GameBoy from "./GameBoy_";
 import Storage from "./storages/Storage";
 import LocalStorage from "./storages/LocalStorage";
 

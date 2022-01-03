@@ -6,8 +6,8 @@ import MBC3 from "./MBC3";
 import MBC5 from "./MBC5";
 import MBC7 from "./MBC7";
 import RUMBLE from "./RUMBLE";
-import settings from "../../settings";
-import GameBoyCore from "../GameBoyCore";
+import GameBoy from "../GameBoy_";
+import settings from "../settings";
 
 const gameAndWatchGameCode = "Game and Watch 50";
 
@@ -24,10 +24,10 @@ export default class Cartridge {
   hasHuc3: boolean = false; // does the cartridge use HuC3? (Hudson Soft / modified MBC3)
   hasHuc1: boolean = false; // does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
   hasMMMO1: boolean = false;
-  hasRTC: boolean = false; // does the cartridge have a RTC?
+  hasRtc: boolean = false; // does the cartridge have a RTC?
   hasBattery: boolean = false;
 
-  gameboy: GameBoyCore;
+  gameboy: GameBoy;
   rom: ROM;
   useGbcMode: boolean;
 
@@ -53,7 +53,7 @@ export default class Cartridge {
     this.rom = rom instanceof ROM ? rom : new ROM(rom);
   }
 
-  connect(gameboy: GameBoyCore) {
+  connect(gameboy: GameBoy) {
     this.gameboy = gameboy;
   }
 
@@ -192,13 +192,13 @@ export default class Cartridge {
         break;
       case 0x0f:
         this.hasMBC3 = true;
-        this.hasRTC = true;
+        this.hasRtc = true;
         this.hasBattery = true;
         this.typeName = "MBC3 + RTC + Battery";
         break;
       case 0x10:
         this.hasMBC3 = true;
-        this.hasRTC = true;
+        this.hasRtc = true;
         this.hasBattery = true;
         this.hasSRAM = true;
         this.typeName = "MBC3 + RTC + Battery + SRAM";
@@ -295,7 +295,7 @@ export default class Cartridge {
   setupRAM() {
     if (this.mbc) this.mbc.setupRAM();
 
-    this.gameboy.api.loadSRAM();
-    this.gameboy.api.loadRTC();
+    this.gameboy.loadRam();
+    this.gameboy.loadRtc();
   }
 }

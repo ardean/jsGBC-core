@@ -2,14 +2,14 @@ import MBC from "./MBC";
 
 export default class RTC {
   lastTime: number;
-  latchedLDays: any;
-  latchedHours: any;
-  latchedMinutes: any;
-  latchedSeconds: any;
+  latchedLDays: number;
+  latchedHours: number;
+  latchedMinutes: number;
+  latchedSeconds: number;
   latchedHDays: number;
   RTCDayOverFlow: boolean;
   RTCDays: number;
-  RTCHours: any;
+  RTCHours: number;
   RTCMinutes: number;
   RTCSeconds: number;
   RTCHalt: boolean;
@@ -116,7 +116,7 @@ export default class RTC {
       this.RTCMinutes,
       this.RTCHours,
       this.RTCDays,
-      this.RTCDayOverFlow,
+      this.RTCDayOverFlow ? 1 : 0,
       this.latchedSeconds,
       this.latchedMinutes,
       this.latchedHours,

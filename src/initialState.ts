@@ -148,7 +148,7 @@ export default [
   0, // channel3lastSampleLookup
   144, // Actual scan line...
   0, // Last rendered scan line...
-  0, // queuedScanLines
+  0, // queuedScanlines
   // RTC (Real Time Clock for MBC3):
   false, // RTCisLatched
   0, // RTC latched seconds.

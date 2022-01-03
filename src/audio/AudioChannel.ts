@@ -1,4 +1,4 @@
-import GameBoyCore from "../GameBoyCore";
+import GameBoy from "../GameBoy_";
 
 export default class AudioChannel {
   enabled: boolean = false;
@@ -9,6 +9,6 @@ export default class AudioChannel {
   canPlay: boolean = false;
 
   constructor(
-    protected gameboy: GameBoyCore
+    protected gameboy: GameBoy
   ) { }
 }

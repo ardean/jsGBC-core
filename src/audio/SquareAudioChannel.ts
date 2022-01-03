@@ -1,6 +1,6 @@
-import settings from "../../settings";
+import GameBoy from "../GameBoy_";
+import settings from "../settings";
 import dutyLookup from "../dutyLookup";
-import GameBoyCore from "../GameBoyCore";
 import AudioChannel from "./AudioChannel";
 
 export default class SquareAudioChannel extends AudioChannel {
@@ -32,7 +32,7 @@ export default class SquareAudioChannel extends AudioChannel {
   frequencySweepDivider: number;
 
   constructor(
-    protected gameboy: GameBoyCore,
+    protected gameboy: GameBoy,
     options: { sweepEnabled?: boolean; } = {}
   ) {
     super(gameboy);

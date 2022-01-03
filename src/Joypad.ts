@@ -1,4 +1,4 @@
-import GameBoyCore from "./GameBoyCore";
+import GameBoy from "./GameBoy_";
 import { joypadAddress } from "./memory/Layout";
 
 const initialValue = 0xF;
@@ -7,7 +7,7 @@ export default class Joypad {
   value: number = 0xFF;
 
   constructor(
-    private gameboy: GameBoyCore
+    private gameboy: GameBoy
   ) { }
 
   init() {

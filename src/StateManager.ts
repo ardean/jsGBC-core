@@ -1,13 +1,11 @@
-import GameBoyCore from "./GameBoyCore";
+import GameBoy from "./GameBoy_";
 import initialState from "./initialState";
-import { toTypedArray, concatArrayBuffers } from "../util";
+import { toTypedArray, concatArrayBuffers } from "./util";
 
 export default class StateManager {
-  gameboy: GameBoyCore;
-
-  constructor(gameboy) {
-    this.gameboy = gameboy;
-  }
+  constructor(
+    private gameboy: GameBoy
+  ) { }
 
   init() {
     this.loadOld(initialState.slice(0));
@@ -19,7 +17,7 @@ export default class StateManager {
 
     return concatArrayBuffers(
       gameboy.memory.buffer.slice(0),
-      gameboy.VRAM.buffer.slice(0)
+      gameboy.videoRam.buffer.slice(0)
     );
 
     // return [
@@ -42,7 +40,7 @@ export default class StateManager {
     //   gameboy.currentInstructionCycleCount,
     //   gameboy.doubleSpeedShifter,
     //   // fromTypedArray(gameboy.memory),
-    //   // fromTypedArray(gameboy.VRAM),
+    //   // fromTypedArray(gameboy.videoRam),
     //   gameboy.currVRAMBank,
     //   fromTypedArray(gameboy.GBCMemory),
     //   gameboy.gbcRamBank,
@@ -164,9 +162,9 @@ export default class StateManager {
     //   gameboy.audioController.cachedChannel4Sample,
     //   gameboy.channel3FrequencyPeriod,
     //   gameboy.channel3lastSampleLookup,
-    //   gameboy.actualScanLine,
+    //   gameboy.actualScanline,
     //   gameboy.lastUnrenderedLine,
-    //   gameboy.queuedScanLines,
+    //   gameboy.queuedScanlines,
     //   gameboy.cartridge.hasRTC &&
     //   gameboy.cartridge.mbc3.rtc.RTCisLatched,
     //   gameboy.cartridge.hasRTC &&
@@ -251,8 +249,8 @@ export default class StateManager {
     gameboy.currentInstructionCycleCount = state[index++];
     gameboy.doubleSpeedShifter = state[index++];
     gameboy.memory = toTypedArray(state[index++], "uint8");
-    gameboy.VRAM = toTypedArray(state[index++], "uint8");
-    gameboy.currVRAMBank = state[index++];
+    gameboy.videoRam = toTypedArray(state[index++], "uint8");
+    gameboy.currentVideoRamBank = state[index++];
     gameboy.GBCMemory = toTypedArray(state[index++], "uint8");
     gameboy.gbcRamBank = state[index++];
     gameboy.gbcRamBankPosition = state[index++];
@@ -283,7 +281,7 @@ export default class StateManager {
     gameboy.serialShiftTimer = state[index++];
     gameboy.serialShiftTimerAllocated = state[index++];
     gameboy.IRQEnableDelay = state[index++];
-    if (gameboy.cartridge?.hasRTC) {
+    if (gameboy.cartridge?.hasRtc) {
       gameboy.cartridge.mbc3.rtc.lastTime = state[index++];
     } else {
       index++;
@@ -380,10 +378,10 @@ export default class StateManager {
     gameboy.audioController.cachedChannel4Sample = state[index++];
     gameboy.audioController.channel3FrequencyPeriod = state[index++];
     gameboy.audioController.channel3LastSampleLookup = state[index++];
-    gameboy.actualScanLine = state[index++];
+    gameboy.actualScanline = state[index++];
     gameboy.lastUnrenderedLine = state[index++];
-    gameboy.queuedScanLines = state[index++];
-    if (gameboy.cartridge?.hasRTC) {
+    gameboy.queuedScanlines = state[index++];
+    if (gameboy.cartridge?.hasRtc) {
       gameboy.cartridge.mbc3.rtc.RTCisLatched = state[index++];
       gameboy.cartridge.mbc3.rtc.latchedSeconds = state[index++];
       gameboy.cartridge.mbc3.rtc.latchedMinutes = state[index++];

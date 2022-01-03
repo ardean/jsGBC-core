@@ -1,4 +1,4 @@
-import GameBoyCore from "./GameBoyCore";
+import GameBoy from "./GameBoy_";
 
 export const totalScanlineCount = 154;
 
@@ -11,7 +11,7 @@ export default class GPU {
   renderSpriteLayer: (scanline: number) => void;
 
   constructor(
-    private gameboy: GameBoyCore
+    private gameboy: GameBoy
   ) {
     this.disableLCD();
   }
@@ -22,7 +22,7 @@ export default class GPU {
       this.renderWindowLayer = this.renderGbWindowLayer;
       this.renderSpriteLayer = this.renderGbSpriteLayer;
     } else {
-      if (this.gameboy.hasBGPriority) {
+      if (this.gameboy.hasBackgroundPriority) {
         this.renderBackgroundLayer = this.renderGbcBackgroundLayer;
         this.renderWindowLayer = this.renderGbcWindowLayer;
       } else {
@@ -35,7 +35,6 @@ export default class GPU {
 
   renderGbcSpriteLayer = (scanline: number) => {
     if (this.gameboy.gfxSpriteShow) {
-
       var OAMAddress = 0xfe00;
       var lineAdjusted = scanline + 0x10;
       var yoffset = 0;
@@ -752,7 +751,7 @@ export default class GPU {
           if (this.gameboy.STATTracker === 0 && this.gameboy.mode2TriggerSTAT) {
             this.gameboy.interruptRequestedFlags |= 0x2;
           }
-          this.gameboy.incrementScanLineQueue();
+          this.gameboy.incrementScanlineQueue();
         }
         if (this.gameboy.hdmaRunning) {
           this.gameboy.executeHDMA();
@@ -763,10 +762,10 @@ export default class GPU {
       }
 
       //Update the scanline registers and assert the LYC counter:
-      this.gameboy.actualScanLine = ++this.gameboy.memory[0xff44];
+      this.gameboy.actualScanline = ++this.gameboy.memory[0xff44];
 
       //Perform a LYC counter assert:
-      if (this.gameboy.actualScanLine === this.gameboy.memory[0xff45]) {
+      if (this.gameboy.actualScanline === this.gameboy.memory[0xff45]) {
         this.gameboy.memory[0xff41] |= 0x04;
         if (this.gameboy.LYCMatchTriggerSTAT) {
           this.gameboy.interruptRequestedFlags |= 0x2;
@@ -778,7 +777,7 @@ export default class GPU {
       //Reset our mode contingency variables:
       this.gameboy.STATTracker = 0;
       this.gameboy.modeSTAT = 2;
-      this.scanlineProcessors[this.gameboy.actualScanLine].apply(this.gameboy); //Scan Line and STAT Mode Control.
+      this.scanlineProcessors[this.gameboy.actualScanline].apply(this.gameboy); //Scan Line and STAT Mode Control.
     }
   };
 
@@ -799,7 +798,7 @@ export default class GPU {
           if (this.gameboy.STATTracker === 0 && this.gameboy.mode2TriggerSTAT) {
             this.gameboy.interruptRequestedFlags |= 0x2;
           }
-          this.gameboy.incrementScanLineQueue();
+          this.gameboy.incrementScanlineQueue();
         }
         if (this.gameboy.hdmaRunning) {
           this.gameboy.executeHDMA();
@@ -808,9 +807,9 @@ export default class GPU {
           this.gameboy.interruptRequestedFlags |= 0x2;
         }
       }
-      //Update the scanline registers and assert the LYC counter:
-      this.gameboy.actualScanLine = this.gameboy.memory[0xff44] = 144;
-      //Perform a LYC counter assert:
+      // Update the scanline registers and assert the LYC counter:
+      this.gameboy.actualScanline = this.gameboy.memory[0xff44] = 144;
+      // Perform a LYC counter assert:
       if (this.gameboy.memory[0xff45] === 144) {
         this.gameboy.memory[0xff41] |= 0x04;
         if (this.gameboy.LYCMatchTriggerSTAT) {
@@ -832,7 +831,7 @@ export default class GPU {
           //Make sure our gfx are up-to-date:
           this.gameboy.graphicsJITVBlank();
           //Draw the frame:
-          this.gameboy.lcdDevice.prepareFrame();
+          this.gameboy.lcdDevice.outputFrameBuffer();
         }
       } else {
         //LCD off takes at least 2 frames:
@@ -846,9 +845,9 @@ export default class GPU {
     if (this.gameboy.LCDTicks >= 456) {
       // We're on a new scan line:
       this.gameboy.LCDTicks -= 456;
-      this.gameboy.actualScanLine = ++this.gameboy.memory[0xff44];
+      this.gameboy.actualScanline = ++this.gameboy.memory[0xff44];
       // Perform a LYC counter assert:
-      if (this.gameboy.actualScanLine === this.gameboy.memory[0xff45]) {
+      if (this.gameboy.actualScanline === this.gameboy.memory[0xff45]) {
         this.gameboy.memory[0xff41] |= 0x04;
         if (this.gameboy.LYCMatchTriggerSTAT) {
           this.gameboy.interruptRequestedFlags |= 0x2;
@@ -857,7 +856,7 @@ export default class GPU {
       } else {
         this.gameboy.memory[0xff41] &= 0x7b;
       }
-      this.scanlineProcessors[this.gameboy.actualScanLine].apply(this.gameboy); //Scan Line and STAT Mode Control.
+      this.scanlineProcessors[this.gameboy.actualScanline].apply(this.gameboy); // Scan Line and STAT Mode Control.
     }
   };
 
@@ -884,7 +883,7 @@ export default class GPU {
       if (this.gameboy.LCDTicks >= 456) {
         // We reset back to the beginning:
         this.gameboy.LCDTicks -= 456;
-        this.gameboy.STATTracker = this.gameboy.actualScanLine = 0;
+        this.gameboy.STATTracker = this.gameboy.actualScanline = 0;
         this.scanlineProcessors[0].apply(this.gameboy); // Scan Line and STAT Mode Control.
       }
     }

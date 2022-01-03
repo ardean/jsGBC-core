@@ -62,7 +62,7 @@ export default class MBC3 extends MBC {
     }
   };
 
-  readRam(address: number) {
+  readRam = (address: number) => {
     if (!this.ramBanksEnabled) return 0xFF;
 
     switch (this.currentMbcRamBank) {

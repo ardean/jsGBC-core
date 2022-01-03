@@ -1,4 +1,4 @@
-import GameBoyCore from "../GameBoyCore";
+import GameBoy from "../GameBoy_";
 import * as MemoryLayout from "./Layout";
 
 export type WriterFunction = (address: number, value: number) => void;
@@ -11,7 +11,7 @@ export default class Memory {
   highWriters: WriterFunction[] = [];
 
   constructor(
-    private gameboy: GameBoyCore,
+    private gameboy: GameBoy,
     private data: Uint8Array = new Uint8Array(0x10000)
   ) { }
 
@@ -101,18 +101,26 @@ export default class Memory {
 
   init() {
     this.setReaders(MemoryLayout.INTERRUPT_VECTORS_START, MemoryLayout.CART_ROM_BANK0_END, (address: number) => this.data[address]);
-    this.setReaders(MemoryLayout.CART_ROM_SWITCH_BANK_START, MemoryLayout.CART_ROM_SWITCH_BANK_END, (address: number) => this.gameboy.cartridge.rom.getByte(this.gameboy.cartridge.mbc.currentRomBank + address));
+    this.setReaders(
+      MemoryLayout.CART_ROM_SWITCH_BANK_START,
+      MemoryLayout.CART_ROM_SWITCH_BANK_END,
+      (address: number) =>
+        this.gameboy.cartridge.rom.getByte(
+          (this.gameboy.cartridge.mbc?.currentRomBank || 0) +
+          address
+        )
+    );
     this.setReaders(MemoryLayout.TILE_SET_0_START, MemoryLayout.TILE_SET_1_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMDATAReadCGBCPU : this.gameboy.VRAMDATAReadDMGCPU);
     this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.useGbcMode ? this.gameboy.VRAMCHRReadCGBCPU : this.gameboy.VRAMCHRReadDMGCPU);
 
-    if (this.gameboy.cartridge.mbc && this.gameboy.cartridge.mbc.ramSize === 0) {
+    if (this.gameboy.cartridge.mbc?.ramSize === 0) {
       this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.readBad);
     } else if (this.gameboy.cartridge.hasMBC7) {
-      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.memoryReadMBC7);
+      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.mbc?.readRam || this.readBad);
     } else if (this.gameboy.cartridge.hasMBC3) {
-      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.memoryReadMBC3);
+      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.mbc?.readRam || this.readBad);
     } else {
-      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.memoryReadMBC);
+      this.setReaders(MemoryLayout.CART_RAM_START, MemoryLayout.CART_RAM_END, this.gameboy.cartridge.mbc?.readRam || this.readBad);
     }
 
     this.setReaders(MemoryLayout.INTERNAL_RAM_BANK0_START, MemoryLayout.INTERNAL_RAM_BANK0_END, this.gameboy.memoryReadNormal);
@@ -418,7 +426,7 @@ export default class Memory {
             break;
           case 0xff4f:
             this.gameboy.highMemoryReader[0x4f] = this.gameboy.memoryReader[0xff4f] = address => {
-              return this.gameboy.currVRAMBank;
+              return this.gameboy.currentVideoRamBank;
             };
             break;
           case MemoryLayout.toggleBootRomControlAddress:
@@ -735,14 +743,14 @@ export default class Memory {
     //SCY
     this.gameboy.highMemoryWriter[0x42] = this.gameboy.memoryWriter[0xff42] = (address: number, data: number) => {
       if (this.gameboy.backgroundY !== data) {
-        this.gameboy.midScanLineJIT();
+        this.gameboy.midScanlineJIT();
         this.gameboy.backgroundY = data;
       }
     };
     //SCX
     this.gameboy.highMemoryWriter[0x43] = this.gameboy.memoryWriter[0xff43] = (address: number, data: number) => {
       if (this.gameboy.backgroundX !== data) {
-        this.gameboy.midScanLineJIT();
+        this.gameboy.midScanlineJIT();
         this.gameboy.backgroundX = data;
       }
     };
@@ -753,7 +761,7 @@ export default class Memory {
         //Gambatte says to do this.gameboy:
         this.gameboy.modeSTAT = 2;
         this.gameboy.midScanlineOffset = -1;
-        this.gameboy.cpu.totalLinesPassed = this.gameboy.currentX = this.gameboy.queuedScanLines = this.gameboy.lastUnrenderedLine = this.gameboy.LCDTicks = this.gameboy.STATTracker = this.gameboy.actualScanLine = this.gameboy.memory[0xff44] = 0;
+        this.gameboy.cpu.totalLinesPassed = this.gameboy.currentX = this.gameboy.queuedScanlines = this.gameboy.lastUnrenderedLine = this.gameboy.LCDTicks = this.gameboy.STATTracker = this.gameboy.actualScanline = this.gameboy.memory[0xff44] = 0;
       }
     };
     //LYC
@@ -768,14 +776,14 @@ export default class Memory {
     //WY
     this.gameboy.highMemoryWriter[0x4a] = this.gameboy.memoryWriter[0xff4a] = (address: number, data: number) => {
       if (this.gameboy.windowY !== data) {
-        this.gameboy.midScanLineJIT();
+        this.gameboy.midScanlineJIT();
         this.gameboy.windowY = data;
       }
     };
     //WX
     this.gameboy.highMemoryWriter[0x4b] = this.gameboy.memoryWriter[0xff4b] = (address: number, data: number) => {
       if (this.gameboy.memory[0xff4b] !== data) {
-        this.gameboy.midScanLineJIT();
+        this.gameboy.midScanlineJIT();
         this.gameboy.memory[0xff4b] = data;
         this.gameboy.windowX = data - 7;
       }
@@ -817,7 +825,7 @@ export default class Memory {
       };
       this.gameboy.highMemoryWriter[0x40] = this.gameboy.memoryWriter[0xff40] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff40] !== data) {
-          this.gameboy.midScanLineJIT();
+          this.gameboy.midScanlineJIT();
           const isLcdOn = data > 0x7f;
           if (isLcdOn !== this.gameboy.gpu.lcdEnabled) {
             // When the display mode changes...
@@ -826,11 +834,11 @@ export default class Memory {
             this.gameboy.midScanlineOffset = -1;
             this.gameboy.cpu.totalLinesPassed =
               this.gameboy.currentX =
-              this.gameboy.queuedScanLines =
+              this.gameboy.queuedScanlines =
               this.gameboy.lastUnrenderedLine =
               this.gameboy.STATTracker =
               this.gameboy.LCDTicks =
-              this.gameboy.actualScanLine =
+              this.gameboy.actualScanline =
               this.gameboy.memory[0xff44] =
               0;
             if (this.gameboy.gpu.lcdEnabled) {
@@ -850,7 +858,7 @@ export default class Memory {
           this.gameboy.gfxBackgroundCHRBankPosition = (data & 0x08) === 0x08 ? 0x400 : 0;
           this.gameboy.gfxSpriteNormalHeight = (data & 0x04) === 0;
           this.gameboy.gfxSpriteShow = (data & 0x02) === 0x02;
-          this.gameboy.hasBGPriority = (data & 0x01) === 0x01;
+          this.gameboy.hasBackgroundPriority = (data & 0x01) === 0x01;
           this.gameboy.gpu.initRenderer();
           this.gameboy.memory[0xff40] = data;
         }
@@ -896,8 +904,8 @@ export default class Memory {
         this.gameboy.memory[0xff4d] = data & 0x7f | this.gameboy.memory[0xff4d] & 0x80;
       };
       this.gameboy.highMemoryWriter[0x4f] = this.gameboy.memoryWriter[0xff4f] = (address: number, data: number) => {
-        this.gameboy.currVRAMBank = data & 0x01;
-        if (this.gameboy.currVRAMBank > 0) {
+        this.gameboy.currentVideoRamBank = data & 0x01;
+        if (this.gameboy.currentVideoRamBank > 0) {
           this.gameboy.BGCHRCurrentBank = this.gameboy.BGCHRBank2;
         } else {
           this.gameboy.BGCHRCurrentBank = this.gameboy.BGCHRBank1;
@@ -1004,14 +1012,14 @@ export default class Memory {
       };
       this.gameboy.highMemoryWriter[0x40] = this.gameboy.memoryWriter[0xff40] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff40] !== data) {
-          this.gameboy.midScanLineJIT();
+          this.gameboy.midScanlineJIT();
           const newState = data > 0x7f;
           if (newState !== this.gameboy.gpu.lcdEnabled) {
             // When the display mode changes...
             this.gameboy.gpu.lcdEnabled = newState;
             this.gameboy.memory[0xff41] &= 0x78;
             this.gameboy.midScanlineOffset = -1;
-            this.gameboy.cpu.totalLinesPassed = this.gameboy.currentX = this.gameboy.queuedScanLines = this.gameboy.lastUnrenderedLine = this.gameboy.STATTracker = this.gameboy.LCDTicks = this.gameboy.actualScanLine = this.gameboy.memory[0xff44] = 0;
+            this.gameboy.cpu.totalLinesPassed = this.gameboy.currentX = this.gameboy.queuedScanlines = this.gameboy.lastUnrenderedLine = this.gameboy.STATTracker = this.gameboy.LCDTicks = this.gameboy.actualScanline = this.gameboy.memory[0xff44] = 0;
             if (this.gameboy.gpu.lcdEnabled) {
               this.gameboy.modeSTAT = 2;
               this.gameboy.matchLYC(); // Get the compare of the first scan line.
@@ -1077,21 +1085,21 @@ export default class Memory {
       };
       this.gameboy.highMemoryWriter[0x47] = this.gameboy.memoryWriter[0xff47] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff47] !== data) {
-          this.gameboy.midScanLineJIT();
+          this.gameboy.midScanlineJIT();
           this.gameboy.updateGBBGPalette(data);
           this.gameboy.memory[0xff47] = data;
         }
       };
       this.gameboy.highMemoryWriter[0x48] = this.gameboy.memoryWriter[0xff48] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff48] !== data) {
-          this.gameboy.midScanLineJIT();
+          this.gameboy.midScanlineJIT();
           this.gameboy.updateGBOBJPalette(0, data);
           this.gameboy.memory[0xff48] = data;
         }
       };
       this.gameboy.highMemoryWriter[0x49] = this.gameboy.memoryWriter[0xff49] = (address: number, data: number) => {
         if (this.gameboy.memory[0xff49] !== data) {
-          this.gameboy.midScanLineJIT();
+          this.gameboy.midScanlineJIT();
           this.gameboy.updateGBOBJPalette(4, data);
           this.gameboy.memory[0xff49] = data;
         }

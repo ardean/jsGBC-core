@@ -1,8 +1,8 @@
 import CPU from "../CPU";
-import * as util from "../../util";
-import settings from "../../settings";
+import * as util from "../util";
+import GameBoy from "../GameBoy_";
+import settings from "../settings";
 import AudioDevice from "./AudioDevice";
-import GameBoyCore from "../GameBoyCore";
 import * as MemoryLayout from "../memory/Layout";
 import SquareAudioChannel from "./SquareAudioChannel";
 
@@ -61,7 +61,7 @@ export default class AudioController {
   downSampleInputDivider: number;
   device: AudioDevice;
   memory: util.TypedArray;
-  gameboy: GameBoyCore;
+  gameboy: GameBoy;
   cpu: CPU;
   LSFR15Table: Int8Array;
   LSFR7Table: Int8Array;
@@ -78,7 +78,7 @@ export default class AudioController {
   channel1: SquareAudioChannel;
   channel2: SquareAudioChannel;
 
-  constructor({ cpu, gameboy }: { cpu: CPU; gameboy: GameBoyCore; }) {
+  constructor({ cpu, gameboy }: { cpu: CPU; gameboy: GameBoy; }) {
     this.cpu = cpu;
     this.gameboy = gameboy;
 
