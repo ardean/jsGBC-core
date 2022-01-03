@@ -4,14 +4,13 @@ import { GameBoy } from "..";
 import Joypad from "./Joypad";
 import * as util from "../util";
 import settings from "../settings";
-import Cartridge from "./cartridge/Cartridge";
 import tickTable from "./tickTable";
 import Memory from "./memory/Memory";
 import LcdDevice from "./lcd/device";
 import { EventEmitter } from "events";
 import StateManager from "./StateManager";
-import LcdController from "./lcd/controller";
 import AudioDevice from "./audio/AudioDevice";
+import Cartridge from "./cartridge/Cartridge";
 import * as MemoryLayout from "./memory/Layout";
 import GPU, { totalScanlineCount } from "./GPU";
 import mainInstructions from "./MainInstructions";
@@ -115,7 +114,6 @@ export default class GameBoyCore {
   gbcRamBankPosition: any;
   gbcRamBankPositionECHO: any;
   gbcRamBank: number;
-  lcdController: LcdController;
   stateManager: StateManager;
   lcdDevice: LcdDevice;
   joypad: Joypad;
@@ -163,7 +161,6 @@ export default class GameBoyCore {
     });
     this.joypad = new Joypad(this);
     this.lcdDevice = new LcdDevice(lcdOptions);
-    this.lcdController = new LcdController();
     this.stateManager = new StateManager(this);
     this.stateManager.init();
 
@@ -324,7 +321,7 @@ export default class GameBoyCore {
     var index = 0xff;
     while (index >= 0) {
       if (index >= 0x30 && index < 0x40) {
-        this.memoryWrite(0xff00 | index, postBootRegisterState[index]);
+        this.writeMemory(0xff00 | index, postBootRegisterState[index]);
       } else {
         switch (index) {
           case 0x00:
@@ -334,7 +331,7 @@ export default class GameBoyCore {
           case 0x07:
           case 0x0f:
           case 0xff:
-            this.memoryWrite(0xff00 | index, postBootRegisterState[index]);
+            this.writeMemory(0xff00 | index, postBootRegisterState[index]);
             break;
           default:
             this.memory[0xff00 | index] = postBootRegisterState[index];
@@ -509,7 +506,7 @@ export default class GameBoyCore {
         this.launchIRQ();
       }
       //Fetch the current opcode:
-      const operationCode = this.memoryRead(this.programCounter);
+      const operationCode = this.readMemory(this.programCounter);
       //Increment the program counter to the next instruction:
       this.programCounter = this.programCounter + 1 & 0xffff;
       //Check for the program counter quirk:
@@ -1222,9 +1219,9 @@ export default class GameBoyCore {
         this.currentInstructionCycleCount = 20;
         //Set the stack pointer to the current program counter value:
         this.stackPointer = this.stackPointer - 1 & 0xffff;
-        this.memoryWrite(this.stackPointer, this.programCounter >> 8);
+        this.writeMemory(this.stackPointer, this.programCounter >> 8);
         this.stackPointer = this.stackPointer - 1 & 0xffff;
-        this.memoryWrite(this.stackPointer, this.programCounter & 0xff);
+        this.writeMemory(this.stackPointer, this.programCounter & 0xff);
         //Set the program counter to the interrupt's address:
         this.programCounter = 0x40 | bitShift << 3;
         //Clock the core for mid-instruction updates:
@@ -1334,7 +1331,7 @@ export default class GameBoyCore {
   }
 
   // Memory Reading:
-  memoryRead(address: number) {
+  readMemory(address: number) {
     // Act as a wrapper for reading the returns from the compiled jumps to memory.
     if (this.memoryNew.hasReader(address)) return this.memoryNew.read(address);
     return this.memoryReader[address].apply(this, [address]);
@@ -1347,7 +1344,7 @@ export default class GameBoyCore {
   }
 
   // Memory Writing:
-  memoryWrite(address: number, data: number) {
+  writeMemory(address: number, data: number) {
     //Act as a wrapper for writing by compiled jumps to specific memory writing functions.
     if (this.memoryNew.hasWriter(address)) return this.memoryNew.write(address, data);
     return this.memoryWriter[address].apply(this, [address, data]);
@@ -1546,42 +1543,42 @@ export default class GameBoyCore {
       // DMA transfer for VRAM bank 0:
       do {
         if (destination < 0x1800) {
-          memory[0x8000 | destination] = this.memoryRead(source++);
-          memory[0x8001 | destination] = this.memoryRead(source++);
-          memory[0x8002 | destination] = this.memoryRead(source++);
-          memory[0x8003 | destination] = this.memoryRead(source++);
-          memory[0x8004 | destination] = this.memoryRead(source++);
-          memory[0x8005 | destination] = this.memoryRead(source++);
-          memory[0x8006 | destination] = this.memoryRead(source++);
-          memory[0x8007 | destination] = this.memoryRead(source++);
-          memory[0x8008 | destination] = this.memoryRead(source++);
-          memory[0x8009 | destination] = this.memoryRead(source++);
-          memory[0x800a | destination] = this.memoryRead(source++);
-          memory[0x800b | destination] = this.memoryRead(source++);
-          memory[0x800c | destination] = this.memoryRead(source++);
-          memory[0x800d | destination] = this.memoryRead(source++);
-          memory[0x800e | destination] = this.memoryRead(source++);
-          memory[0x800f | destination] = this.memoryRead(source++);
+          memory[0x8000 | destination] = this.readMemory(source++);
+          memory[0x8001 | destination] = this.readMemory(source++);
+          memory[0x8002 | destination] = this.readMemory(source++);
+          memory[0x8003 | destination] = this.readMemory(source++);
+          memory[0x8004 | destination] = this.readMemory(source++);
+          memory[0x8005 | destination] = this.readMemory(source++);
+          memory[0x8006 | destination] = this.readMemory(source++);
+          memory[0x8007 | destination] = this.readMemory(source++);
+          memory[0x8008 | destination] = this.readMemory(source++);
+          memory[0x8009 | destination] = this.readMemory(source++);
+          memory[0x800a | destination] = this.readMemory(source++);
+          memory[0x800b | destination] = this.readMemory(source++);
+          memory[0x800c | destination] = this.readMemory(source++);
+          memory[0x800d | destination] = this.readMemory(source++);
+          memory[0x800e | destination] = this.readMemory(source++);
+          memory[0x800f | destination] = this.readMemory(source++);
           this.generateGBCTileBank1(destination);
           destination += 0x10;
         } else {
           destination &= 0x7f0;
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
-          this.BGCHRBank1[destination++] = this.memoryRead(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
+          this.BGCHRBank1[destination++] = this.readMemory(source++);
           destination = destination + 0x1800 & 0x1ff0;
         }
         source &= 0xfff0;
@@ -1592,42 +1589,42 @@ export default class GameBoyCore {
       //DMA transfer for VRAM bank 1:
       do {
         if (destination < 0x1800) {
-          VRAM[destination] = this.memoryRead(source++);
-          VRAM[destination | 0x1] = this.memoryRead(source++);
-          VRAM[destination | 0x2] = this.memoryRead(source++);
-          VRAM[destination | 0x3] = this.memoryRead(source++);
-          VRAM[destination | 0x4] = this.memoryRead(source++);
-          VRAM[destination | 0x5] = this.memoryRead(source++);
-          VRAM[destination | 0x6] = this.memoryRead(source++);
-          VRAM[destination | 0x7] = this.memoryRead(source++);
-          VRAM[destination | 0x8] = this.memoryRead(source++);
-          VRAM[destination | 0x9] = this.memoryRead(source++);
-          VRAM[destination | 0xa] = this.memoryRead(source++);
-          VRAM[destination | 0xb] = this.memoryRead(source++);
-          VRAM[destination | 0xc] = this.memoryRead(source++);
-          VRAM[destination | 0xd] = this.memoryRead(source++);
-          VRAM[destination | 0xe] = this.memoryRead(source++);
-          VRAM[destination | 0xf] = this.memoryRead(source++);
+          VRAM[destination] = this.readMemory(source++);
+          VRAM[destination | 0x1] = this.readMemory(source++);
+          VRAM[destination | 0x2] = this.readMemory(source++);
+          VRAM[destination | 0x3] = this.readMemory(source++);
+          VRAM[destination | 0x4] = this.readMemory(source++);
+          VRAM[destination | 0x5] = this.readMemory(source++);
+          VRAM[destination | 0x6] = this.readMemory(source++);
+          VRAM[destination | 0x7] = this.readMemory(source++);
+          VRAM[destination | 0x8] = this.readMemory(source++);
+          VRAM[destination | 0x9] = this.readMemory(source++);
+          VRAM[destination | 0xa] = this.readMemory(source++);
+          VRAM[destination | 0xb] = this.readMemory(source++);
+          VRAM[destination | 0xc] = this.readMemory(source++);
+          VRAM[destination | 0xd] = this.readMemory(source++);
+          VRAM[destination | 0xe] = this.readMemory(source++);
+          VRAM[destination | 0xf] = this.readMemory(source++);
           this.generateGBCTileBank2(destination);
           destination += 0x10;
         } else {
           destination &= 0x7f0;
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
-          this.BGCHRBank2[destination++] = this.memoryRead(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
+          this.BGCHRBank2[destination++] = this.readMemory(source++);
           destination = destination + 0x1800 & 0x1ff0;
         }
         source &= 0xfff0;

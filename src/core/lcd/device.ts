@@ -18,7 +18,6 @@ export default class LcdDevice {
   colorizedGbPalettes: any;
   offscreenCanvas: any;
   canvas: any;
-  resizePathClear: boolean;
   offscreenRgbCount: number;
 
   constructor({
@@ -41,8 +40,6 @@ export default class LcdDevice {
     this.offscreenRgbaCount = this.offscreenWidth * this.offscreenHeight * 4;
     this.width = width || this.offscreenWidth;
     this.height = height || this.offscreenHeight;
-
-    this.resizePathClear = true;
 
     if (typeof document !== "undefined") {
       if (!this.canvas) this.canvas = document.createElement("canvas");

@@ -255,7 +255,7 @@ export default class AudioController {
     this.enabled = false;
 
     for (let address = 0xff10; address < 0xff26; address++) {
-      this.gameboy.memoryWrite(address, 0);
+      this.gameboy.writeMemory(address, 0);
     }
   }
 

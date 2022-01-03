@@ -869,7 +869,7 @@ export default class Memory {
           this.gameboy.modeSTAT = 0;
           var newData = 0;
           do {
-            newData = this.gameboy.memoryRead(data++);
+            newData = this.gameboy.readMemory(data++);
             if (newData !== this.gameboy.memory[address]) {
               // JIT the graphics render queue:
               this.gameboy.modeSTAT = stat;
@@ -881,10 +881,10 @@ export default class Memory {
           } while (++address < 0xfea0);
           if (address < 0xfea0) {
             do {
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
             } while (address < 0xfea0);
           }
           this.gameboy.modeSTAT = stat;
@@ -1053,7 +1053,7 @@ export default class Memory {
           this.gameboy.modeSTAT = 0;
           var newData = 0;
           do {
-            newData = this.gameboy.memoryRead(data++);
+            newData = this.gameboy.readMemory(data++);
             if (newData !== this.gameboy.memory[address]) {
               //JIT the graphics render queue:
               this.gameboy.modeSTAT = stat;
@@ -1065,10 +1065,10 @@ export default class Memory {
           } while (++address < 0xfea0);
           if (address < 0xfea0) {
             do {
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
-              this.gameboy.memory[address++] = this.gameboy.memoryRead(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
+              this.gameboy.memory[address++] = this.gameboy.readMemory(data++);
             } while (address < 0xfea0);
           }
           this.gameboy.modeSTAT = stat;

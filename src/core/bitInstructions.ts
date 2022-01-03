@@ -54,7 +54,7 @@ export default [
   //RLC (HL)
   //#0x06:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     this.FCarry = temp_var > 0x7f;
     temp_var = temp_var << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -124,7 +124,7 @@ export default [
   //RRC (HL)
   //#0x0E:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     this.FCarry = (temp_var & 0x01) === 0x01;
     temp_var = (this.FCarry ? 0x80 : 0) | temp_var >> 1;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -200,7 +200,7 @@ export default [
   //RL (HL)
   //#0x16:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     var newFCarry = temp_var > 0x7f;
     temp_var = temp_var << 1 & 0xff | (this.FCarry ? 1 : 0);
     this.FCarry = newFCarry;
@@ -278,7 +278,7 @@ export default [
   //RR (HL)
   //#0x1E:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     var newFCarry = (temp_var & 0x01) === 0x01;
     temp_var = (this.FCarry ? 0x80 : 0) | temp_var >> 1;
     this.FCarry = newFCarry;
@@ -346,7 +346,7 @@ export default [
   //SLA (HL)
   //#0x26:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     this.FCarry = temp_var > 0x7f;
     temp_var = temp_var << 1 & 0xff;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -414,7 +414,7 @@ export default [
   //SRA (HL)
   //#0x2E:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     this.FCarry = (temp_var & 0x01) === 0x01;
     temp_var = temp_var & 0x80 | temp_var >> 1;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
@@ -478,7 +478,7 @@ export default [
   //SWAP (HL)
   //#0x36:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     temp_var = (temp_var & 0xf) << 4 | temp_var >> 4;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var);
     this.FZero = temp_var === 0;
@@ -543,7 +543,7 @@ export default [
   //SRL (HL)
   //#0x3E:
   function () {
-    var temp_var = this.memoryRead(this.registersHL);
+    var temp_var = this.readMemory(this.registersHL);
     this.FCarry = (temp_var & 0x01) === 0x01;
     this.memoryWriter[this.registersHL](this.registersHL, temp_var >> 1);
     this.FHalfCarry = this.FSubtract = false;
@@ -604,7 +604,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x01) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x01) === 0;
   },
   //BIT 0, A
   //#0x47:
@@ -660,7 +660,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x02) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x02) === 0;
   },
   //BIT 1, A
   //#0x4F:
@@ -716,7 +716,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x04) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x04) === 0;
   },
   //BIT 2, A
   //#0x57:
@@ -772,7 +772,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x08) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x08) === 0;
   },
   //BIT 3, A
   //#0x5F:
@@ -828,7 +828,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x10) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x10) === 0;
   },
   //BIT 4, A
   //#0x67:
@@ -884,7 +884,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x20) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x20) === 0;
   },
   //BIT 5, A
   //#0x6F:
@@ -940,7 +940,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x40) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x40) === 0;
   },
   //BIT 6, A
   //#0x77:
@@ -996,7 +996,7 @@ export default [
   function () {
     this.FHalfCarry = true;
     this.FSubtract = false;
-    this.FZero = (this.memoryRead(this.registersHL) & 0x80) === 0;
+    this.FZero = (this.readMemory(this.registersHL) & 0x80) === 0;
   },
   //BIT 7, A
   //#0x7F:
@@ -1040,7 +1040,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0xfe);
+      this.readMemory(this.registersHL) & 0xfe);
   },
   //RES 0, A
   //#0x87:
@@ -1082,7 +1082,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0xfd
+      this.readMemory(this.registersHL) & 0xfd
     );
   },
   //RES 1, A
@@ -1125,7 +1125,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0xfb
+      this.readMemory(this.registersHL) & 0xfb
     );
   },
   //RES 2, A
@@ -1168,7 +1168,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0xf7
+      this.readMemory(this.registersHL) & 0xf7
     );
   },
   //RES 3, A
@@ -1211,7 +1211,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0xef
+      this.readMemory(this.registersHL) & 0xef
     );
   },
   //RES 4, A
@@ -1254,7 +1254,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0xdf
+      this.readMemory(this.registersHL) & 0xdf
     );
   },
   //RES 5, A
@@ -1297,7 +1297,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0xbf
+      this.readMemory(this.registersHL) & 0xbf
     );
   },
   //RES 6, A
@@ -1340,7 +1340,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) & 0x7f
+      this.readMemory(this.registersHL) & 0x7f
     );
   },
   //RES 7, A
@@ -1383,7 +1383,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x01
+      this.readMemory(this.registersHL) | 0x01
     );
   },
   //SET 0, A
@@ -1426,7 +1426,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x02
+      this.readMemory(this.registersHL) | 0x02
     );
   },
   //SET 1, A
@@ -1469,7 +1469,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x04
+      this.readMemory(this.registersHL) | 0x04
     );
   },
   //SET 2, A
@@ -1512,7 +1512,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x08
+      this.readMemory(this.registersHL) | 0x08
     );
   },
   //SET 3, A
@@ -1555,7 +1555,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x10
+      this.readMemory(this.registersHL) | 0x10
     );
   },
   //SET 4, A
@@ -1598,7 +1598,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x20
+      this.readMemory(this.registersHL) | 0x20
     );
   },
   //SET 5, A
@@ -1641,7 +1641,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x40
+      this.readMemory(this.registersHL) | 0x40
     );
   },
   //SET 6, A
@@ -1684,7 +1684,7 @@ export default [
   function () {
     this.memoryWriter[this.registersHL](
       this.registersHL,
-      this.memoryRead(this.registersHL) | 0x80
+      this.readMemory(this.registersHL) | 0x80
     );
   },
   //SET 7, A
