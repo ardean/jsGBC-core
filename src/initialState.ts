@@ -1,4 +1,4 @@
-import dutyLookup from "./duty-lookup";
+import dutyLookup from "./dutyLookup";
 
 export default [
   true, // Whether we're in the GBC boot ROM.
@@ -54,7 +54,6 @@ export default [
   0, // To prevent the repeating of drawing a blank screen.
   [], // The internal frame-buffer.
   true, // Is the BG enabled?
-  true, // Can we flag the BG for priority over sprites?
   0x2000, // channel1FrequencyTracker
   0x200, // channel1FrequencyCounter
   0, // channel1totalLength
@@ -149,7 +148,7 @@ export default [
   0, // channel3lastSampleLookup
   144, // Actual scan line...
   0, // Last rendered scan line...
-  0, // queuedScanLines
+  0, // queuedScanlines
   // RTC (Real Time Clock for MBC3):
   false, // RTCisLatched
   0, // RTC latched seconds.

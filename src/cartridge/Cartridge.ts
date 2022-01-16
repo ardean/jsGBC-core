@@ -1,35 +1,35 @@
-import settings from "../../settings";
+import MBC from "./MBC";
 import ROM from "../ROM";
-import MBC from "./mbc";
-import MBC1 from "./mbc1";
-import MBC2 from "./mbc2";
-import MBC3 from "./mbc3";
-import MBC5 from "./mbc5";
-import MBC7 from "./mbc7";
+import MBC1 from "./MBC1";
+import MBC2 from "./MBC2";
+import MBC3 from "./MBC3";
+import MBC5 from "./MBC5";
+import MBC7 from "./MBC7";
 import RUMBLE from "./RUMBLE";
-import GameBoyCore from "../GameBoyCore";
+import GameBoy from "../GameBoy";
+import settings from "../settings";
 
-const GAME_AND_WATCH_ID = "Game and Watch 50";
+const gameAndWatchGameCode = "Game and Watch 50";
 
 export default class Cartridge {
-  hasMBC1: boolean = false; // does the cartridge use MBC1?
-  hasMBC2: boolean = false; // does the cartridge use MBC2?
-  hasMBC3: boolean = false; // does the cartridge use MBC3?
-  hasMBC5: boolean = false; // does the cartridge use MBC5?
-  hasMBC7: boolean = false; // does the cartridge use MBC7?
-  hasSRAM: boolean = false; // does the cartridge use save RAM?
-  hasRUMBLE: boolean = false; // does the cartridge have Rumble addressing? (modified MBC5)
+  hasMbc1: boolean = false; // does the cartridge use MBC1?
+  hasMbc2: boolean = false; // does the cartridge use MBC2?
+  hasMbc3: boolean = false; // does the cartridge use MBC3?
+  hasMbc5: boolean = false; // does the cartridge use MBC5?
+  hasMbc7: boolean = false; // does the cartridge use MBC7?
+  hasRam: boolean = false; // does the cartridge use save RAM?
+  hasRumble: boolean = false; // does the cartridge have Rumble addressing? (modified MBC5)
   hasCamera: boolean = false; // is the cartridge a GameBoy Camera?
-  hasTAMA5: boolean = false; // does the cartridge use TAMA5? (Tamagotchi Cartridge)
-  hasHuC3: boolean = false; // does the cartridge use HuC3? (Hudson Soft / modified MBC3)
-  hasHuC1: boolean = false; // does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
-  hasMMMO1: boolean = false;
-  hasRTC: boolean = false; // does the cartridge have a RTC?
+  hasTama5: boolean = false; // does the cartridge use TAMA5? (Tamagotchi Cartridge)
+  hasHuc3: boolean = false; // does the cartridge use HuC3? (Hudson Soft / modified MBC3)
+  hasHuc1: boolean = false; // does the cartridge use HuC1 (Hudson Soft / modified MBC1)?
+  hasMmmO1: boolean = false;
+  hasRtc: boolean = false; // does the cartridge have a RTC?
   hasBattery: boolean = false;
 
-  gameboy: GameBoyCore;
+  gameboy: GameBoy;
   rom: ROM;
-  useGBCMode: boolean;
+  useGbcMode: boolean;
 
   name: string;
   gameCode: string;
@@ -53,8 +53,12 @@ export default class Cartridge {
     this.rom = rom instanceof ROM ? rom : new ROM(rom);
   }
 
-  connect(gameboy: GameBoyCore) {
+  connect(gameboy: GameBoy) {
     this.gameboy = gameboy;
+  }
+
+  disconnect() {
+    this.gameboy = undefined;
   }
 
   interpret() {
@@ -87,29 +91,29 @@ export default class Cartridge {
     if (!this.gameboy.usedBootRom) {
       switch (this.colorCompatibilityByte) {
         case 0x00: // GB only
-          this.useGBCMode = false;
+          this.useGbcMode = false;
           break;
         case 0x32: // Exception to the GBC identifying code:
-          if (!settings.gbHasPriority && this.name + this.gameCode + this.colorCompatibilityByte === GAME_AND_WATCH_ID) {
-            this.useGBCMode = true;
+          if (!settings.hasGameBoyPriority && this.name + this.gameCode + this.colorCompatibilityByte === gameAndWatchGameCode) {
+            this.useGbcMode = true;
             console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
           } else {
-            this.useGBCMode = false;
+            this.useGbcMode = false;
           }
           break;
         case 0x80: // Both GB + GBC modes
-          this.useGBCMode = !settings.gbHasPriority;
+          this.useGbcMode = !settings.hasGameBoyPriority;
           break;
         case 0xc0: // Only GBC mode
-          this.useGBCMode = true;
+          this.useGbcMode = true;
           break;
         default:
-          this.useGBCMode = false;
+          this.useGbcMode = false;
           console.warn("Unknown GameBoy game type code #" + this.colorCompatibilityByte + ", defaulting to GB mode (Old games don't have a type code).");
       }
     } else {
       console.log("used boot rom");
-      this.useGBCMode = this.gameboy.usedGbcBootRom; // Allow the GBC boot ROM to run in GBC mode...
+      this.useGbcMode = this.gameboy.usedGbcBootRom; // Allow the GBC boot ROM to run in GBC mode...
     }
 
     const oldLicenseCode = this.rom.getByte(0x14b);
@@ -123,14 +127,14 @@ export default class Cartridge {
     }
   }
 
-  setGBCMode(data) {
-    this.useGBCMode = (data & 0x1) === 0;
+  setGbcMode(data: number) {
+    this.useGbcMode = (data & 0x1) === 0;
     // Exception to the GBC identifying code:
-    if (this.name + this.gameCode + this.colorCompatibilityByte === GAME_AND_WATCH_ID) {
-      this.useGBCMode = true;
+    if (this.name + this.gameCode + this.colorCompatibilityByte === gameAndWatchGameCode) {
+      this.useGbcMode = true;
       console.log("Created a boot exception for Game and Watch Gallery 2 (GBC ID byte is wrong on the cartridge).");
     }
-    console.log("Booted to GBC Mode: " + this.useGBCMode);
+    console.log("Booted to GBC Mode: " + this.useGbcMode);
   }
 
   setTypeName() {
@@ -139,108 +143,108 @@ export default class Cartridge {
         this.typeName = "ROM";
         break;
       case 0x01:
-        this.hasMBC1 = true;
+        this.hasMbc1 = true;
         this.typeName = "MBC1";
         break;
       case 0x02:
-        this.hasMBC1 = true;
-        this.hasSRAM = true;
+        this.hasMbc1 = true;
+        this.hasRam = true;
         this.typeName = "MBC1 + SRAM";
         break;
       case 0x03:
-        this.hasMBC1 = true;
-        this.hasSRAM = true;
+        this.hasMbc1 = true;
+        this.hasRam = true;
         this.hasBattery = true;
         this.typeName = "MBC1 + SRAM + Battery";
         break;
       case 0x05:
-        this.hasMBC2 = true;
+        this.hasMbc2 = true;
         this.typeName = "MBC2";
         break;
       case 0x06:
-        this.hasMBC2 = true;
+        this.hasMbc2 = true;
         this.hasBattery = true;
         this.typeName = "MBC2 + Battery";
         break;
       case 0x08:
-        this.hasSRAM = true;
+        this.hasRam = true;
         this.typeName = "ROM + SRAM";
         break;
       case 0x09:
-        this.hasSRAM = true;
+        this.hasRam = true;
         this.hasBattery = true;
         this.typeName = "ROM + SRAM + Battery";
         break;
       case 0x0b:
-        this.hasMMMO1 = true;
+        this.hasMmmO1 = true;
         this.typeName = "MMMO1";
         break;
       case 0x0c:
-        this.hasMMMO1 = true;
-        this.hasSRAM = true;
+        this.hasMmmO1 = true;
+        this.hasRam = true;
         this.typeName = "MMMO1 + SRAM";
         break;
       case 0x0d:
-        this.hasMMMO1 = true;
-        this.hasSRAM = true;
+        this.hasMmmO1 = true;
+        this.hasRam = true;
         this.hasBattery = true;
         this.typeName = "MMMO1 + SRAM + Battery";
         break;
       case 0x0f:
-        this.hasMBC3 = true;
-        this.hasRTC = true;
+        this.hasMbc3 = true;
+        this.hasRtc = true;
         this.hasBattery = true;
         this.typeName = "MBC3 + RTC + Battery";
         break;
       case 0x10:
-        this.hasMBC3 = true;
-        this.hasRTC = true;
+        this.hasMbc3 = true;
+        this.hasRtc = true;
         this.hasBattery = true;
-        this.hasSRAM = true;
+        this.hasRam = true;
         this.typeName = "MBC3 + RTC + Battery + SRAM";
         break;
       case 0x11:
-        this.hasMBC3 = true;
+        this.hasMbc3 = true;
         this.typeName = "MBC3";
         break;
       case 0x12:
-        this.hasMBC3 = true;
-        this.hasSRAM = true;
+        this.hasMbc3 = true;
+        this.hasRam = true;
         this.typeName = "MBC3 + SRAM";
         break;
       case 0x13:
-        this.hasMBC3 = true;
-        this.hasSRAM = true;
+        this.hasMbc3 = true;
+        this.hasRam = true;
         this.hasBattery = true;
         this.typeName = "MBC3 + SRAM + Battery";
         break;
       case 0x19:
-        this.hasMBC5 = true;
+        this.hasMbc5 = true;
         this.typeName = "MBC5";
         break;
       case 0x1a:
-        this.hasMBC5 = true;
-        this.hasSRAM = true;
+        this.hasMbc5 = true;
+        this.hasRam = true;
         this.typeName = "MBC5 + SRAM";
         break;
       case 0x1b:
-        this.hasMBC5 = true;
-        this.hasSRAM = true;
+        this.hasMbc5 = true;
+        this.hasRam = true;
         this.hasBattery = true;
         this.typeName = "MBC5 + SRAM + Battery";
         break;
       case 0x1c:
-        this.hasRUMBLE = true;
+        this.hasRumble = true;
         this.typeName = "RUMBLE";
         break;
       case 0x1d:
-        this.hasRUMBLE = true;
-        this.hasSRAM = true;
+        this.hasRumble = true;
+        this.hasRam = true;
         this.typeName = "RUMBLE + SRAM";
         break;
       case 0x1e:
-        this.hasRUMBLE = true;
-        this.hasSRAM = true;
+        this.hasRumble = true;
+        this.hasRam = true;
         this.hasBattery = true;
         this.typeName = "RUMBLE + SRAM + Battery";
         break;
@@ -249,33 +253,33 @@ export default class Cartridge {
         this.typeName = "GameBoy Camera";
         break;
       case 0x22:
-        this.hasMBC7 = true;
-        this.hasSRAM = true;
+        this.hasMbc7 = true;
+        this.hasRam = true;
         this.hasBattery = true;
         this.typeName = "MBC7 + SRAM + Battery";
         break;
       case 0xfd:
-        this.hasTAMA5 = true;
+        this.hasTama5 = true;
         this.typeName = "TAMA5";
         break;
       case 0xfe:
-        this.hasHuC3 = true;
+        this.hasHuc3 = true;
         this.typeName = "HuC3";
         break;
       case 0xff:
-        this.hasHuC1 = true;
+        this.hasHuc1 = true;
         this.typeName = "HuC1";
         break;
       default:
         throw new Error("Unknown Cartridge Type");
     }
 
-    if (this.hasMBC1) this.mbc1 = new MBC1(this);
-    if (this.hasMBC2) this.mbc2 = new MBC2(this);
-    if (this.hasMBC3) this.mbc3 = new MBC3(this);
-    if (this.hasMBC5) this.mbc5 = new MBC5(this);
-    if (this.hasMBC7) this.mbc7 = new MBC7(this);
-    if (this.hasRUMBLE) this.mbc5 = this.rumble = new RUMBLE(this);
+    if (this.hasMbc1) this.mbc1 = new MBC1(this);
+    if (this.hasMbc2) this.mbc2 = new MBC2(this);
+    if (this.hasMbc3) this.mbc3 = new MBC3(this);
+    if (this.hasMbc5) this.mbc5 = new MBC5(this);
+    if (this.hasMbc7) this.mbc7 = new MBC7(this);
+    if (this.hasRumble) this.mbc5 = this.rumble = new RUMBLE(this);
 
     this.mbc = (
       this.mbc1 ||
@@ -291,7 +295,7 @@ export default class Cartridge {
   setupRAM() {
     if (this.mbc) this.mbc.setupRAM();
 
-    this.gameboy.api.loadSRAM();
-    this.gameboy.api.loadRTC();
+    this.gameboy.loadRam();
+    this.gameboy.loadRtc();
   }
 }

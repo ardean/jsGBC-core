@@ -1,24 +1,23 @@
-import MBC from "./mbc";
+import MBC from "./MBC";
 
 export default class RTC {
   lastTime: number;
-  latchedLDays: any;
-  latchedHours: any;
-  latchedMinutes: any;
-  latchedSeconds: any;
+  latchedLDays: number;
+  latchedHours: number;
+  latchedMinutes: number;
+  latchedSeconds: number;
   latchedHDays: number;
   RTCDayOverFlow: boolean;
   RTCDays: number;
-  RTCHours: any;
+  RTCHours: number;
   RTCMinutes: number;
   RTCSeconds: number;
   RTCHalt: boolean;
   RTCisLatched: boolean;
-  mbc: MBC;
 
-  constructor(mbc: MBC) {
-    this.mbc = mbc;
-  }
+  constructor(
+    private mbc: MBC
+  ) { }
 
   // TODO: rename RTC vars
 
@@ -28,7 +27,7 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-        this.mbc.currentMBCRAMBank +
+        this.mbc.currentMbcRamBank +
         ") RTC write out of range: " +
         data
       );
@@ -41,7 +40,7 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-        this.mbc.currentMBCRAMBank +
+        this.mbc.currentMbcRamBank +
         ") RTC write out of range: " +
         data
       );
@@ -64,7 +63,7 @@ export default class RTC {
     } else {
       console.log(
         "(Bank #" +
-        this.mbc.currentMBCRAMBank +
+        this.mbc.currentMbcRamBank +
         ") RTC write out of range: " +
         data
       );
@@ -93,7 +92,7 @@ export default class RTC {
       this.latchedHDays;
   }
 
-  writeLatch(address, data) {
+  writeLatch = (address: number, data: number) => {
     if (data === 0) {
       this.RTCisLatched = false;
     } else if (!this.RTCisLatched) {
@@ -105,7 +104,7 @@ export default class RTC {
       this.latchedLDays = this.RTCDays & 0xff;
       this.latchedHDays = this.RTCDays >> 8;
     }
-  }
+  };
 
   get() {
     const lastTimeSeconds = Math.round(this.lastTime / 1000);
@@ -117,7 +116,7 @@ export default class RTC {
       this.RTCMinutes,
       this.RTCHours,
       this.RTCDays,
-      this.RTCDayOverFlow,
+      this.RTCDayOverFlow ? 1 : 0,
       this.latchedSeconds,
       this.latchedMinutes,
       this.latchedHours,

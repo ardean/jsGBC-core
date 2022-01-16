@@ -1,6 +1,3 @@
-export const WORD_MAX = 0xFFFF;
-export const BYTE_MAX = 0xFF;
-
 // Interrupt service routine addresses
 export const VBLANK_ISR_ADDR = 0x40;
 export const LCDC_ISR_ADDR = 0x48;
@@ -34,8 +31,8 @@ export const BG_MAP_DATA0_END = 0x9BFF;
 export const BG_MAP_DATA1_START = 0x9C00;
 export const BG_MAP_DATA1_END = 0x9FFF;
 
-export const CART_RAM_START = 0xA000;
-export const CART_RAM_END = 0xBFFF;
+export const cartridgeRamStartAddress = 0xA000;
+export const cartridgeRamEndAddress = 0xBFFF;
 
 export const INTERNAL_RAM_BANK0_START = 0xC000;
 export const INTERNAL_RAM_BANK0_END = 0xCFFF;
@@ -43,37 +40,24 @@ export const INTERNAL_RAM_BANK0_END = 0xCFFF;
 export const INTERNAL_RAM_SWITCH_BANK_START = 0xD000;
 export const INTERNAL_RAM_SWITCH_BANK_END = 0xDFFF;
 
-// Mirrored Memory
-export const ECHO_RAM_START = 0xE000;
-export const ECHO_RAM_END = 0xFDFF;
+export const echoRamStartAddress = 0xE000;
+export const echoRamEndAddress = 0xFDFF;
 
 /*--------------- HIGH MEM-------------- */
 export const SPRITE_ATTRIBUTE_TABLE_START = 0xFE00;
 export const SPRITE_ATTRIBUTE_TABLE_END = 0xFE9F;
 
-export const UNUSABLE_MEM_START = 0xFEA0;
-export const UNUSABLE_MEM_END = 0xFEFF;
-
-export const IO_PORTS_START = 0xFF00;
-export const IO_PORTS_END = 0xFF7F;
-
-export const ZERO_PAGE_START = 0xFF80;
-export const ZERO_PAGE_END = 0xFFFE;
-
-/* -------------------------------------*/
-
-// Convert between local IO memory address and global address
-//  export const GLOBAL_TO_IO_ADDR(A) A - 0xFF00
-//  export const IO_TO_GLOBAL_ADDR(A) A + 0xFF00
+export const unusableMemoryStartAddress = 0xFEA0;
+export const unusableMemoryEndAddress = 0xFEFF;
 
 /*  -------------IO ports/registers ------------------*/
-export const JOYPAD_REG = 0xFF00; /*  Register for reading joy pad info */
-export const SERIAL_DATA_REG = 0xFF01; /*  Serial transfer data */
-export const SERIAL_CONTROL_REG = 0xFF02; /*  SIO control */
-export const DIV_REG = 0xFF04; /*  Divider register */
+export const joypadAddress = 0xFF00;
+export const serialDataAddress = 0xFF01;
+export const serialControlAddress = 0xFF02;
+export const divAddress = 0xFF04; /*  Divider register */
 export const TIMA_REG = 0xFF05; /*  Timer Counter */
 export const TMA_REG = 0xFF06; /*  Timer Modulo  */
-export const TIMER_CONTROL_REG = 0xFF07; /*  Timer Control */
+export const timerControlAddress = 0xFF07; /*  Timer Control */
 export const INTERRUPT_FLAG_REG = 0xFF0F; /*  Interrupt Flag */
 
 /*   Sound Mode 1 registers */
@@ -102,7 +86,7 @@ export const NR_42_REG = 0xFF21; /*  Envelope */
 export const NR_43_REG = 0xFF22; /*  Polynomial Counter */
 export const NR_44_REG = 0xFF23; /*  Counter/Consecutive; initial */
 
-export const NR_50_REG = 0xFF24; /*  Channel Control/on-off/Volume */
+export const soundChannelVolumeControlAddress = 0xFF24; // NR50
 export const NR_51_REG = 0xFF25; /*  Selection of Sound output terminal */
 export const NR_52_REG = 0xFF26; /*  Sound on/off */
 
@@ -124,7 +108,7 @@ export const OBP1_REG = 0xFF49; /*  Object Palette 1 Data */
 export const WY_REG = 0xFF4A; /*  Window Y Position; 0 <= WY <= 143*/
 export const WX_REG = 0xFF4B; /*  Window X Position; 0 <= WX <= 166 */
 
-export const disableBootRomAddress = 0xFF50;
+export const toggleBootRomControlAddress = 0xFF50;
 
 /* DMA transfer for Gameboy Color */
 export const HDMA1_REG = 0xFF51;
@@ -144,6 +128,11 @@ export const BGPD = 0xFF69; // Background Palette data for Gameboy Color
 export const SPPI = 0xFF6A; // Sprite Palette index for Gameboy Color
 export const SPPD = 0xFF6B; // Sprite Palette data for Gameboy Color
 
+// FF6C - Bit 0 (Read/Write) - CGB Mode Only
+// Only the least significant bit of this register can be written to. It defaults to 0, so this register's initial value is $FE.
+// In non-CGB mode, it isn't writable, and its value is locked at $FF.
+export const undocumentedGbcOnlyAddress = 0xFF6C;
+
 export const SRAM_BANK = 0xFF70; // Register to select internal RAM banks for Gameboy Color
 
-export const INTERRUPT_ENABLE_REG = 0xFFFF; /*  Interrupt Enable Register */
+export const interruptEnableAddress = 0xFFFF;

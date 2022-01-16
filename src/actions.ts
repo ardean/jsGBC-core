@@ -1,9 +1,9 @@
 import { EventEmitter } from "events";
 
 export default class Actions extends EventEmitter {
-  map = {};
+  map: { [key: string]: any; } = {};
 
-  register(action) {
+  register(action: string) {
     this.map[action] = true;
     return this;
   }
@@ -12,19 +12,19 @@ export default class Actions extends EventEmitter {
     return Object.keys(this.map);
   }
 
-  is(action) {
+  is(action: string) {
     return !!this.map[action];
   }
 
-  down(action, options) {
-    this.emit("down-" + action, options);
+  down(action: string, options) {
+    this.emit("Down" + action, options);
   }
 
-  change(action, options) {
-    this.emit("change-" + action, options);
+  change(action: string, options) {
+    this.emit("Change" + action, options);
   }
 
-  up(action, options) {
-    this.emit("up-" + action, options);
+  up(action: string, options) {
+    this.emit("Up" + action, options);
   }
 }

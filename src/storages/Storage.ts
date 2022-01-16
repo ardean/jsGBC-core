@@ -1,15 +1,13 @@
-export default class Storage {
-  memory = {};
-
+export default abstract class Storage {
   getState(name: string) {
     return this.get("state-" + name);
   }
 
-  getSRAM(name: string) {
-    return this.get("sram-" + name);
+  getRam(name: string) {
+    return this.get("ram-" + name);
   }
 
-  getRTC(name: string) {
+  getRtc(name: string) {
     return this.get("rtc-" + name);
   }
 
@@ -17,19 +15,14 @@ export default class Storage {
     return this.set("state-" + name, buffer);
   }
 
-  setSRAM(name: string, buffer) {
-    return this.set("sram-" + name, buffer);
+  setRam(name: string, buffer) {
+    return this.set("ram-" + name, buffer);
   }
 
-  setRTC(name: string, buffer) {
+  setRtc(name: string, buffer) {
     return this.set("rtc-" + name, buffer);
   }
 
-  get(name: string) {
-    return this.memory[name];
-  }
-
-  set(name: string, buffer) {
-    this.memory[name] = buffer;
-  }
+  abstract get(key: string): Promise<ArrayBuffer> | ArrayBuffer;
+  abstract set(key: string, buffer: ArrayBuffer): Promise<void> | void;
 }
